@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#C2185B">
+<title>Pilates Studio</title>
+<style>
+/* ── RESET & VARS ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --pink:#C2185B;--pink-d:#880E4F;--pink-l:#FCE4EC;--pink-m:#F06292;
+  --green:#2E7D32;--green-l:#E8F5E9;
+  --blue:#1565C0;--blue-l:#E3F2FD;
+  --purple:#7B1FA2;--teal:#00695C;--gold:#F57F17;
+  --red:#C62828;--red-l:#FFEBEE;
+  --warn:#E65100;--warn-l:#FFF3E0;
+  --bg:#F7F3F7;--border:#E8E0E8;--white:#FFFFFF;
+  --text:#1A1A1A;--muted:#888888;
+  --r-sm:8px;--r-md:12px;--r-lg:18px;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+}
+html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow-x:hidden}
+
+/* ── LOGIN ── */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 24px;background:linear-gradient(160deg,var(--pink-d) 0%,var(--pink) 60%,var(--pink-m) 100%)}
+.login-logo{font-size:56px;margin-bottom:12px}
+.login-title{color:#fff;font-size:26px;font-weight:700;margin-bottom:4px;letter-spacing:-0.5px}
+.login-sub{color:rgba(255,255,255,.7);font-size:14px;margin-bottom:36px}
+.login-box{background:#fff;border-radius:var(--r-lg);padding:28px 24px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.login-box label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.login-box input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:16px;margin-bottom:16px;outline:none;transition:border .15s}
+.login-box input:focus{border-color:var(--pink)}
+.login-err{color:var(--red);font-size:13px;margin-bottom:10px;text-align:center;min-height:18px}
+
+/* ── TOPBAR ── */
+#app{display:none;flex-direction:column;height:100vh}
+.topbar{background:var(--pink);color:#fff;padding:48px 16px 14px;flex-shrink:0}
+.topbar-row{display:flex;justify-content:space-between;align-items:center}
+.topbar h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.topbar .sub{font-size:11px;opacity:.75;margin-top:2px}
+.incasso .val{font-size:20px;font-weight:700;text-align:right}
+.incasso .lbl{font-size:11px;opacity:.7;text-align:right}
+
+/* ── TABS ── */
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:10px 12px 8px;text-align:center;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;min-width:60px}
+.tab .ti{display:block;font-size:19px;margin-bottom:2px}
+.tab.active{color:var(--pink);border-bottom-color:var(--pink)}
+
+/* ── PAGES ── */
+.pages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page{display:none;padding:14px 14px 40px}
+.page.active{display:block}
+
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);font-size:13px;gap:10px}
+.spin{width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--pink);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── CARDS ── */
+.card{background:#fff;border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.card-click{cursor:pointer;transition:transform .1s,box-shadow .1s}
+.card-click:active{transform:scale(.985);box-shadow:none}
+
+/* ── STATS ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{background:#fff;border-radius:var(--r-md);padding:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-val{font-size:26px;font-weight:700;line-height:1}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── SECTION LABEL ── */
+.sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 8px}
+
+/* ── BADGES ── */
+.badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700}
+.b-ok{background:var(--green-l);color:var(--green)}
+.b-warn{background:var(--warn-l);color:var(--warn)}
+.b-danger{background:var(--red-l);color:var(--red)}
+.b-blue{background:var(--blue-l);color:var(--blue)}
+.b-pink{background:var(--pink-l);color:var(--pink)}
+
+/* ── PROGRESS ── */
+.prog{height:5px;background:var(--bg);border-radius:3px;margin:8px 0 4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 18px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--pink);color:#fff;border-color:var(--pink)}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-red{background:var(--red);color:#fff;border-color:var(--red)}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-icon{padding:8px 10px}
+.btn-ghost{background:transparent;border:none;color:var(--muted);padding:6px}
+
+/* ── ROW ── */
+.row{display:flex;align-items:center;justify-content:space-between}
+.row-gap{display:flex;align-items:center;gap:8px}
+
+/* ── SEARCH ── */
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap .ti{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
+.search-wrap input{width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:14px;background:#fff;outline:none}
+.search-wrap input:focus{border-color:var(--pink)}
+
+/* ── CHIPS (filtri) ── */
+.chips{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.chip{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);transition:all .15s}
+.chip.on{background:var(--pink);color:#fff;border-color:var(--pink)}
+
+/* ── FORM ── */
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:#fff;color:var(--text);-webkit-appearance:none;outline:none;transition:border .15s}
+.field input:focus,.field select:focus{border-color:var(--pink)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── SESSION CARD ── */
+.ses-card{background:#fff;border-radius:var(--r-md);padding:13px 15px;margin-bottom:8px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.ses-day{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:14px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.ses-title{font-size:15px;font-weight:700;margin-bottom:2px}
+.ses-meta{font-size:12px;color:var(--muted)}
+.pchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.pchip{font-size:11px;padding:3px 9px;border-radius:10px;background:var(--green-l);color:var(--green);font-weight:700}
+
+/* ── CASSA ── */
+.mov-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--bg)}
+.mov-row:last-child{border:none}
+.mov-desc{font-size:13px;font-weight:500}
+.mov-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.mov-importo{font-size:14px;font-weight:700;white-space:nowrap;margin-left:10px}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;justify-content:flex-end;flex-direction:column;align-items:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--r-lg) var(--r-lg) 0 0;padding:16px 16px 40px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px}
+.close-btn{position:absolute;top:16px;right:14px;background:var(--bg);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+
+/* ── PICKER PARTECIPANTI ── */
+.picker-grid{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.picker-item{padding:6px 12px;border-radius:20px;background:var(--bg);border:1.5px solid transparent;font-size:12px;font-weight:600;cursor:pointer;transition:all .1s}
+.picker-item.sel{background:var(--pink-l);border-color:var(--pink);color:var(--pink)}
+.picker-item.no-lez{opacity:.35;cursor:not-allowed}
+
+/* ── DETAIL TABLE ── */
+.dtable{width:100%;font-size:13px;border-collapse:collapse}
+.dtable td{padding:7px 0;border-bottom:1px solid var(--bg)}
+.dtable td:first-child{color:var(--muted);font-weight:500;width:45%}
+.dtable td:last-child{text-align:right;font-weight:600}
+.dtable tr:last-child td{border:none}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--bg);margin:14px 0}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 16px;color:var(--muted);font-size:13px}
+.empty .ti{font-size:36px;display:block;margin-bottom:10px}
+
+/* ── ALERT ROW ── */
+.alert-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bg);font-size:13px}
+.alert-row:last-child{border:none}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);background:#222;color:#fff;padding:11px 22px;border-radius:24px;font-size:13px;font-weight:700;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:90vw;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ICONS via Unicode fallback per Tabler */
+.ti{font-style:normal}
+
+/* ── SETTINGS ROWS ── */
+.setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bg);cursor:pointer}
+.setting-item:last-child{border:none}
+.setting-label{font-size:14px;font-weight:500}
+.setting-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.setting-arrow{color:var(--muted);font-size:18px}
+
+/* ── SALDO BOX ── */
+.saldo-box{background:linear-gradient(135deg,var(--green) 0%,#43A047 100%);color:#fff;border-radius:var(--r-md);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.saldo-box .lbl{font-size:11px;opacity:.8;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.saldo-box .val{font-size:32px;font-weight:700;margin:4px 0 2px}
+.saldo-box .sub{font-size:12px;opacity:.8}
+</style>
+<!-- Tabler Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">🌸</div>
+  <div class="login-title">Pilates Studio</div>
+  <div class="login-sub">Gestione palestra</div>
+  <div class="login-box">
+    <label>Password</label>
+    <input type="password" id="pwd-input" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-err" id="login-err"></div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Accedi</button>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><div class="sub" id="topbar-date"></div><h1>🌸 Pilates Studio</h1></div>
+      <div class="incasso"><div class="val" id="top-inc">—</div><div class="lbl">incassato</div></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="goTab('dash')"><span class="ti ti-chart-bar"></span>Home</div>
+    <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Iscritte</div>
+    <div class="tab" onclick="goTab('ses')"><span class="ti ti-calendar"></span>Sessioni</div>
+    <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
+    <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuova</div>
+    <div class="tab" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</div>
+  </div>
+
+  <div class="pages">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dash">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-val" style="color:var(--pink)" id="d-isc">—</div><div class="stat-lbl">Iscritte</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-rin">—</div><div class="stat-lbl">Da rinnovare</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--red)" id="d-sal">—</div><div class="stat-lbl">Da saldare</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--blue)" id="d-sog">—</div><div class="stat-lbl">Sessioni oggi</div></div>
+      </div>
+      <div class="sec">Situazione cassa</div>
+      <div id="dash-saldo"></div>
+      <div class="sec">Da gestire</div>
+      <div class="card" id="dash-alerts"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
+      <div class="sec">Sessioni oggi</div>
+      <div class="card" id="dash-oggi"></div>
+    </div>
+
+    <!-- ISCRITTE -->
+    <div class="page" id="page-isc">
+      <div class="search-wrap"><span class="ti ti-search"></span><input type="text" id="srch" placeholder="Cerca iscritta…" oninput="renderIsc()"></div>
+      <div class="chips">
+        <div class="chip on" id="f-tutte" onclick="setFilt('tutte')">Tutte</div>
+        <div class="chip" id="f-rinnovo" onclick="setFilt('rinnovo')">Da rinnovare</div>
+        <div class="chip" id="f-saldo" onclick="setFilt('saldo')">Da saldare</div>
+      </div>
+      <div id="isc-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
+    </div>
+
+    <!-- SESSIONI -->
+    <div class="page" id="page-ses">
+      <div class="row" style="margin-bottom:12px">
+        <div class="chips" style="margin:0">
+          <div class="chip on" id="sv-f" onclick="setSesV('f')">Prossime</div>
+          <div class="chip" id="sv-p" onclick="setSesV('p')">Passate</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openNuovaSes()"><span class="ti ti-plus"></span> Sessione</button>
+      </div>
+      <div id="ses-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
+    </div>
+
+    <!-- CASSA -->
+    <div class="page" id="page-cas">
+      <div id="cas-saldo" style="margin-bottom:14px"></div>
+      <div class="row" style="margin-bottom:12px">
+        <div class="chips" style="margin:0">
+          <div class="chip on" id="ct-tutti" onclick="setCasT('tutti')">Tutti</div>
+          <div class="chip" id="ct-entrate" onclick="setCasT('entrate')">Entrate</div>
+          <div class="chip" id="ct-uscite" onclick="setCasT('uscite')">Uscite</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openNuovaMov()"><span class="ti ti-plus"></span> Movimento</button>
+      </div>
+      <div id="cas-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
+    </div>
+
+    <!-- NUOVA ISCRITTA -->
+    <div class="page" id="page-add">
+      <div class="sec">Nuova iscritta</div>
+      <div class="card">
+        <div class="field"><label>Nome e cognome *</label><input type="text" id="n-nome" placeholder="Es. Giulia Rossi"></div>
+        <div class="field"><label>Pacchetto *</label><select id="n-pac"><option value="">— seleziona —</option></select></div>
+        <div class="field"><label>Tipo pagamento</label>
+          <select id="n-pag"><option>Bonifico</option><option>Contanti</option><option>Carta</option><option>Da saldare</option></select>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Quota (€)</label><input type="number" id="n-quota" placeholder="310"></div>
+          <div class="field"><label>Pagato (€)</label><input type="number" id="n-pagato" placeholder="310"></div>
+        </div>
+        <div class="field"><label>Lezioni totali</label><input type="number" id="n-lez" placeholder="13"></div>
+        <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
+        <button class="btn btn-primary btn-full" onclick="aggiungiIsc()"><span class="ti ti-user-plus"></span> Aggiungi iscritta</button>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-cfg">
+      <div class="sec">Corsi</div>
+      <div class="card" id="corsi-list"></div>
+      <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoCorso()"><span class="ti ti-plus"></span> Aggiungi corso</button>
+
+      <div class="sec">Istruttori/Istruttori</div>
+      <div class="card" id="istr-list"></div>
+      <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore/istruttrice</button>
+
+      <div class="sec">Account</div>
+      <div class="card">
+        <div class="setting-item" onclick="downloadDb()">
+          <div><div class="setting-label">Scarica backup Excel</div><div class="setting-sub">Copia del database</div></div>
+          <span class="ti ti-download setting-arrow"></span>
+        </div>
+        <div class="setting-item" onclick="doLogout()">
+          <div><div class="setting-label" style="color:var(--red)">Esci</div></div>
+          <span class="ti ti-logout setting-arrow"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
+
+<!-- Dettaglio iscritta -->
+<div class="overlay" id="ov-isc">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-isc')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="mi-nome"></div>
+    <div id="mi-body"></div>
+  </div>
+</div>
+
+<!-- Prenotazione sessione -->
+<div class="overlay" id="ov-pren">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-pren')"><span class="ti ti-x"></span></button>
+    <div class="modal-title">Gestisci partecipanti</div>
+    <div id="pren-info" style="background:var(--blue-l);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;margin-bottom:14px;color:var(--blue)"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Seleziona partecipanti <span style="font-weight:400">(numero tra parentesi = lezioni rimanenti)</span></div>
+    <div class="picker-grid" id="pren-picker"></div>
+    <div class="divider"></div>
+    <button class="btn btn-primary btn-full" onclick="conferma()">Conferma — scala lezioni automaticamente</button>
+  </div>
+</div>
+
+<!-- Nuova sessione -->
+<div class="overlay" id="ov-ses">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-ses')"><span class="ti ti-x"></span></button>
+    <div class="modal-title">Nuova sessione</div>
+    <div class="field"><label>Data *</label><input type="date" id="ns-data"></div>
+    <div class="field"><label>Orario</label>
+      <select id="ns-ora">
+        <option>09:00–10:00</option><option>10:00–11:00</option><option>11:00–12:00</option>
+        <option>12:00–13:00</option><option>13:00–14:00</option><option>14:00–15:00</option>
+        <option>15:00–16:00</option><option>16:00–17:00</option><option>17:00–18:00</option>
+        <option>18:00–19:00</option><option>19:00–20:00</option><option>19:30–20:30</option>
+        <option>20:00–21:00</option><option>20:30–21:30</option>
+      </select>
+    </div>
+    <div class="field"><label>Tipo corso *</label><select id="ns-tipo"><option value="">— seleziona —</option></select></div>
+    <div class="field"><label>Istruttrice/Istruttore *</label><select id="ns-istr"><option value="">— seleziona —</option></select></div>
+    <div class="field"><label>Note</label><input type="text" id="ns-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="creaSessione()">Crea sessione</button>
+  </div>
+</div>
+
+<!-- Nuovo movimento cassa -->
+<div class="overlay" id="ov-mov">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-mov')"><span class="ti ti-x"></span></button>
+    <div class="modal-title">Nuovo movimento</div>
+    <div class="field"><label>Data *</label><input type="date" id="mv-data"></div>
+    <div class="field"><label>Tipo *</label>
+      <select id="mv-tipo" onchange="updateCatOptions()">
+        <option value="Entrata">Entrata</option>
+        <option value="Uscita">Uscita</option>
+      </select>
+    </div>
+    <div class="field"><label>Categoria</label><select id="mv-cat"></select></div>
+    <div class="field"><label>Descrizione</label><input type="text" id="mv-desc" placeholder="Es. Abbonamento Giulia Rossi"></div>
+    <div class="field"><label>Importo (€) *</label><input type="number" id="mv-imp" placeholder="0" step="0.01"></div>
+    <div class="field"><label>Note</label><input type="text" id="mv-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="aggiungiMov()">Aggiungi movimento</button>
+  </div>
+</div>
+
+<!-- Nuovo corso -->
+<div class="overlay" id="ov-corso">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-corso')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="corso-modal-title">Nuovo corso</div>
+    <div class="field"><label>Nome corso *</label><input type="text" id="c-nome" placeholder="Es. Reformer (10+3)"></div>
+    <div class="field-row">
+      <div class="field"><label>Lezioni incluse</label><input type="number" id="c-lez" placeholder="13"></div>
+      <div class="field"><label>Prezzo (€)</label><input type="number" id="c-prezzo" placeholder="310"></div>
+    </div>
+    <div class="field"><label>Note</label><input type="text" id="c-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="salvaCorso()">Salva corso</button>
+  </div>
+</div>
+
+<!-- Nuovo istruttore -->
+<div class="overlay" id="ov-istr">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-istr')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="istr-modal-title">Nuovo istruttore/istruttrice</div>
+    <div class="field-row">
+      <div class="field"><label>Nome *</label><input type="text" id="i-nome" placeholder="Francesca"></div>
+      <div class="field"><label>Cognome</label><input type="text" id="i-cog" placeholder="Rossi"></div>
+    </div>
+    <div class="field"><label>Telefono</label><input type="tel" id="i-tel" placeholder="+39 333 000 0000"></div>
+    <div class="field"><label>Email</label><input type="email" id="i-email" placeholder="francesca@email.it"></div>
+    <div class="field"><label>Note</label><input type="text" id="i-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="salvaIstr()">Salva</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ CONFIG ═══════════════════════════════════════════════════════════════════
+// IMPORTANTE: sostituisci con l'URL del tuo backend Render dopo il deploy
+const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
+
+// ══ STATE ════════════════════════════════════════════════════════════════════
+let token = localStorage.getItem('pilot') || '';
+let iscritte=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
+let filtro='tutte', sesView='f', casTab='tutti';
+let activeSes=null, selPart=[];
+let editCorsoIdx=null, editIstrIdx=null;
+
+const oggi = new Date(); oggi.setHours(0,0,0,0);
+
+// ══ UTILS ════════════════════════════════════════════════════════════════════
+const euro = n => '€' + Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:2});
+const lezRim = i => Math.max(0,(i.lezTot||0)-(i.lezFatte||0));
+const resto  = i => (i.quota||0)-(i.pagato||0);
+
+function fmtData(s){
+  if(!s) return '';
+  const d=new Date(s+'T00:00:00');
+  return d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+}
+function fmtShort(s){
+  if(!s) return '';
+  return new Date(s+'T00:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'short'});
+}
+function fmtDataIT(s){
+  if(!s) return '';
+  const p=s.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s;
+}
+
+// ══ API ═══════════════════════════════════════════════════════════════════════
+async function api(method, path, body){
+  const opts={method,headers:{'Content-Type':'application/json','X-Auth-Token':token}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  if(r.status===401){doLogout();return null;}
+  return r.json();
+}
+const GET  = path       => api('GET',path);
+const POST = (path,body)=> api('POST',path,body);
+
+// ══ LOGIN/LOGOUT ═════════════════════════════════════════════════════════════
+async function doLogin(){
+  const pwd=document.getElementById('pwd-input').value;
+  document.getElementById('login-err').textContent='';
+  try{
+    const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
+    const data=await r.json();
+    if(data.token){
+      token=data.token;
+      localStorage.setItem('pilot',token);
+      startApp();
+    } else {
+      document.getElementById('login-err').textContent='Password errata. Riprova.';
+    }
+  }catch(e){
+    document.getElementById('login-err').textContent='Errore di connessione al server.';
+  }
+}
+
+async function checkToken(){
+  if(!token) return false;
+  try{
+    const r=await fetch(API+'/api/ping',{headers:{'X-Auth-Token':token}});
+    return r.status===200;
+  }catch(e){return false;}
+}
+
+function doLogout(){
+  if(token) POST('/api/logout');
+  token=''; localStorage.removeItem('pilot');
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('pwd-input').value='';
+}
+
+// ══ START ════════════════════════════════════════════════════════════════════
+async function startApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  await loadAll();
+}
+
+async function loadAll(){
+  const [i,s,c,ist,cas]=await Promise.all([
+    GET('/api/iscritti'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/cassa')
+  ]);
+  if(i) iscritte=i;
+  if(s) sessioni=s;
+  if(c) corsi=c;
+  if(ist) istruttori=ist;
+  if(cas) cassa=cas;
+  renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
+  updateTopbar(); populateSelects();
+}
+
+// ══ NAVIGATION ═══════════════════════════════════════════════════════════════
+function goTab(t){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(tb=>tb.classList.remove('active'));
+  document.getElementById('page-'+t).classList.add('active');
+  const idx=['dash','isc','ses','cas','add','cfg'].indexOf(t);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+}
+
+// ══ SELECTS DINAMICI ═════════════════════════════════════════════════════════
+function populateSelects(){
+  // Pacchetto (nuova iscritta)
+  const selPac=document.getElementById('n-pac');
+  selPac.innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option value="${c.nome}" data-lez="${c.lezioni}" data-prezzo="${c.prezzo}">${c.nome}${c.prezzo?' — €'+c.prezzo:''}</option>`).join('');
+  selPac.onchange=function(){
+    const opt=this.selectedOptions[0];
+    if(opt&&opt.dataset.lez) document.getElementById('n-lez').value=opt.dataset.lez;
+    if(opt&&opt.dataset.prezzo){document.getElementById('n-quota').value=opt.dataset.prezzo;document.getElementById('n-pagato').value=opt.dataset.prezzo;}
+  };
+  // Tipo corso (sessione)
+  document.getElementById('ns-tipo').innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option>${c.nome}</option>`).join('');
+  // Istruttore (sessione)
+  document.getElementById('ns-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
+  updateCatOptions();
+}
+
+function updateCatOptions(){
+  const tipo=document.getElementById('mv-tipo').value;
+  const catE=['Abbonamento','Lezione singola','Quota associativa','Altro'];
+  const catU=['Istruttori','Affitto','Attrezzatura','Utenze','Manutenzione','Pulizie','Altro'];
+  const cats=tipo==='Entrata'?catE:catU;
+  document.getElementById('mv-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
+}
+
+// ══ TOPBAR ═══════════════════════════════════════════════════════════════════
+function updateTopbar(){
+  document.getElementById('top-inc').textContent=euro(iscritte.reduce((a,i)=>a+i.pagato,0));
+}
+
+// ══ DASHBOARD ════════════════════════════════════════════════════════════════
+function renderDash(){
+  const daRin=iscritte.filter(i=>lezRim(i)<=2&&i.lezTot>0);
+  const daSal=iscritte.filter(i=>resto(i)>0);
+  const todaySes=sessioni.filter(s=>{const d=new Date(s.data+'T00:00:00');d.setHours(0,0,0,0);return d.getTime()===oggi.getTime();});
+  document.getElementById('d-isc').textContent=iscritte.length;
+  document.getElementById('d-rin').textContent=daRin.length;
+  document.getElementById('d-sal').textContent=euro(daSal.reduce((a,i)=>a+resto(i),0));
+  document.getElementById('d-sog').textContent=todaySes.length;
+
+  // Saldo cassa
+  const entrate=cassa.filter(m=>m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
+  const uscite=cassa.filter(m=>m.tipo==='Uscita').reduce((a,m)=>a+m.importo,0);
+  const saldo=entrate-uscite;
+  document.getElementById('dash-saldo').innerHTML=`
+    <div class="saldo-box">
+      <div class="lbl">Saldo cassa</div>
+      <div class="val">${euro(saldo)}</div>
+      <div class="sub">Entrate ${euro(entrate)} — Uscite ${euro(uscite)}</div>
+    </div>`;
+
+  // Alerts
+  let h='';
+  daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}</span><span class="badge ${lezRim(i)===0?'b-danger':'b-warn'}">${lezRim(i)} lez.</span></div>`;});
+  daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}</span><span class="badge b-danger">${euro(resto(i))}</span></div>`;});
+  document.getElementById('dash-alerts').innerHTML=h||'<div class="empty"><span class="ti ti-circle-check" style="color:var(--green)"></span>Tutto ok!</div>';
+
+  // Sessioni oggi
+  let h2='';
+  if(!todaySes.length) h2='<div style="font-size:13px;color:var(--muted);padding:6px 0">Nessuna sessione oggi</div>';
+  else todaySes.forEach(s=>{
+    const nomi=s.partecipanti.map(n=>n.split(' ')[0]);
+    h2+=`<div class="alert-row"><div><div style="font-weight:700">${s.tipo}</div><div style="font-size:12px;color:var(--muted)">${s.orario} · ${s.istr}</div></div><div style="font-size:12px;color:var(--muted);text-align:right">${nomi.join(', ')||'—'}</div></div>`;
+  });
+  document.getElementById('dash-oggi').innerHTML=h2;
+}
+
+// ══ ISCRITTE ═════════════════════════════════════════════════════════════════
+function setFilt(f){
+  filtro=f;
+  ['tutte','rinnovo','saldo'].forEach(x=>document.getElementById('f-'+x).classList.toggle('on',x===f));
+  renderIsc();
+}
+
+function renderIsc(){
+  const q=(document.getElementById('srch').value||'').toLowerCase();
+  let list=iscritte.filter(i=>i.nome.toLowerCase().includes(q));
+  if(filtro==='rinnovo') list=list.filter(i=>lezRim(i)<=2&&i.lezTot>0);
+  if(filtro==='saldo') list=list.filter(i=>resto(i)>0);
+  if(!list.length){document.getElementById('isc-list').innerHTML='<div class="empty"><span class="ti ti-mood-empty"></span>Nessun risultato</div>';return;}
+  document.getElementById('isc-list').innerHTML=list.map(isc=>{
+    const rim=lezRim(isc),pct=isc.lezTot>0?Math.round(isc.lezFatte/isc.lezTot*100):0,r=resto(isc);
+    const bc=rim===0?'b-danger':(rim<=2?'b-warn':'b-ok'),fc=rim===0?'var(--red)':(rim<=2?'var(--warn)':'var(--green)');
+    return `<div class="card card-click" onclick="openIsc('${isc.id}')">
+      <div class="row"><div style="font-size:15px;font-weight:700">${isc.nome}</div><span class="badge ${bc}">${rim} lez.</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">${isc.pacchetto||'—'} · ${isc.pagamento||'—'}</div>
+      ${r>0?`<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:4px">Da saldare: ${euro(r)}</div>`:''}
+      <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${fc}"></div></div>
+      <div style="font-size:11px;color:var(--muted)">${isc.lezFatte} / ${isc.lezTot} lezioni effettuate</div>
+    </div>`;
+  }).join('');
+}
+
+function openIsc(id){
+  const isc=iscritte.find(x=>String(x.id)===String(id)); if(!isc) return;
+  document.getElementById('mi-nome').textContent=isc.nome;
+  const rim=lezRim(isc),r=resto(isc);
+  const ultSes=sessioni.filter(s=>s.partecipanti.includes(isc.nome)).sort((a,b)=>a.data>b.data?-1:1).slice(0,5);
+  let h=`<div class="stat-grid" style="margin-bottom:14px">
+    <div class="stat"><div class="stat-val" style="color:var(--pink)">${rim}</div><div class="stat-lbl">Lez. rimanenti</div></div>
+    <div class="stat"><div class="stat-val" style="color:${r>0?'var(--red)':'var(--green)'}">${euro(r>0?r:isc.pagato)}</div><div class="stat-lbl">${r>0?'Da saldare':'Pagato'}</div></div>
+  </div>
+  <table class="dtable">
+    <tr><td>Pacchetto</td><td>${isc.pacchetto||'—'}</td></tr>
+    <tr><td>Pagamento</td><td>${isc.pagamento||'—'}</td></tr>
+    <tr><td>Quota</td><td>${euro(isc.quota)}</td></tr>
+    <tr><td>Pagato</td><td>${euro(isc.pagato)}</td></tr>
+    ${isc.note?`<tr><td>Note</td><td>${isc.note}</td></tr>`:''}
+  </table>`;
+  if(ultSes.length){
+    h+='<div class="sec" style="margin-top:14px">Ultime sessioni</div>';
+    ultSes.forEach(s=>{h+=`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--bg)">${fmtShort(s.data)} · ${s.orario} · ${s.tipo}</div>`;});
+  }
+  h+=`<div class="divider"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <button class="btn" onclick="modLez('${id}',-1)"><span class="ti ti-minus"></span> Lezione</button>
+    <button class="btn btn-primary" onclick="modLez('${id}',1)"><span class="ti ti-plus"></span> Lezione</button>
+  </div>`;
+  document.getElementById('mi-body').innerHTML=h;
+  document.getElementById('ov-isc').classList.add('open');
+}
+
+async function modLez(id,d){
+  const isc=iscritte.find(x=>String(x.id)===String(id)); if(!isc) return;
+  isc.lezFatte=Math.max(0,(isc.lezFatte||0)+d);
+  isc.lezRim=lezRim(isc);
+  await POST('/api/iscritti',iscritte);
+  toast(d>0?'Lezione aggiunta':'Lezione rimossa');
+  openIsc(id); renderIsc(); renderDash();
+}
+
+async function aggiungiIsc(){
+  const nome=document.getElementById('n-nome').value.trim();
+  if(!nome){toast('Inserisci il nome',true);return;}
+  const pac=document.getElementById('n-pac').value;
+  if(!pac){toast('Seleziona un pacchetto',true);return;}
+  const nuova={id:Date.now(),nome,pacchetto:pac,pagamento:document.getElementById('n-pag').value,quota:parseFloat(document.getElementById('n-quota').value)||0,pagato:parseFloat(document.getElementById('n-pagato').value)||0,lezTot:parseInt(document.getElementById('n-lez').value)||13,lezFatte:0,note:document.getElementById('n-note').value};
+  nuova.resto=nuova.quota-nuova.pagato; nuova.lezRim=nuova.lezTot;
+  iscritte.push(nuova);
+  await POST('/api/iscritti',iscritte);
+  ['n-nome','n-quota','n-pagato','n-lez','n-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('n-pac').value='';
+  toast(nome+' aggiunta!'); goTab('isc'); renderIsc(); renderDash(); updateTopbar();
+}
+
+// ══ SESSIONI ═════════════════════════════════════════════════════════════════
+function setSesV(v){
+  sesView=v;
+  ['f','p'].forEach(x=>document.getElementById('sv-'+x).classList.toggle('on',x===v));
+  renderSes();
+}
+
+function renderSes(){
+  const list=sessioni.filter(s=>{const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);return sesView==='f'?sd>=oggi:sd<oggi;}).sort((a,b)=>sesView==='f'?(a.data>b.data?1:-1):(a.data>b.data?-1:1));
+  if(!list.length){document.getElementById('ses-list').innerHTML='<div class="empty"><span class="ti ti-calendar-off"></span>Nessuna sessione</div>';return;}
+  let h='',lastD='';
+  list.forEach(s=>{
+    if(s.data!==lastD){h+=`<div class="ses-day">${fmtData(s.data)}</div>`;lastD=s.data;}
+    const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);
+    const fut=sd>=oggi;
+    const chips=s.partecipanti.map(n=>`<span class="pchip">${n.split(' ')[0]}</span>`).join('');
+    h+=`<div class="ses-card">
+      <div class="row">
+        <div><div class="ses-title">${s.tipo}</div><div class="ses-meta">${s.orario} · ${s.istr}${s.note?' · '+s.note:''}</div></div>
+        ${fut?`<button class="btn btn-primary btn-sm btn-icon" onclick="openPren(${s.id})"><span class="ti ti-user-plus"></span></button>`:`<span class="badge b-pink">${s.partecipanti.length}</span>`}
+      </div>
+      <div class="pchips">${chips||'<span style="font-size:12px;color:var(--muted)">Nessuna prenotazione</span>'}</div>
+    </div>`;
+  });
+  document.getElementById('ses-list').innerHTML=h;
+}
+
+function openNuovaSes(){
+  document.getElementById('ns-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('ns-note').value='';
+  document.getElementById('ov-ses').classList.add('open');
+}
+
+async function creaSessione(){
+  const data=document.getElementById('ns-data').value;
+  const tipo=document.getElementById('ns-tipo').value;
+  const istr=document.getElementById('ns-istr').value;
+  if(!data||!tipo||!istr){toast('Compila data, corso e istruttore',true);return;}
+  const nuova={id:Date.now(),data,orario:document.getElementById('ns-ora').value,tipo,istr,partecipanti:[],note:document.getElementById('ns-note').value};
+  sessioni.push(nuova);
+  await POST('/api/sessioni',sessioni);
+  closeOv('ov-ses'); toast('Sessione creata!'); renderSes(); renderDash();
+}
+
+function openPren(sid){
+  activeSes=sessioni.find(s=>s.id===sid||s.id===Number(sid)); if(!activeSes) return;
+  selPart=[...activeSes.partecipanti];
+  document.getElementById('pren-info').innerHTML=`<strong>${activeSes.tipo}</strong> · ${activeSes.orario}<br>${fmtData(activeSes.data)} · ${activeSes.istr}`;
+  document.getElementById('pren-picker').innerHTML=iscritte.map(isc=>{
+    const rim=lezRim(isc),sel=selPart.includes(isc.nome),nolez=rim<=0&&!sel;
+    return `<div class="picker-item ${sel?'sel':''} ${nolez?'no-lez':''}" id="pi-${isc.id}" onclick="togglePart('${isc.id}','${isc.nome}')">${isc.nome.split(' ')[0]} ${(isc.nome.split(' ')[1]||'')} <span style="opacity:.55;font-size:10px">(${rim})</span></div>`;
+  }).join('');
+  document.getElementById('ov-pren').classList.add('open');
+}
+
+function togglePart(id,nome){
+  const isc=iscritte.find(x=>String(x.id)===String(id)); if(!isc) return;
+  const inS=selPart.includes(nome);
+  if(!inS&&lezRim(isc)<=0){toast('Lezioni esaurite!',true);return;}
+  if(inS) selPart=selPart.filter(x=>x!==nome);
+  else selPart.push(nome);
+  document.getElementById('pi-'+id).classList.toggle('sel',selPart.includes(nome));
+}
+
+async function conferma(){
+  if(!activeSes) return;
+  const prev=activeSes.partecipanti;
+  const aggiunti=selPart.filter(n=>!prev.includes(n));
+  const rimossi=prev.filter(n=>!selPart.includes(n));
+  aggiunti.forEach(nome=>{const isc=iscritte.find(x=>x.nome===nome);if(isc){isc.lezFatte++;isc.lezRim=lezRim(isc);}});
+  rimossi.forEach(nome=>{const isc=iscritte.find(x=>x.nome===nome);if(isc&&isc.lezFatte>0){isc.lezFatte--;isc.lezRim=lezRim(isc);}});
+  activeSes.partecipanti=[...selPart];
+  await Promise.all([POST('/api/iscritti',iscritte),POST('/api/sessioni',sessioni)]);
+  closeOv('ov-pren');
+  toast(`Salvato · ${aggiunti.length} aggiunt${aggiunti.length===1?'a':'e'}`);
+  renderSes(); renderIsc(); renderDash();
+}
+
+// ══ CASSA ════════════════════════════════════════════════════════════════════
+function setCasT(t){
+  casTab=t;
+  ['tutti','entrate','uscite'].forEach(x=>document.getElementById('ct-'+x).classList.toggle('on',x===t));
+  renderCas();
+}
+
+function renderCas(){
+  const entrate=cassa.filter(m=>m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
+  const uscite=cassa.filter(m=>m.tipo==='Uscita').reduce((a,m)=>a+m.importo,0);
+  document.getElementById('cas-saldo').innerHTML=`
+    <div class="saldo-box">
+      <div class="lbl">Saldo</div>
+      <div class="val">${euro(entrate-uscite)}</div>
+      <div class="sub">Entrate ${euro(entrate)} — Uscite ${euro(uscite)}</div>
+    </div>`;
+  let list=[...cassa].sort((a,b)=>a.data>b.data?-1:1);
+  if(casTab==='entrate') list=list.filter(m=>m.tipo==='Entrata');
+  if(casTab==='uscite') list=list.filter(m=>m.tipo==='Uscita');
+  if(!list.length){document.getElementById('cas-list').innerHTML='<div class="empty"><span class="ti ti-cash-off"></span>Nessun movimento</div>';return;}
+  let h='',lastD='';
+  list.forEach(m=>{
+    if(m.data!==lastD){h+=`<div class="ses-day">${fmtData(m.data)}</div>`;lastD=m.data;}
+    const isE=m.tipo==='Entrata';
+    h+=`<div class="mov-row">
+      <div>
+        <div class="mov-desc">${m.descrizione||m.categoria||'—'}</div>
+        <div class="mov-meta">${m.categoria}${m.note?' · '+m.note:''}</div>
+      </div>
+      <div class="mov-importo" style="color:${isE?'var(--green)':'var(--red)'}">${isE?'+':'−'}${euro(m.importo)}</div>
+    </div>`;
+  });
+  document.getElementById('cas-list').innerHTML=`<div class="card">${h}</div>`;
+}
+
+function openNuovaMov(){
+  document.getElementById('mv-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('mv-tipo').value='Entrata';
+  document.getElementById('mv-desc').value='';
+  document.getElementById('mv-imp').value='';
+  document.getElementById('mv-note').value='';
+  updateCatOptions();
+  document.getElementById('ov-mov').classList.add('open');
+}
+
+async function aggiungiMov(){
+  const imp=parseFloat(document.getElementById('mv-imp').value);
+  if(!imp||imp<=0){toast('Inserisci un importo valido',true);return;}
+  const mov={id:Date.now(),data:document.getElementById('mv-data').value,tipo:document.getElementById('mv-tipo').value,categoria:document.getElementById('mv-cat').value,descrizione:document.getElementById('mv-desc').value,importo:imp,note:document.getElementById('mv-note').value};
+  cassa.push(mov);
+  await POST('/api/cassa',cassa);
+  closeOv('ov-mov'); toast('Movimento aggiunto!'); renderCas(); renderDash();
+}
+
+// ══ CONFIG ═══════════════════════════════════════════════════════════════════
+function renderCfg(){
+  // Corsi
+  document.getElementById('corsi-list').innerHTML=corsi.length
+    ?corsi.map((c,i)=>`<div class="setting-item" onclick="openEditCorso(${i})">
+        <div><div class="setting-label">${c.nome}</div><div class="setting-sub">${c.lezioni} lezioni · ${euro(c.prezzo)}</div></div>
+        <span class="ti ti-chevron-right setting-arrow"></span>
+      </div>`).join('')
+    :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun corso. Aggiungine uno.</div>';
+  // Istruttori
+  document.getElementById('istr-list').innerHTML=istruttori.length
+    ?istruttori.map((ist,i)=>`<div class="setting-item" onclick="openEditIstr(${i})">
+        <div><div class="setting-label">${ist.nome}${ist.cognome?' '+ist.cognome:''}</div><div class="setting-sub">${ist.telefono||ist.email||'—'}</div></div>
+        <span class="ti ti-chevron-right setting-arrow"></span>
+      </div>`).join('')
+    :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun istruttore. Aggiungine uno.</div>';
+}
+
+function openNuovoCorso(){
+  editCorsoIdx=null;
+  document.getElementById('corso-modal-title').textContent='Nuovo corso';
+  ['c-nome','c-lez','c-prezzo','c-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ov-corso').classList.add('open');
+}
+function openEditCorso(i){
+  editCorsoIdx=i; const c=corsi[i];
+  document.getElementById('corso-modal-title').textContent='Modifica corso';
+  document.getElementById('c-nome').value=c.nome||'';
+  document.getElementById('c-lez').value=c.lezioni||'';
+  document.getElementById('c-prezzo').value=c.prezzo||'';
+  document.getElementById('c-note').value=c.note||'';
+  document.getElementById('ov-corso').classList.add('open');
+}
+async function salvaCorso(){
+  const nome=document.getElementById('c-nome').value.trim();
+  if(!nome){toast('Inserisci il nome del corso',true);return;}
+  const obj={id:editCorsoIdx!==null?corsi[editCorsoIdx].id:Date.now(),nome,lezioni:parseInt(document.getElementById('c-lez').value)||0,prezzo:parseFloat(document.getElementById('c-prezzo').value)||0,note:document.getElementById('c-note').value};
+  if(editCorsoIdx!==null) corsi[editCorsoIdx]=obj; else corsi.push(obj);
+  await POST('/api/corsi',corsi);
+  closeOv('ov-corso'); toast('Corso salvato!'); renderCfg(); populateSelects();
+}
+
+function openNuovoIstr(){
+  editIstrIdx=null;
+  document.getElementById('istr-modal-title').textContent='Nuovo istruttore/istruttrice';
+  ['i-nome','i-cog','i-tel','i-email','i-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ov-istr').classList.add('open');
+}
+function openEditIstr(i){
+  editIstrIdx=i; const ist=istruttori[i];
+  document.getElementById('istr-modal-title').textContent='Modifica istruttore/istruttrice';
+  document.getElementById('i-nome').value=ist.nome||'';
+  document.getElementById('i-cog').value=ist.cognome||'';
+  document.getElementById('i-tel').value=ist.telefono||'';
+  document.getElementById('i-email').value=ist.email||'';
+  document.getElementById('i-note').value=ist.note||'';
+  document.getElementById('ov-istr').classList.add('open');
+}
+async function salvaIstr(){
+  const nome=document.getElementById('i-nome').value.trim();
+  if(!nome){toast('Inserisci il nome',true);return;}
+  const obj={id:editIstrIdx!==null?istruttori[editIstrIdx].id:Date.now(),nome,cognome:document.getElementById('i-cog').value,telefono:document.getElementById('i-tel').value,email:document.getElementById('i-email').value,note:document.getElementById('i-note').value};
+  if(editIstrIdx!==null) istruttori[editIstrIdx]=obj; else istruttori.push(obj);
+  await POST('/api/istruttori',istruttori);
+  closeOv('ov-istr'); toast('Salvato!'); renderCfg(); populateSelects();
+}
+
+async function downloadDb(){
+  const a=document.createElement('a');
+  a.href=API+'/api/download';
+  a.setAttribute('download','pilates_db.xlsx');
+  // header auth tramite fetch + blob
+  const r=await fetch(API+'/api/download',{headers:{'X-Auth-Token':token}});
+  const blob=await r.blob();
+  a.href=URL.createObjectURL(blob);
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  toast('Download avviato!');
+}
+
+// ══ UTILS UI ═════════════════════════════════════════════════════════════════
+function closeOv(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+function toast(msg,warn=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=warn?'var(--warn)':'#222';
+  t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ══ BOOT ════════════════════════════════════════════════════════════════════
+(async()=>{
+  if(token && await checkToken()){
+    startApp();
+  }
+})();
+</script>
+</body>
+</html>
