@@ -305,12 +305,20 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div class="card" id="istr-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore/istruttrice</button>
 
-      <div class="sec">Account</div>
+      <div class="sec">Database</div>
       <div class="card">
         <div class="setting-item" onclick="downloadDb()">
-          <div><div class="setting-label">Scarica backup Excel</div><div class="setting-sub">Copia del database</div></div>
+          <div><div class="setting-label">Scarica backup Excel</div><div class="setting-sub">Copia aggiornata del database</div></div>
           <span class="ti ti-download setting-arrow"></span>
         </div>
+        <div class="setting-item" onclick="document.getElementById('upload-db').click()">
+          <div><div class="setting-label">Carica Excel</div><div class="setting-sub">Sostituisce il database con il file caricato</div></div>
+          <span class="ti ti-upload setting-arrow"></span>
+        </div>
+        <input type="file" id="upload-db" accept=".xlsx" style="display:none" onchange="uploadDb(this)">
+      </div>
+      <div class="sec">Account</div>
+      <div class="card">
         <div class="setting-item" onclick="doLogout()">
           <div><div class="setting-label" style="color:var(--red)">Esci</div></div>
           <span class="ti ti-logout setting-arrow"></span>
@@ -428,7 +436,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 <script>
 // ══ CONFIG ═══════════════════════════════════════════════════════════════════
 // IMPORTANTE: sostituisci con l'URL del tuo backend Render dopo il deploy
-const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
+const API = (window.BACKEND_URL || 'https://TUO-PROGETTO.onrender.com');
 
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
@@ -876,6 +884,33 @@ async function salvaIstr(){
   if(editIstrIdx!==null) istruttori[editIstrIdx]=obj; else istruttori.push(obj);
   await POST('/api/istruttori',istruttori);
   closeOv('ov-istr'); toast('Salvato!'); renderCfg(); populateSelects();
+}
+
+async function uploadDb(input){
+  const file = input.files[0]; if(!file) return;
+  const confirm_msg = "Stai per sostituire il database con questo file Excel. Tutti i dati attuali verranno sovrascritti. Continuare?";
+  if(!window.confirm(confirm_msg)){ input.value=''; return; }
+  toast('Caricamento in corso…');
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch(API+'/api/upload', {
+      method:'POST',
+      headers:{'X-Auth-Token':token},
+      body: fd
+    });
+    const data = await r.json();
+    if(data.ok){
+      input.value='';
+      toast('Database aggiornato! Ricarico i dati…');
+      await loadAll();
+    } else {
+      toast('Errore: '+(data.error||'file non valido'), true);
+    }
+  } catch(e){
+    toast('Errore di connessione', true);
+  }
+  input.value='';
 }
 
 async function downloadDb(){
