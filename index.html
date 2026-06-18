@@ -200,7 +200,13 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <label>Password</label>
     <input type="password" id="pwd-input" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="login-err" id="login-err"></div>
-    <button class="btn btn-primary btn-full" onclick="doLogin()">Accedi</button>
+    <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">Accedi</button>
+    <div id="login-wait" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <div class="spin" style="width:16px;height:16px;border-width:2px"></div>
+        <span>Connessione al server in corso… può richiedere fino a 60 secondi al primo avvio.</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -308,7 +314,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div class="card" id="corsi-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoCorso()"><span class="ti ti-plus"></span> Aggiungi corso</button>
 
-      <div class="sec">Istruttori</div>
+      <div class="sec">Istruttori/Istruttori</div>
       <div class="card" id="istr-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore/istruttrice</button>
 
@@ -486,21 +492,66 @@ const GET  = path       => api('GET',path);
 const POST = (path,body)=> api('POST',path,body);
 
 // ══ LOGIN/LOGOUT ═════════════════════════════════════════════════════════════
+let loginAttempts = 0;
+const MAX_ATTEMPTS = 3;
+
 async function doLogin(){
-  const pwd=document.getElementById('pwd-input').value;
-  document.getElementById('login-err').textContent='';
-  try{
-    const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
-    const data=await r.json();
+  if(loginAttempts >= MAX_ATTEMPTS) return;
+
+  const pwd = document.getElementById('pwd-input').value;
+  const btn = document.getElementById('login-btn');
+  const errDiv = document.getElementById('login-err');
+  const waitDiv = document.getElementById('login-wait');
+
+  errDiv.textContent = '';
+
+  // Mostra spinner e blocca pulsante
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  btn.textContent = 'Connessione…';
+  waitDiv.style.display = 'block';
+  document.getElementById('pwd-input').disabled = true;
+
+  try {
+    const r = await fetch(API+'/api/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password: pwd})
+    });
+    const data = await r.json();
     if(data.token){
-      token=data.token;
-      localStorage.setItem('pilot',token);
+      token = data.token;
+      localStorage.setItem('pilot', token);
+      waitDiv.style.display = 'none';
       startApp();
     } else {
-      document.getElementById('login-err').textContent='Password errata. Riprova.';
+      loginAttempts++;
+      const rimanenti = MAX_ATTEMPTS - loginAttempts;
+      if(loginAttempts >= MAX_ATTEMPTS){
+        // Blocca tutto
+        errDiv.innerHTML = '<strong>Troppi tentativi errati.</strong><br>Apri una nuova pagina per riprovare.';
+        errDiv.style.color = 'var(--red)';
+        btn.style.display = 'none';
+        waitDiv.style.display = 'none';
+        document.getElementById('pwd-input').style.display = 'none';
+      } else {
+        errDiv.textContent = `Password errata. Tentativi rimanenti: ${rimanenti}`;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.textContent = 'Accedi';
+        waitDiv.style.display = 'none';
+        document.getElementById('pwd-input').disabled = false;
+        document.getElementById('pwd-input').value = '';
+        document.getElementById('pwd-input').focus();
+      }
     }
-  }catch(e){
-    document.getElementById('login-err').textContent='Errore di connessione al server.';
+  } catch(e) {
+    errDiv.textContent = 'Server non raggiungibile. Riprova tra qualche secondo.';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.textContent = 'Accedi';
+    waitDiv.style.display = 'none';
+    document.getElementById('pwd-input').disabled = false;
   }
 }
 
