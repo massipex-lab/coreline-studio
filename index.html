@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#C2185B">
-<title>Coreline Pilates Monza - BackOffice</title>
+<title>Coreline Pilates Monza</title>
 <style>
 /* ── RESET & VARS ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -195,7 +195,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 <div id="login-screen">
   <div class="login-logo">🌸</div>
   <div class="login-title">Coreline Pilates Monza - BackOffice</div>
-  <div class="login-sub">Gestione palestra</div>
+  <div class="login-sub">Gestione corsi e iscritti</div>
   <div class="login-box">
     <label>Password</label>
     <input type="password" id="pwd-input" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')doLogin()">
@@ -219,6 +219,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <div class="tab" onclick="goTab('ses')"><span class="ti ti-calendar"></span>Sessioni</div>
     <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
     <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuova</div>
+    <div class="tab" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttori</div>
     <div class="tab" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</div>
   </div>
 
@@ -293,6 +294,12 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
         <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
         <button class="btn btn-primary btn-full" onclick="aggiungiIsc()"><span class="ti ti-user-plus"></span> Aggiungi iscritta</button>
       </div>
+    </div>
+
+    <!-- ISTRUTTORI RECAP -->
+    <div class="page" id="page-istr-recap">
+      <div class="sec">Riepilogo per istruttore/istruttrice</div>
+      <div id="istr-recap-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
 
     <!-- CONFIG -->
@@ -540,6 +547,7 @@ async function loadAll(){
   if(cas) cassa=cas;
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
   updateTopbar(); populateSelects();
+  if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
 }
 
 // ══ NAVIGATION ═══════════════════════════════════════════════════════════════
@@ -547,8 +555,9 @@ function goTab(t){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(tb=>tb.classList.remove('active'));
   document.getElementById('page-'+t).classList.add('active');
-  const idx=['dash','isc','ses','cas','add','cfg'].indexOf(t);
+  const idx=['dash','isc','ses','cas','add','istr-recap','cfg'].indexOf(t);
   document.querySelectorAll('.tab')[idx].classList.add('active');
+  if(t==='istr-recap') renderIstrRecap();
 }
 
 // ══ SELECTS DINAMICI ═════════════════════════════════════════════════════════
@@ -829,6 +838,85 @@ async function aggiungiMov(){
 }
 
 // ══ CONFIG ═══════════════════════════════════════════════════════════════════
+function renderIstrRecap(){
+  const now = new Date(); now.setHours(0,0,0,0);
+
+  // Raggruppa sessioni passate per istruttore
+  const sesPas = sessioni.filter(s=>{
+    const d=new Date(s.data+'T00:00:00'); d.setHours(0,0,0,0); return d<=now;
+  });
+
+  // Calcola statistiche per ogni istruttore
+  const stats = {};
+  istruttori.forEach(ist=>{
+    const nome = ist.nome + (ist.cognome?' '+ist.cognome:'');
+    stats[nome] = { nome, sesCount:0, oreCount:0, partTot:0, ultSes:[] };
+  });
+
+  sesPas.forEach(s=>{
+    const key = s.istr;
+    if(!stats[key]) stats[key] = { nome:key, sesCount:0, oreCount:0, partTot:0, ultSes:[] };
+    stats[key].sesCount++;
+    stats[key].partTot += (s.partecipanti||[]).length;
+    // Calcola ore dall'orario es "09:00–10:00"
+    if(s.orario && s.orario.includes('–')){
+      const parts = s.orario.split('–');
+      const [h1,m1] = parts[0].split(':').map(Number);
+      const [h2,m2] = parts[1].split(':').map(Number);
+      stats[key].oreCount += ((h2*60+m2)-(h1*60+m1))/60;
+    } else {
+      stats[key].oreCount += 1;
+    }
+    if(stats[key].ultSes.length < 5) stats[key].ultSes.push(s);
+  });
+
+  const list = Object.values(stats).sort((a,b)=>b.sesCount-a.sesCount);
+
+  if(!list.length || list.every(x=>x.sesCount===0)){
+    document.getElementById('istr-recap-list').innerHTML='<div class="empty"><span class="ti ti-mood-empty"></span>Nessuna sessione registrata</div>';
+    return;
+  }
+
+  document.getElementById('istr-recap-list').innerHTML = list.map(ist=>{
+    const oreStr = Number.isInteger(ist.oreCount) ? ist.oreCount+'h' : ist.oreCount.toFixed(1)+'h';
+    const ultHtml = ist.ultSes.length ? ist.ultSes.map(s=>{
+      const nomi = (s.partecipanti||[]).map(n=>n.split(' ')[0]).join(', ');
+      return `<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--bg)">
+        <span style="font-weight:600">${fmtShort(s.data)}</span>
+        <span style="color:var(--muted)"> · ${s.orario} · ${s.tipo}</span>
+        ${nomi?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${nomi}</div>`:''}
+      </div>`;
+    }).join('') : '<div style="font-size:12px;color:var(--muted);padding:6px 0">Nessuna sessione passata</div>';
+
+    return `<div class="card" style="margin-bottom:12px">
+      <div class="row" style="margin-bottom:10px">
+        <div style="font-size:16px;font-weight:700">${ist.nome}</div>
+        <span class="badge b-pink">${ist.sesCount} session${ist.sesCount===1?'e':'i'}</span>
+      </div>
+      <div class="stat-grid" style="margin-bottom:12px">
+        <div class="stat" style="padding:10px">
+          <div class="stat-val" style="font-size:20px;color:var(--pink)">${ist.sesCount}</div>
+          <div class="stat-lbl">Sessioni</div>
+        </div>
+        <div class="stat" style="padding:10px">
+          <div class="stat-val" style="font-size:20px;color:var(--blue)">${oreStr}</div>
+          <div class="stat-lbl">Ore totali</div>
+        </div>
+        <div class="stat" style="padding:10px">
+          <div class="stat-val" style="font-size:20px;color:var(--green)">${ist.partTot}</div>
+          <div class="stat-lbl">Presenze</div>
+        </div>
+        <div class="stat" style="padding:10px">
+          <div class="stat-val" style="font-size:20px;color:var(--gold || '#F57F17')">${ist.sesCount>0?(ist.partTot/ist.sesCount).toFixed(1):0}</div>
+          <div class="stat-lbl">Media partec.</div>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ultime sessioni</div>
+      ${ultHtml}
+    </div>`;
+  }).join('');
+}
+
 function renderCfg(){
   // Corsi
   document.getElementById('corsi-list').innerHTML=corsi.length
