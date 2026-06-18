@@ -566,9 +566,23 @@ async function checkToken(){
 function doLogout(){
   if(token) POST('/api/logout');
   token=''; localStorage.removeItem('pilot');
+  loginAttempts = 0;
+  // Reset completo schermata login
+  const btn = document.getElementById('login-btn');
+  const pwd = document.getElementById('pwd-input');
+  const waitDiv = document.getElementById('login-wait');
+  const errDiv = document.getElementById('login-err');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.display = '';
+  btn.textContent = 'Accedi';
+  pwd.disabled = false;
+  pwd.style.display = '';
+  pwd.value = '';
+  waitDiv.style.display = 'none';
+  errDiv.textContent = '';
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
-  document.getElementById('pwd-input').value='';
 }
 
 // ══ START ════════════════════════════════════════════════════════════════════
