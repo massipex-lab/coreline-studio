@@ -208,7 +208,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 <div id="app">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="sub" id="topbar-date"></div><h1>🌸 Coreline Pilates Monza</h1></div>
+      <div><div class="sub" id="topbar-date"></div><h1>🌸 Coreline Pilates Monza - BackOffice</h1></div>
       <div class="incasso"><div class="val" id="top-inc">—</div><div class="lbl">incassato</div></div>
     </div>
   </div>
@@ -350,7 +350,8 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Seleziona partecipanti <span style="font-weight:400">(numero tra parentesi = lezioni rimanenti)</span></div>
     <div class="picker-grid" id="pren-picker"></div>
     <div class="divider"></div>
-    <button class="btn btn-primary btn-full" onclick="conferma()">Conferma — scala lezioni automaticamente</button>
+    <button class="btn btn-primary btn-full" onclick="conferma()">Conferma prenotazione</button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Le lezioni vengono scalate automaticamente a fine giornata. Usa questo pannello per modifiche manuali dell'ultimo secondo.</p>
   </div>
 </div>
 
@@ -521,6 +522,14 @@ async function startApp(){
 }
 
 async function loadAll(){
+  // Prima processa le sessioni passate (scala lezioni automaticamente)
+  try {
+    const proc = await POST('/api/sessioni/processa', {});
+    if(proc && proc.processate > 0){
+      toast(`Auto-scalate lezioni: ${proc.processate} session${proc.processate===1?'e':'i'} processata${proc.processate===1?'':'e'}`);
+    }
+  } catch(e) { console.warn('Processa sessioni:', e); }
+
   const [i,s,c,ist,cas]=await Promise.all([
     GET('/api/iscritti'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/cassa')
   ]);
