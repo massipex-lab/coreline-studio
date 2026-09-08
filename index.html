@@ -195,7 +195,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 <div id="login-screen">
   <div class="login-logo">🌸</div>
   <div class="login-title">Coreline Pilates Monza - BackOffice</div>
-  <div class="login-sub">Gestione corsi e iscritti</div>
+  <div class="login-sub">Gestione corsi e clienti</div>
   <div class="login-box">
     <label>Password</label>
     <input type="password" id="pwd-input" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')doLogin()">
@@ -221,7 +221,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 
   <div class="tabs">
     <div class="tab active" onclick="goTab('dash')"><span class="ti ti-chart-bar"></span>Home</div>
-    <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Iscritte</div>
+    <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Clienti</div>
     <div class="tab" onclick="goTab('ses')"><span class="ti ti-calendar"></span>Sessioni</div>
     <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
     <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuova</div>
@@ -233,7 +233,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <!-- DASHBOARD -->
     <div class="page active" id="page-dash">
       <div class="stat-grid">
-        <div class="stat"><div class="stat-val" style="color:var(--pink)" id="d-isc">—</div><div class="stat-lbl">Iscritte</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--pink)" id="d-isc">—</div><div class="stat-lbl">Clienti</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-rin">—</div><div class="stat-lbl">Da rinnovare</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--red)" id="d-sal">—</div><div class="stat-lbl">Da saldare</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--blue)" id="d-sog">—</div><div class="stat-lbl">Sessioni oggi</div></div>
@@ -246,9 +246,9 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div class="card" id="dash-oggi"></div>
     </div>
 
-    <!-- ISCRITTE -->
+    <!-- CLIENTI -->
     <div class="page" id="page-isc">
-      <div class="search-wrap"><span class="ti ti-search"></span><input type="text" id="srch" placeholder="Cerca iscritta…" oninput="renderIsc()"></div>
+      <div class="search-wrap"><span class="ti ti-search"></span><input type="text" id="srch" placeholder="Cerca cliente…" oninput="renderIsc()"></div>
       <div class="chips">
         <div class="chip on" id="f-tutte" onclick="setFilt('tutte')">Tutte</div>
         <div class="chip" id="f-rinnovo" onclick="setFilt('rinnovo')">Da rinnovare</div>
@@ -283,9 +283,9 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div id="cas-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
 
-    <!-- NUOVA ISCRITTA -->
+    <!-- NUOVO CLIENTE -->
     <div class="page" id="page-add">
-      <div class="sec">Nuova iscritta</div>
+      <div class="sec">Nuova cliente</div>
       <div class="card">
         <div class="field"><label>Nome e cognome *</label><input type="text" id="n-nome" placeholder="Es. Giulia Rossi"></div>
         <div class="field"><label>Pacchetto *</label><select id="n-pac"><option value="">— seleziona —</option></select></div>
@@ -297,7 +297,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
           <div class="field"><label>Lezioni totali</label><input type="number" id="n-lez" placeholder="13"></div>
         </div>
         <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
-        <button class="btn btn-primary btn-full" onclick="aggiungiIsc()"><span class="ti ti-user-plus"></span> Aggiungi iscritta</button>
+        <button class="btn btn-primary btn-full" onclick="aggiungiIsc()"><span class="ti ti-user-plus"></span> Aggiungi cliente</button>
       </div>
     </div>
 
@@ -342,7 +342,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 
 <!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
 
-<!-- Dettaglio iscritta -->
+<!-- Dettaglio cliente -->
 <div class="overlay" id="ov-isc">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -487,7 +487,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
-let iscritte=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
+let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
 let filtro='tutte', sesView='f', casTab='tutti';
 let activeSes=null, selPart=[];
 let editCorsoIdx=null, editIstrIdx=null;
@@ -612,7 +612,7 @@ async function loadAll(){
   const [iv2,s,c,ist,cas]=await Promise.all([
     GET('/api/v2/iscritte'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/cassa')
   ]);
-  if(iv2) iscritte=iv2;
+  if(iv2) clienti=iv2;
   if(s) sessioni=s;
   if(c) corsi=c;
   if(ist) istruttori=ist;
@@ -634,7 +634,7 @@ function goTab(t){
 
 // ══ SELECTS DINAMICI ═════════════════════════════════════════════════════════
 function populateSelects(){
-  // Pacchetto (nuova iscritta)
+  // Pacchetto (nuova cliente)
   const selPac=document.getElementById('n-pac');
   selPac.innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option value="${c.nome}" data-lez="${c.lezioni}" data-prezzo="${c.prezzo}">${c.nome}${c.prezzo?' — €'+c.prezzo:''}</option>`).join('');
   selPac.onchange=function(){
@@ -659,16 +659,16 @@ function updateCatOptions(){
 
 // ══ TOPBAR ═══════════════════════════════════════════════════════════════════
 function updateTopbar(){
-  document.getElementById('top-inc').textContent=euro(iscritte.reduce((a,i)=>a+i.pagato,0));
+  document.getElementById('top-inc').textContent=euro(clienti.reduce((a,i)=>a+i.pagato,0));
 }
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
 function renderDash(){
   // v2: pacchetti_attivi e totale_pagato sono pre-calcolati dal backend
-  const daRin=iscritte.filter(i=>i.pacchetti_attivi===0);
-  const daSal=[];  // calcolato per pacchetto, non per iscritta globale
+  const daRin=clienti.filter(i=>i.pacchetti_attivi===0);
+  const daSal=[];  // calcolato per pacchetto, non per cliente globale
   const todaySes=sessioni.filter(s=>{const d=new Date(s.data+'T00:00:00');d.setHours(0,0,0,0);return d.getTime()===oggi.getTime();});
-  document.getElementById('d-isc').textContent=iscritte.length;
+  document.getElementById('d-isc').textContent=clienti.length;
   document.getElementById('d-rin').textContent=daRin.length;
   document.getElementById('d-sal').textContent='—';  // calcolato per pacchetto
   document.getElementById('d-sog').textContent=todaySes.length;
@@ -700,7 +700,7 @@ function renderDash(){
   document.getElementById('dash-oggi').innerHTML=h2;
 }
 
-// ══ ISCRITTE ═════════════════════════════════════════════════════════════════
+// ══ CLIENTI ═════════════════════════════════════════════════════════════════
 function setFilt(f){
   filtro=f;
   ['tutte','rinnovo','saldo'].forEach(x=>document.getElementById('f-'+x).classList.toggle('on',x===f));
@@ -709,7 +709,7 @@ function setFilt(f){
 
 function renderIsc(){
   const q=(document.getElementById('srch').value||'').toLowerCase();
-  let list=iscritte.filter(i=>i.nome.toLowerCase().includes(q));
+  let list=clienti.filter(i=>i.nome.toLowerCase().includes(q));
   if(filtro==='rinnovo') list=list.filter(i=>lezRim(i)<=2&&i.lezTot>0);
   if(filtro==='saldo') list=list.filter(i=>resto(i)>0);
   if(!list.length){document.getElementById('isc-list').innerHTML='<div class="empty"><span class="ti ti-mood-empty"></span>Nessun risultato</div>';return;}
@@ -729,13 +729,13 @@ function renderIsc(){
 }
 
 async function openIsc(id){
-  const isc=iscritte.find(x=>String(x.id)===String(id)); if(!isc) return;
+  const isc=clienti.find(x=>String(x.id)===String(id)); if(!isc) return;
   document.getElementById('mi-nome').textContent=isc.nome+(isc.cognome?' '+isc.cognome:'');
   document.getElementById('mi-body').innerHTML='<div class="loading"><div class="spin"></div>Caricamento…</div>';
   document.getElementById('ov-isc').classList.add('open');
   const scheda = await GET(`/api/v2/iscritte/${id}/scheda`);
   if(!scheda) return;
-  const {iscritta, pacchetti, pagamenti, ultime_presenze} = scheda;
+  const {cliente, pacchetti, pagamenti, ultime_presenze} = scheda;
   const attivi = pacchetti.filter(p=>p.stato==='attivo');
   const storici = pacchetti.filter(p=>p.stato!=='attivo');
   let h = '';
@@ -796,9 +796,9 @@ async function openIsc(id){
   }
   // Anagrafica
   h += `<div class="sec">Anagrafica</div><table class="dtable">
-    <tr><td>Telefono</td><td>${iscritta.telefono||'—'}</td></tr>
-    <tr><td>Email</td><td>${iscritta.email||'—'}</td></tr>
-    ${iscritta.note?`<tr><td>Note</td><td>${iscritta.note}</td></tr>`:''}
+    <tr><td>Telefono</td><td>${cliente.telefono||'—'}</td></tr>
+    <tr><td>Email</td><td>${cliente.email||'—'}</td></tr>
+    ${cliente.note?`<tr><td>Note</td><td>${cliente.note}</td></tr>`:''}
   </table>`;
   // Storici
   if(storici.length){
@@ -816,7 +816,7 @@ async function modLezPacchetto(pid, delta, iscritaId){
   toast(delta>0?'Lezione aggiunta':'Lezione rimossa');
   openIsc(iscritaId);
   const iv2=await GET('/api/v2/iscritte');
-  if(iv2){iscritte=iv2; renderIsc(); renderDash();}
+  if(iv2){clienti=iv2; renderIsc(); renderDash();}
 }
 
 let _addPacchettoIscritaId=null;
@@ -844,7 +844,7 @@ async function salvaAddPacchetto(){
   closeOv('ov-add-pac');
   toast('Pacchetto aggiunto!');
   const iv2=await GET('/api/v2/iscritte');
-  if(iv2){iscritte=iv2; renderIsc(); renderDash();}
+  if(iv2){clienti=iv2; renderIsc(); renderDash();}
   openIsc(iid);
 }
 
@@ -873,11 +873,11 @@ async function aggiungiIsc(){
   if(!nome){toast('Inserisci il nome',true);return;}
   const pac=document.getElementById('n-pac').value;
   if(!pac){toast('Seleziona un pacchetto',true);return;}
-  // 1. Crea iscritta
+  // 1. Crea cliente
   const r = await POST('/api/v2/iscritte',{
     nome, cognome:'', telefono:'', email:'', note:document.getElementById('n-note').value
   });
-  if(!r||!r.id){toast('Errore creazione iscritta',true);return;}
+  if(!r||!r.id){toast('Errore creazione cliente',true);return;}
   // 2. Aggiungi pacchetto con eventuale pagamento
   const corso = corsi.find(c=>c.nome===pac);
   await POST(`/api/v2/iscritte/${r.id}/pacchetti`,{
@@ -891,8 +891,8 @@ async function aggiungiIsc(){
   ['n-nome','n-pagato','n-lez','n-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('n-pac').value='';
   const iv2=await GET('/api/v2/iscritte');
-  if(iv2){iscritte=iv2;}
-  toast(nome+' aggiunta!'); goTab('isc'); renderIsc(); renderDash(); updateTopbar();
+  if(iv2){clienti=iv2;}
+  toast(nome+' aggiunto!'); goTab('isc'); renderIsc(); renderDash(); updateTopbar();
 }
 
 // ══ SESSIONI ═════════════════════════════════════════════════════════════════
@@ -939,7 +939,7 @@ async function creaSessione(){
   closeOv('ov-ses'); toast('Sessione creata!'); renderSes(); renderDash();
 }
 
-// selPart v2: [{iscritta_id, pacchetto_id, nome}]
+// selPart v2: [{cliente_id, pacchetto_id, nome}]
 let selPartV2 = [];
 
 async function openPren(sid){
@@ -950,17 +950,17 @@ async function openPren(sid){
 
   // Carica presenze attuali della sessione
   const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
-  selPartV2 = presenze.map(p=>({iscritta_id:p.iscritta_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
+  selPartV2 = presenze.map(p=>({cliente_id:p.cliente_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
 
-  // Carica pacchetti per ogni iscritta (compatibili con tipo sessione)
+  // Carica pacchetti per ogni cliente (compatibili con tipo sessione)
   const tipoSes = activeSes.tipo || '';
   let html = '';
-  for(const isc of iscritte){
+  for(const isc of clienti){
     const pacs = await GET(`/api/v2/iscritte/${isc.id}/pacchetti`) || [];
     // Pacchetti attivi compatibili con il tipo sessione
     const compatibili = pacs.filter(p=>p.stato==='attivo' && p.lezioni_rim>0);
     const attivi = pacs.filter(p=>p.stato==='attivo');
-    const inSes = selPartV2.find(x=>x.iscritta_id===isc.id);
+    const inSes = selPartV2.find(x=>x.cliente_id===isc.id);
     const sel = !!inSes;
 
     if(!attivi.length && !sel) continue; // Nascondi chi non ha pacchetti
@@ -985,21 +985,21 @@ async function openPren(sid){
       <span style="opacity:.55;font-size:10px">(${rimTot})</span>
     </div>`;
   }
-  document.getElementById('pren-picker').innerHTML = html || '<div style="font-size:13px;color:var(--muted)">Nessuna iscritta con pacchetti attivi</div>';
+  document.getElementById('pren-picker').innerHTML = html || '<div style="font-size:13px;color:var(--muted)">Nessuna cliente con pacchetti attivi</div>';
 }
 
 function togglePartV2(iid){
-  const isc = iscritte.find(x=>x.id===iid); if(!isc) return;
-  const inS = selPartV2.find(x=>x.iscritta_id===iid);
+  const isc = clienti.find(x=>x.id===iid); if(!isc) return;
+  const inS = selPartV2.find(x=>x.cliente_id===iid);
   if(inS){
-    selPartV2 = selPartV2.filter(x=>x.iscritta_id!==iid);
+    selPartV2 = selPartV2.filter(x=>x.cliente_id!==iid);
     document.getElementById('pi-'+iid)?.classList.remove('sel');
   } else {
     // Trova pacchetto selezionato (da select se presente, altrimenti il primo compatibile)
     const selEl = document.getElementById('pac-sel-'+iid);
     const pacId = selEl ? parseInt(selEl.value) : null;
     const nome = isc.nome+(isc.cognome?' '+isc.cognome:'');
-    selPartV2.push({iscritta_id:iid, pacchetto_id:pacId, nome});
+    selPartV2.push({cliente_id:iid, pacchetto_id:pacId, nome});
     document.getElementById('pi-'+iid)?.classList.add('sel');
   }
 }
@@ -1013,7 +1013,7 @@ async function conferma(){
   toast(`Salvato · ${selPartV2.length} partecipant${selPartV2.length===1?'e':'i'}`);
   renderSes(); renderDash();
   const iv2=await GET('/api/v2/iscritte');
-  if(iv2){iscritte=iv2; renderIsc();}
+  if(iv2){clienti=iv2; renderIsc();}
 }
 
 // ══ CASSA ════════════════════════════════════════════════════════════════════
