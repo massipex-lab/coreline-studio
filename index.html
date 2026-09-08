@@ -237,6 +237,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
         <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-rin">—</div><div class="stat-lbl">Da rinnovare</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--red)" id="d-sal">—</div><div class="stat-lbl">Da saldare</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--blue)" id="d-sog">—</div><div class="stat-lbl">Sessioni oggi</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-cert">—</div><div class="stat-lbl">Cert. da approvare</div></div>
       </div>
       <div class="sec">Situazione cassa</div>
       <div id="dash-saldo"></div>
@@ -244,6 +245,8 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div class="card" id="dash-alerts"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
       <div class="sec">Sessioni oggi</div>
       <div class="card" id="dash-oggi"></div>
+      <div class="sec">🏥 Certificati medici da approvare</div>
+      <div class="card" id="dash-cert"></div>
     </div>
 
     <!-- CLIENTI -->
@@ -264,7 +267,8 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
           <div class="chip on" id="sv-f" onclick="setSesV('f')">Prossime</div>
           <div class="chip" id="sv-p" onclick="setSesV('p')">Passate</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openNuovaSes()"><span class="ti ti-plus"></span> Sessione</button>
+        <button class="btn btn-sm" onclick="openRicorrente()" style="margin-right:4px"><span class="ti ti-repeat"></span> Ricorrente</button>
+    <button class="btn btn-primary btn-sm" onclick="openNuovaSes()"><span class="ti ti-plus"></span> Singola</button>
       </div>
       <div id="ses-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
@@ -478,6 +482,64 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
   </div>
 </div>
 
+<!-- MODAL CERTIFICATO MEDICO -->
+<div class="overlay" id="ov-cert">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-cert')"><span class="ti ti-x"></span></button>
+    <div class="modal-title">Certificato medico</div>
+    <input type="hidden" id="ec-iid">
+    <div class="field"><label>Data certificato</label><input type="date" id="ec-data"></div>
+    <div class="field"><label>Data scadenza *</label><input type="date" id="ec-scad"></div>
+    <div class="field"><label>Stato</label>
+      <select id="ec-stato">
+        <option value="valido">✅ Valido</option>
+        <option value="in attesa approvazione">🟡 In attesa approvazione</option>
+        <option value="scaduto">🔴 Scaduto</option>
+        <option value="non presentato">🔴 Non presentato</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="salvaEditCert()">Salva certificato</button>
+  </div>
+</div>
+
+<!-- MODAL SESSIONE RICORRENTE -->
+<div class="overlay" id="ov-ric">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-ric')"><span class="ti ti-x"></span></button>
+    <div class="modal-title">Sessione ricorrente</div>
+    <div class="field"><label>Giorni della settimana</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="0" class="ric-giorno"> Lun</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="1" class="ric-giorno"> Mar</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="2" class="ric-giorno"> Mer</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="3" class="ric-giorno"> Gio</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="4" class="ric-giorno"> Ven</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="5" class="ric-giorno"> Sab</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="6" class="ric-giorno"> Dom</label>
+      </div>
+    </div>
+    <div class="field"><label>Orario</label>
+      <select id="ric-ora">
+        <option>09:00–10:00</option><option>10:00–11:00</option><option>11:00–12:00</option>
+        <option>12:00–13:00</option><option>13:00–14:00</option><option>14:00–15:00</option>
+        <option>15:00–16:00</option><option>16:00–17:00</option><option>17:00–18:00</option>
+        <option>18:00–19:00</option><option>19:00–20:00</option><option>19:30–20:30</option>
+        <option>20:00–21:00</option><option>20:30–21:30</option>
+      </select>
+    </div>
+    <div class="field"><label>Tipo corso *</label><select id="ric-tipo"><option value="">— seleziona —</option></select></div>
+    <div class="field"><label>Istruttore/Istruttrice *</label><select id="ric-istr"><option value="">— seleziona —</option></select></div>
+    <div class="field-row">
+      <div class="field"><label>Data inizio *</label><input type="date" id="ric-inizio"></div>
+      <div class="field"><label>Data fine *</label><input type="date" id="ric-fine"></div>
+    </div>
+    <div class="field"><label>Note</label><input type="text" id="ric-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="creaRicorrenza()">Crea sessioni ricorrenti</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -488,7 +550,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
 let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
-let filtro='tutte', sesView='f', casTab='tutti';
+let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[];
 let activeSes=null, selPart=[];
 let editCorsoIdx=null, editIstrIdx=null;
 
@@ -603,7 +665,7 @@ async function startApp(){
 async function loadAll(){
   // Processa sessioni passate con nuovo sistema presenze v2
   try {
-    const proc = await POST('/api/v2/sessioni/processa', {});
+    const proc = await POST('/api/v3/sessioni/processa', {});
     if(proc && proc.processate > 0){
       toast(`Auto-scalate lezioni: ${proc.processate} session${proc.processate===1?'e':'i'} processata${proc.processate===1?'':'e'}`);
     }
@@ -617,6 +679,8 @@ async function loadAll(){
   if(c) corsi=c;
   if(ist) istruttori=ist;
   if(cas) cassa=cas;
+  // Carica certificati da approvare per dashboard
+  try { const certs = await GET('/api/v2/certificati/da-approvare'); if(certs) certDaApprovare=certs; } catch(e){}
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
@@ -672,6 +736,7 @@ function renderDash(){
   document.getElementById('d-rin').textContent=daRin.length;
   document.getElementById('d-sal').textContent='—';  // calcolato per pacchetto
   document.getElementById('d-sog').textContent=todaySes.length;
+  document.getElementById('d-cert').textContent=certDaApprovare.length;
 
   // Saldo cassa
   const entrate=cassa.filter(m=>m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
@@ -698,6 +763,29 @@ function renderDash(){
     h2+=`<div class="alert-row"><div><div style="font-weight:700">${s.tipo}</div><div style="font-size:12px;color:var(--muted)">${s.orario} · ${s.istr}</div></div><div style="font-size:12px;color:var(--muted);text-align:right">${nomi.join(', ')||'—'}</div></div>`;
   });
   document.getElementById('dash-oggi').innerHTML=h2;
+
+  // Riquadro certificati da approvare
+  let hCert = '';
+  if(certDaApprovare.length){
+    hCert = certDaApprovare.map(c=>`
+      <div class="alert-row">
+        <div>
+          <div style="font-weight:600">${c.nome} ${c.cognome||''}</div>
+          <div style="font-size:11px;color:var(--muted)">
+            ${c.cert_medico_data?'Data cert: '+fmtShort(c.cert_medico_data):''}
+            ${c.cert_medico_scadenza?' · Scad: '+fmtShort(c.cert_medico_scadenza):''}
+            ${c.ha_file?'<span style="color:var(--green)"> · 📎 File caricato</span>':''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="approvaCert(${c.id})">✓</button>
+          <button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="rifiutaCert(${c.id})">✗</button>
+        </div>
+      </div>`).join('');
+  } else {
+    hCert = '<div style="font-size:13px;color:var(--muted);padding:6px 0">Nessun certificato in attesa</div>';
+  }
+  document.getElementById('dash-cert').innerHTML = hCert;
 }
 
 // ══ CLIENTI ═════════════════════════════════════════════════════════════════
@@ -717,10 +805,15 @@ function renderIsc(){
     const rim=lezRim(isc),pct=isc.lezTot>0?Math.round(isc.lezFatte/isc.lezTot*100):0,r=resto(isc);
     const bc=rim===0?'b-danger':(rim<=2?'b-warn':'b-ok'),fc=rim===0?'var(--red)':(rim<=2?'var(--warn)':'var(--green)');
     const pa = isc.pacchetti_attivi || 0;
+    const certColor = isc.cert_stato==='valido'?'b-ok':(isc.cert_stato==='scaduto'||isc.cert_stato==='non presentato'?'b-danger':'b-warn');
+    const certEmoji = isc.cert_stato==='valido'?'🟢':(isc.cert_stato==='scaduto'||isc.cert_stato==='non presentato'?'🔴':'🟡');
     return `<div class="card card-click" onclick="openIsc('${isc.id}')">
       <div class="row">
         <div style="font-size:15px;font-weight:700">${isc.nome}${isc.cognome?' '+isc.cognome:''}</div>
-        <span class="badge ${pa>0?'b-ok':'b-danger'}">${pa} pacchett${pa===1?'o':'i'}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span title="Certificato medico: ${isc.cert_stato||'non presentato'}">${certEmoji}</span>
+          <span class="badge ${pa>0?'b-ok':'b-danger'}">${pa} pacchett${pa===1?'o':'i'}</span>
+        </div>
       </div>
       ${isc.telefono?`<div style="font-size:12px;color:var(--muted);margin-top:3px">📞 ${isc.telefono}</div>`:''}
       ${isc.note?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${isc.note}</div>`:''}
@@ -796,11 +889,25 @@ async function openIsc(id){
     h += '</div>';
   }
   // Anagrafica
+  const certS = iscritta.cert_medico_stato||'non presentato';
+  const certCol = certS==='valido'?'var(--green)':(certS==='scaduto'||certS==='non presentato'?'var(--red)':'var(--warn)');
+  const certEmj = certS==='valido'?'🟢':(certS==='scaduto'||certS==='non presentato'?'🔴':'🟡');
   h += `<div class="sec">Anagrafica</div><table class="dtable">
     <tr><td>Telefono</td><td>${iscritta.telefono||'—'}</td></tr>
     <tr><td>Email</td><td>${iscritta.email||'—'}</td></tr>
     ${iscritta.note?`<tr><td>Note</td><td>${iscritta.note}</td></tr>`:''}
-  </table>`;
+  </table>
+  <div class="sec" style="margin-top:14px">Certificato medico</div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="row" style="margin-bottom:8px">
+      <div style="font-size:14px;font-weight:700">${certEmj} ${certS.charAt(0).toUpperCase()+certS.slice(1)}</div>
+      <button class="btn btn-sm" onclick="openEditCert(${id})"><span class="ti ti-pencil"></span></button>
+    </div>
+    <table class="dtable">
+      <tr><td>Data certificato</td><td>${iscritta.cert_medico_data?fmtShort(iscritta.cert_medico_data):'—'}</td></tr>
+      <tr><td>Scadenza</td><td style="color:${certCol};font-weight:600">${iscritta.cert_medico_scadenza?fmtShort(iscritta.cert_medico_scadenza):'—'}</td></tr>
+    </table>
+  </div>`;
   // Storici
   if(storici.length){
     h += '<div class="sec" style="margin-top:14px">Pacchetti precedenti</div>';
@@ -927,6 +1034,42 @@ function openNuovaSes(){
   document.getElementById('ns-data').value=new Date().toISOString().split('T')[0];
   document.getElementById('ns-note').value='';
   document.getElementById('ov-ses').classList.add('open');
+}
+
+function openRicorrente(){
+  document.querySelectorAll('.ric-giorno').forEach(cb=>cb.checked=false);
+  const oggi=new Date().toISOString().split('T')[0];
+  document.getElementById('ric-inizio').value=oggi;
+  document.getElementById('ric-fine').value='';
+  document.getElementById('ric-note').value='';
+  // Popola selects corsi e istruttori
+  document.getElementById('ric-tipo').innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option>${c.nome}</option>`).join('');
+  document.getElementById('ric-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
+  document.getElementById('ov-ric').classList.add('open');
+}
+
+async function creaRicorrenza(){
+  const giorni=[...document.querySelectorAll('.ric-giorno:checked')].map(cb=>parseInt(cb.value));
+  if(!giorni.length){toast('Seleziona almeno un giorno',true);return;}
+  const tipo=document.getElementById('ric-tipo').value;
+  const istr=document.getElementById('ric-istr').value;
+  const inizio=document.getElementById('ric-inizio').value;
+  const fine=document.getElementById('ric-fine').value;
+  if(!tipo||!istr||!inizio||!fine){toast('Compila tutti i campi obbligatori',true);return;}
+  if(fine<=inizio){toast('La data fine deve essere dopo la data inizio',true);return;}
+  const r=await POST('/api/v2/ricorrenze',{
+    giorni_settimana:giorni, orario:document.getElementById('ric-ora').value,
+    tipo, istr, data_inizio:inizio, data_fine:fine,
+    note:document.getElementById('ric-note').value
+  });
+  closeOv('ov-ric');
+  if(r&&r.sessioni_create){
+    toast(`Creato! ${r.sessioni_create} sessioni generate`);
+    const s=await GET('/api/sessioni'); if(s) sessioni=s;
+    renderSes(); renderDash();
+  } else {
+    toast('Errore nella creazione',true);
+  }
 }
 
 async function creaSessione(){
@@ -1257,6 +1400,50 @@ async function downloadDb(){
 }
 
 // ══ UTILS UI ═════════════════════════════════════════════════════════════════
+async function approvaCert(iid){
+  if(!confirm('Approvi il certificato medico?')) return;
+  await POST(`/api/v2/certificati/${iid}/approva`,{});
+  toast('Certificato approvato!');
+  const certs=await GET('/api/v2/certificati/da-approvare');
+  if(certs) certDaApprovare=certs;
+  const iv2=await GET('/api/v2/iscritte');
+  if(iv2){clienti=iv2; renderIsc();}
+  renderDash();
+}
+
+async function rifiutaCert(iid){
+  if(!confirm('Rifiuti il certificato? Il cliente dovrà ricaricarlo.')) return;
+  await POST(`/api/v2/certificati/${iid}/rifiuta`,{});
+  toast('Certificato rifiutato.');
+  const certs=await GET('/api/v2/certificati/da-approvare');
+  if(certs) certDaApprovare=certs;
+  renderDash();
+}
+
+function openEditCert(iid){
+  // Precompila modal con dati attuali
+  const cliente=clienti.find(x=>x.id===iid); if(!cliente) return;
+  document.getElementById('ec-data').value='';
+  document.getElementById('ec-scad').value='';
+  document.getElementById('ec-stato').value='valido';
+  document.getElementById('ec-iid').value=iid;
+  document.getElementById('ov-cert').classList.add('open');
+}
+
+async function salvaEditCert(){
+  const iid=parseInt(document.getElementById('ec-iid').value);
+  const data=document.getElementById('ec-data').value;
+  const scad=document.getElementById('ec-scad').value;
+  const stato=document.getElementById('ec-stato').value;
+  if(!scad){toast('Inserisci la data di scadenza',true);return;}
+  await fetch(API+`/api/v2/certificati/${iid}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify({cert_medico_data:data,cert_medico_scadenza:scad,cert_medico_stato:stato})});
+  closeOv('ov-cert');
+  toast('Certificato aggiornato!');
+  const iv2=await GET('/api/v2/iscritte');
+  if(iv2){clienti=iv2; renderIsc();}
+  openIsc(iid);
+}
+
 function closeOv(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
