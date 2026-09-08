@@ -245,7 +245,13 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div class="card" id="dash-alerts"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
       <div class="sec">Sessioni oggi</div>
       <div class="card" id="dash-oggi"></div>
-      <div class="sec">🏥 Certificati medici da approvare</div>
+      <div class="sec">🏥 Certificati medici</div>
+      <div class="stat-grid" style="margin-bottom:10px">
+        <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-cert-approva">—</div><div class="stat-lbl">Da approvare</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--red)" id="d-cert-mancanti">—</div><div class="stat-lbl">Mancanti</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--green)" id="d-cert-presenti">—</div><div class="stat-lbl">Validi</div></div>
+        <div class="stat"><div class="stat-val" id="d-cert-tot">—</div><div class="stat-lbl">Totale clienti</div></div>
+      </div>
       <div class="card" id="dash-cert"></div>
     </div>
 
@@ -550,7 +556,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
 let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
-let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[];
+let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[];
 
 // ── UTILITY: gestione bottoni durante azioni async ────────────────────────────
 function btnLoading(btnEl, loading, originalText=null){
@@ -702,7 +708,14 @@ async function loadAll(){
   if(ist) istruttori=ist;
   if(cas) cassa=cas;
   // Carica certificati da approvare per dashboard
-  try { const certs = await GET('/api/v2/certificati/da-approvare'); if(certs) certDaApprovare=certs; } catch(e){}
+  try {
+    const certsResp = await GET('/api/v2/certificati/da-approvare');
+    if(certsResp){
+      certDaApprovare = certsResp.da_approvare || [];
+      certMancanti = certsResp.mancanti || [];
+      certPresenti = certsResp.presenti || [];
+    }
+  } catch(e){}
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
@@ -750,15 +763,19 @@ function updateTopbar(){
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
 function renderDash(){
-  // v2: pacchetti_attivi e totale_pagato sono pre-calcolati dal backend
-  const daRin=clienti.filter(i=>i.pacchetti_attivi===0);
-  const daSal=[];  // calcolato per pacchetto, non per cliente globale
+  const daRin=clienti.filter(i=>i.pacchetti_attivi===0&&i.stato!=='sospeso');
+  const daSal=clienti.filter(i=>(i.totale_da_saldare||0)>0&&i.stato!=='sospeso');
+  const totDaSaldare=daSal.reduce((a,i)=>a+(i.totale_da_saldare||0),0);
   const todaySes=sessioni.filter(s=>{const d=new Date(s.data+'T00:00:00');d.setHours(0,0,0,0);return d.getTime()===oggi.getTime();});
-  document.getElementById('d-isc').textContent=clienti.length;
+  document.getElementById('d-isc').textContent=clienti.filter(i=>i.stato!=='sospeso').length;
   document.getElementById('d-rin').textContent=daRin.length;
-  document.getElementById('d-sal').textContent='—';  // calcolato per pacchetto
+  document.getElementById('d-sal').textContent=euro(totDaSaldare);
   document.getElementById('d-sog').textContent=todaySes.length;
   document.getElementById('d-cert').textContent=certDaApprovare.length;
+  document.getElementById('d-cert-approva').textContent=certDaApprovare.length;
+  document.getElementById('d-cert-mancanti').textContent=certMancanti.length;
+  document.getElementById('d-cert-presenti').textContent=certPresenti.length;
+  document.getElementById('d-cert-tot').textContent=clienti.length;
 
   // Saldo cassa
   const entrate=cassa.filter(m=>m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
@@ -773,8 +790,8 @@ function renderDash(){
 
   // Alerts
   let h='';
-  daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}</span><span class="badge ${lezRim(i)===0?'b-danger':'b-warn'}">${lezRim(i)} lez.</span></div>`;});
-  daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}</span><span class="badge b-danger">${euro(resto(i))}</span></div>`;});
+  daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}${i.cognome?' '+i.cognome:''}</span><span class="badge b-warn">Nessun pacchetto</span></div>`;});
+  daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}${i.cognome?' '+i.cognome:''}</span><span class="badge b-danger">${euro(i.totale_da_saldare)}</span></div>`;});
   document.getElementById('dash-alerts').innerHTML=h||'<div class="empty"><span class="ti ti-circle-check" style="color:var(--green)"></span>Tutto ok!</div>';
 
   // Sessioni oggi
@@ -788,24 +805,27 @@ function renderDash(){
 
   // Riquadro certificati da approvare
   let hCert = '';
-  if(certDaApprovare.length){
-    hCert = certDaApprovare.map(c=>`
+  const certAlert = [...certDaApprovare, ...certMancanti];
+  if(certAlert.length){
+    hCert = certAlert.map(c=>`
       <div class="alert-row">
         <div>
           <div style="font-weight:600">${c.nome} ${c.cognome||''}</div>
           <div style="font-size:11px;color:var(--muted)">
-            ${c.cert_medico_data?'Data cert: '+fmtShort(c.cert_medico_data):''}
+            ${c.stato==='in attesa approvazione'?'🟡 In attesa':c.stato==='non presentato'?'🔴 Non presentato':c.stato==='scaduto'?'🔴 Scaduto':'🟡 Grace period'}
             ${c.cert_medico_scadenza?' · Scad: '+fmtShort(c.cert_medico_scadenza):''}
-            ${c.ha_file?'<span style="color:var(--green)"> · 📎 File caricato</span>':''}
+            ${c.ha_file?'<span style="color:var(--green)"> · 📎 File presente</span>':''}
           </div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="approvaCert(${c.id})">✓</button>
-          <button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="rifiutaCert(${c.id})">✗</button>
+          ${c.stato==='in attesa approvazione'?`
+            <button class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="approvaCert(${c.id})">✓</button>
+            <button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="rifiutaCert(${c.id})">✗</button>
+          `:''}
         </div>
       </div>`).join('');
   } else {
-    hCert = '<div style="font-size:13px;color:var(--muted);padding:6px 0">Nessun certificato in attesa</div>';
+    hCert = '<div style="font-size:13px;color:var(--muted);padding:6px 0">✅ Tutti i certificati sono in regola</div>';
   }
   document.getElementById('dash-cert').innerHTML = hCert;
 }
@@ -915,9 +935,10 @@ async function openIsc(id){
     h += '</div>';
   }
   // Anagrafica
-  const certS = iscritta.cert_medico_stato||'non presentato';
+  const isSospeso = iscritta.stato==='sospeso';
+  const certS = isSospeso?'n/a':(iscritta.cert_medico_stato||'non presentato');
   const certCol = certS==='valido'?'var(--green)':(certS==='scaduto'||certS==='non presentato'?'var(--red)':'var(--warn)');
-  const certEmj = certS==='valido'?'🟢':(certS==='scaduto'||certS==='non presentato'?'🔴':'🟡');
+  const certEmj = certS==='n/a'?'⏸️':(certS==='valido'?'🟢':(certS==='scaduto'||certS==='non presentato'?'🔴':'🟡'));
   h += `<div class="sec">Anagrafica</div><table class="dtable">
     <tr><td>Telefono</td><td>${iscritta.telefono||'—'}</td></tr>
     <tr><td>Email</td><td>${iscritta.email||'—'}</td></tr>
@@ -1233,6 +1254,53 @@ function renderCas(){
   document.getElementById('cas-list').innerHTML=`<div class="card">${h}</div>`;
 }
 
+function openEditMov(mid){
+  const m = cassa.find(x=>x.id===mid); if(!m) return;
+  document.getElementById('mv-data').value = m.data||'';
+  document.getElementById('mv-tipo').value = m.tipo||'Entrata';
+  document.getElementById('mv-desc').value = m.descrizione||'';
+  document.getElementById('mv-imp').value = m.importo||'';
+  document.getElementById('mv-note').value = m.note||'';
+  updateCatOptions();
+  document.getElementById('mv-cat').value = m.categoria||'';
+  // Cambia pulsante in "Salva modifiche"
+  const btn = document.querySelector('#ov-mov .btn-primary');
+  btn._editId = mid;
+  btn.textContent = 'Salva modifiche';
+  btn.onclick = () => withLoading(btn, ()=>salvaMov(mid));
+  document.getElementById('ov-mov').classList.add('open');
+}
+
+async function salvaMov(mid){
+  const importo=parseFloat(document.getElementById('mv-imp').value);
+  if(!importo||importo<=0){toast('Inserisci un importo valido',true);return;}
+  await fetch(API+`/api/v2/cassa/${mid}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Auth-Token':token},
+    body:JSON.stringify({
+      data:document.getElementById('mv-data').value,
+      tipo:document.getElementById('mv-tipo').value,
+      categoria:document.getElementById('mv-cat').value,
+      descrizione:document.getElementById('mv-desc').value,
+      importo, note:document.getElementById('mv-note').value
+    })
+  });
+  closeOv('ov-mov');
+  toast('Movimento aggiornato!');
+  const newCas=await GET('/api/cassa'); if(newCas){cassa=newCas; renderCas(); renderDash();}
+  // Ripristina pulsante per nuovo inserimento
+  const btn=document.querySelector('#ov-mov .btn-primary');
+  btn.onclick=()=>withLoading(btn,aggiungiMov);
+  btn.textContent='Aggiungi movimento';
+}
+
+async function deleteMov(mid){
+  if(!confirm('Eliminare questo movimento di cassa?')) return;
+  await fetch(API+`/api/v2/cassa/${mid}`,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  toast('Movimento eliminato.');
+  const newCas=await GET('/api/cassa'); if(newCas){cassa=newCas; renderCas(); renderDash();}
+}
+
 function openNuovaMov(){
   document.getElementById('mv-data').value=new Date().toISOString().split('T')[0];
   document.getElementById('mv-tipo').value='Entrata';
@@ -1462,20 +1530,25 @@ async function sospendi(iid){
 
 async function cancellaCliente(iid){
   const cliente = clienti.find(x=>x.id===iid);
-  const nome = cliente ? cliente.nome+' '+(cliente.cognome||'') : '';
-  const conf1 = confirm(`⚠️ ATTENZIONE\n\nStai per cancellare definitivamente ${nome.trim()}.\n\nVerranno eliminati:\n• Tutti i dati anagrafici\n• Tutti i pacchetti\n• Tutti i pagamenti\n• Tutte le presenze\n\nQuesta operazione è IRREVERSIBILE.\n\nVuoi continuare?`);
+  const nome = cliente ? (cliente.nome+' '+(cliente.cognome||'')).trim() : '';
+
+  const conf1 = confirm(`⚠️ ATTENZIONE\n\nStai per cancellare definitivamente ${nome}.\n\nVerranno eliminati:\n• Tutti i dati anagrafici\n• Tutti i pacchetti\n• Tutti i pagamenti\n• Tutte le presenze\n\nQuesta operazione è IRREVERSIBILE.\n\nVuoi continuare?`);
   if(!conf1) return;
-  const conf2 = confirm(`Confermi la cancellazione definitiva di ${nome.trim()}?`);
-  if(!conf2) return;
-  const r = await fetch(API+`/api/v2/iscritte/${iid}`, {
-    method:'DELETE', headers:{'X-Auth-Token':token}
+
+  const cancellaCassa = confirm(`Vuoi cancellare anche i movimenti di cassa relativi a ${nome}?\n\n• OK = Cancella anche i movimenti cassa (es. cliente ha chiesto rimborso)\n• Annulla = Mantieni i movimenti cassa (registrazione contabile)`)
+
+  const r = await fetch(API+\`/api/v2/iscritte/\${iid}\`, {
+    method:'DELETE',
+    headers:{'Content-Type':'application/json','X-Auth-Token':token},
+    body: JSON.stringify({cancella_cassa: cancellaCassa})
   });
   const data = await r.json();
   if(data.ok){
     closeOv('ov-isc');
-    toast(`${nome.trim()} cancellato definitivamente.`);
+    toast(\`\${nome} cancellato.\${cancellaCassa?' Flusso cassa rimosso.':' Flusso cassa mantenuto.'}\`);
     const iv2=await GET('/api/v2/iscritte');
     if(iv2){clienti=iv2; renderIsc(); renderDash();}
+    const newCas=await GET('/api/cassa'); if(newCas) cassa=newCas; renderCas();
   } else {
     toast('Errore nella cancellazione', true);
   }
@@ -1498,8 +1571,8 @@ async function approvaCert(iid){
   if(!confirm('Approvi il certificato medico?')) return;
   await POST(`/api/v2/certificati/${iid}/approva`,{});
   toast('Certificato approvato!');
-  const certs=await GET('/api/v2/certificati/da-approvare');
-  if(certs) certDaApprovare=certs;
+  const certsR=await GET('/api/v2/certificati/da-approvare');
+  if(certsR){ certDaApprovare=certsR.da_approvare||[]; certMancanti=certsR.mancanti||[]; certPresenti=certsR.presenti||[]; }
   const iv2=await GET('/api/v2/iscritte');
   if(iv2){clienti=iv2; renderIsc();}
   renderDash();
@@ -1509,8 +1582,8 @@ async function rifiutaCert(iid){
   if(!confirm('Rifiuti il certificato? Il cliente dovrà ricaricarlo.')) return;
   await POST(`/api/v2/certificati/${iid}/rifiuta`,{});
   toast('Certificato rifiutato.');
-  const certs=await GET('/api/v2/certificati/da-approvare');
-  if(certs) certDaApprovare=certs;
+  const certsR=await GET('/api/v2/certificati/da-approvare');
+  if(certsR){ certDaApprovare=certsR.da_approvare||[]; certMancanti=certsR.mancanti||[]; certPresenti=certsR.presenti||[]; }
   renderDash();
 }
 
@@ -1538,7 +1611,18 @@ async function salvaEditCert(){
   openIsc(iid);
 }
 
-function closeOv(id){document.getElementById(id).classList.remove('open');}
+function closeOv(id){
+  document.getElementById(id).classList.remove('open');
+  // Ripristina pulsante cassa se era in modalità modifica
+  if(id==='ov-mov'){
+    const btn=document.querySelector('#ov-mov .btn-primary');
+    if(btn && btn._editId){
+      btn._editId=null;
+      btn.onclick=()=>withLoading(btn,aggiungiMov);
+      btn.innerHTML='Aggiungi movimento';
+    }
+  }
+}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
 function toast(msg,warn=false){
