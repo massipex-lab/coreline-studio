@@ -735,7 +735,8 @@ async function openIsc(id){
   document.getElementById('ov-isc').classList.add('open');
   const scheda = await GET(`/api/v2/iscritte/${id}/scheda`);
   if(!scheda) return;
-  const {cliente, pacchetti, pagamenti, ultime_presenze} = scheda;
+  const iscritta = scheda.iscritta || scheda.cliente || {};
+  const {pacchetti=[], pagamenti=[], ultime_presenze=[]} = scheda;
   const attivi = pacchetti.filter(p=>p.stato==='attivo');
   const storici = pacchetti.filter(p=>p.stato!=='attivo');
   let h = '';
@@ -796,9 +797,9 @@ async function openIsc(id){
   }
   // Anagrafica
   h += `<div class="sec">Anagrafica</div><table class="dtable">
-    <tr><td>Telefono</td><td>${cliente.telefono||'—'}</td></tr>
-    <tr><td>Email</td><td>${cliente.email||'—'}</td></tr>
-    ${cliente.note?`<tr><td>Note</td><td>${cliente.note}</td></tr>`:''}
+    <tr><td>Telefono</td><td>${iscritta.telefono||'—'}</td></tr>
+    <tr><td>Email</td><td>${iscritta.email||'—'}</td></tr>
+    ${iscritta.note?`<tr><td>Note</td><td>${iscritta.note}</td></tr>`:''}
   </table>`;
   // Storici
   if(storici.length){
