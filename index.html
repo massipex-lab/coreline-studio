@@ -301,7 +301,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
           <div class="field"><label>Lezioni totali</label><input type="number" id="n-lez" placeholder="13"></div>
         </div>
         <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
-        <button class="btn btn-primary btn-full" onclick="aggiungiIsc()"><span class="ti ti-user-plus"></span> Aggiungi cliente</button>
+        <button class="btn btn-primary btn-full" id="btn-aggiungi-isc" onclick="withLoading(this,aggiungiIsc)"><span class="ti ti-user-plus"></span> Aggiungi cliente</button>
       </div>
     </div>
 
@@ -366,7 +366,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Seleziona partecipanti <span style="font-weight:400">(numero tra parentesi = lezioni rimanenti)</span></div>
     <div class="picker-grid" id="pren-picker"></div>
     <div class="divider"></div>
-    <button class="btn btn-primary btn-full" onclick="conferma()">Conferma prenotazione</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,conferma)">Conferma prenotazione</button>
     <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Le lezioni vengono scalate automaticamente a fine giornata. Usa questo pannello per modifiche manuali dell'ultimo secondo.</p>
   </div>
 </div>
@@ -390,7 +390,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <div class="field"><label>Tipo corso *</label><select id="ns-tipo"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Istruttrice/Istruttore *</label><select id="ns-istr"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Note</label><input type="text" id="ns-note" placeholder="Opzionale"></div>
-    <button class="btn btn-primary btn-full" onclick="creaSessione()">Crea sessione</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,creaSessione)">Crea sessione</button>
   </div>
 </div>
 
@@ -411,7 +411,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <div class="field"><label>Descrizione</label><input type="text" id="mv-desc" placeholder="Es. Abbonamento Giulia Rossi"></div>
     <div class="field"><label>Importo (€) *</label><input type="number" id="mv-imp" placeholder="0" step="0.01"></div>
     <div class="field"><label>Note</label><input type="text" id="mv-note" placeholder="Opzionale"></div>
-    <button class="btn btn-primary btn-full" onclick="aggiungiMov()">Aggiungi movimento</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,aggiungiMov)">Aggiungi movimento</button>
   </div>
 </div>
 
@@ -427,7 +427,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div class="field"><label>Prezzo (€)</label><input type="number" id="c-prezzo" placeholder="310"></div>
     </div>
     <div class="field"><label>Note</label><input type="text" id="c-note" placeholder="Opzionale"></div>
-    <button class="btn btn-primary btn-full" onclick="salvaCorso()">Salva corso</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaCorso)">Salva corso</button>
   </div>
 </div>
 
@@ -444,7 +444,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <div class="field"><label>Telefono</label><input type="tel" id="i-tel" placeholder="+39 333 000 0000"></div>
     <div class="field"><label>Email</label><input type="email" id="i-email" placeholder="francesca@email.it"></div>
     <div class="field"><label>Note</label><input type="text" id="i-note" placeholder="Opzionale"></div>
-    <button class="btn btn-primary btn-full" onclick="salvaIstr()">Salva</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaIstr)">Salva</button>
   </div>
 </div>
 
@@ -461,7 +461,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     </div>
     <div class="field"><label>Importo pagato (€)</label><input type="number" id="ap-importo" placeholder="0" step="0.01"></div>
     <div class="field"><label>Note</label><input type="text" id="ap-note" placeholder="Opzionale"></div>
-    <button class="btn btn-primary btn-full" onclick="salvaAddPacchetto()">Aggiungi pacchetto</button>
+    <button class="btn btn-primary btn-full" id="btn-salva-pac" onclick="withLoading(this,salvaAddPacchetto)">Aggiungi pacchetto</button>
   </div>
 </div>
 
@@ -478,7 +478,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <select id="pag-metodo"><option>Bonifico</option><option>Contanti</option><option>Carta</option></select>
     </div>
     <div class="field"><label>Note</label><input type="text" id="pag-note" placeholder="Opzionale"></div>
-    <button class="btn btn-primary btn-full" onclick="salvaAddPagamento()">Salva pagamento</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaAddPagamento)">Salva pagamento</button>
   </div>
 </div>
 
@@ -499,7 +499,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
         <option value="non presentato">🔴 Non presentato</option>
       </select>
     </div>
-    <button class="btn btn-primary btn-full" onclick="salvaEditCert()">Salva certificato</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaEditCert)">Salva certificato</button>
   </div>
 </div>
 
@@ -536,7 +536,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       <div class="field"><label>Data fine *</label><input type="date" id="ric-fine"></div>
     </div>
     <div class="field"><label>Note</label><input type="text" id="ric-note" placeholder="Opzionale"></div>
-    <button class="btn btn-primary btn-full" onclick="creaRicorrenza()">Crea sessioni ricorrenti</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,creaRicorrenza)">Crea sessioni ricorrenti</button>
   </div>
 </div>
 
@@ -551,6 +551,28 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 let token = localStorage.getItem('pilot') || '';
 let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
 let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[];
+
+// ── UTILITY: gestione bottoni durante azioni async ────────────────────────────
+function btnLoading(btnEl, loading, originalText=null){
+  if(loading){
+    btnEl._orig = btnEl.innerHTML;
+    btnEl.disabled = true;
+    btnEl.style.opacity = '0.65';
+    btnEl.innerHTML = '<span class="spin" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></span>In corso…';
+  } else {
+    btnEl.disabled = false;
+    btnEl.style.opacity = '1';
+    btnEl.innerHTML = originalText || btnEl._orig || btnEl.innerHTML;
+  }
+}
+
+// Wrapper generico: disabilita btn, esegue fn async, riabilita
+async function withLoading(btnEl, fn){
+  btnLoading(btnEl, true);
+  try { await fn(); }
+  catch(e){ console.error(e); toast('Errore imprevisto', true); }
+  finally { btnLoading(btnEl, false); }
+}
 let activeSes=null, selPart=[];
 let editCorsoIdx=null, editIstrIdx=null;
 
@@ -1380,6 +1402,8 @@ async function uploadDb(input){
   const file = input.files[0]; if(!file) return;
   const confirm_msg = "Stai per sostituire il database con questo file Excel. Tutti i dati attuali verranno sovrascritti. Continuare?";
   if(!window.confirm(confirm_msg)){ input.value=''; return; }
+  const btn = document.querySelector('[onclick*="upload-db"]');
+  if(btn) btnLoading(btn, true);
   toast('Caricamento in corso…');
   const fd = new FormData();
   fd.append('file', file);
@@ -1401,6 +1425,8 @@ async function uploadDb(input){
     toast('Errore di connessione', true);
   }
   input.value='';
+  const btn2 = document.querySelector('[onclick*="upload-db"]');
+  if(btn2) btnLoading(btn2, false);
 }
 
 async function downloadDb(){
