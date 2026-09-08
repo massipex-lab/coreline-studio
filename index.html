@@ -1532,23 +1532,24 @@ async function cancellaCliente(iid){
   const cliente = clienti.find(x=>x.id===iid);
   const nome = cliente ? (cliente.nome+' '+(cliente.cognome||'')).trim() : '';
 
-  const conf1 = confirm(`⚠️ ATTENZIONE\n\nStai per cancellare definitivamente ${nome}.\n\nVerranno eliminati:\n• Tutti i dati anagrafici\n• Tutti i pacchetti\n• Tutti i pagamenti\n• Tutte le presenze\n\nQuesta operazione è IRREVERSIBILE.\n\nVuoi continuare?`);
+  const conf1 = confirm('⚠️ ATTENZIONE\n\nStai per cancellare definitivamente ' + nome + '.\n\nVerranno eliminati:\n• Tutti i dati anagrafici\n• Tutti i pacchetti\n• Tutti i pagamenti\n• Tutte le presenze\n\nQuesta operazione è IRREVERSIBILE.\n\nVuoi continuare?');
   if(!conf1) return;
 
-  const cancellaCassa = confirm(`Vuoi cancellare anche i movimenti di cassa relativi a ${nome}?\n\n• OK = Cancella anche i movimenti cassa (es. cliente ha chiesto rimborso)\n• Annulla = Mantieni i movimenti cassa (registrazione contabile)`)
+  const cancellaCassa = confirm('Vuoi cancellare anche i movimenti di cassa relativi a ' + nome + '?\n\n• OK = Cancella anche i movimenti cassa\n• Annulla = Mantieni i movimenti cassa');
 
-  const r = await fetch(API+\`/api/v2/iscritte/\${iid}\`, {
-    method:'DELETE',
-    headers:{'Content-Type':'application/json','X-Auth-Token':token},
+  const r = await fetch(API + '/api/v2/iscritte/' + iid, {
+    method: 'DELETE',
+    headers: {'Content-Type': 'application/json', 'X-Auth-Token': token},
     body: JSON.stringify({cancella_cassa: cancellaCassa})
   });
   const data = await r.json();
   if(data.ok){
     closeOv('ov-isc');
-    toast(\`\${nome} cancellato.\${cancellaCassa?' Flusso cassa rimosso.':' Flusso cassa mantenuto.'}\`);
-    const iv2=await GET('/api/v2/iscritte');
+    toast(nome + ' cancellato.' + (cancellaCassa ? ' Flusso cassa rimosso.' : ' Flusso cassa mantenuto.'));
+    const iv2 = await GET('/api/v2/iscritte');
     if(iv2){clienti=iv2; renderIsc(); renderDash();}
-    const newCas=await GET('/api/cassa'); if(newCas) cassa=newCas; renderCas();
+    const newCas = await GET('/api/cassa');
+    if(newCas){cassa=newCas; renderCas();}
   } else {
     toast('Errore nella cancellazione', true);
   }
