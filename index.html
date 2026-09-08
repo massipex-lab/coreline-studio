@@ -204,7 +204,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <div id="login-wait" style="display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">
       <div style="display:flex;align-items:center;justify-content:center;gap:8px">
         <div class="spin" style="width:16px;height:16px;border-width:2px"></div>
-        <span>Connessione al server in corso… può richiedere fino a 60 secondi al primo avvio.</span>
+        <span>Connessione al server… può richiedere fino a 60 secondi al primo avvio.</span>
       </div>
     </div>
   </div>
@@ -293,10 +293,9 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
           <select id="n-pag"><option>Bonifico</option><option>Contanti</option><option>Carta</option><option>Da saldare</option></select>
         </div>
         <div class="field-row">
-          <div class="field"><label>Quota (€)</label><input type="number" id="n-quota" placeholder="310"></div>
-          <div class="field"><label>Pagato (€)</label><input type="number" id="n-pagato" placeholder="310"></div>
+          <div class="field"><label>Pagato ora (€)</label><input type="number" id="n-pagato" placeholder="0"></div>
+          <div class="field"><label>Lezioni totali</label><input type="number" id="n-lez" placeholder="13"></div>
         </div>
-        <div class="field"><label>Lezioni totali</label><input type="number" id="n-lez" placeholder="13"></div>
         <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
         <button class="btn btn-primary btn-full" onclick="aggiungiIsc()"><span class="ti ti-user-plus"></span> Aggiungi iscritta</button>
       </div>
@@ -445,6 +444,40 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
   </div>
 </div>
 
+<!-- MODAL AGGIUNGI PACCHETTO -->
+<div class="overlay" id="ov-add-pac">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-add-pac')"><span class="ti ti-x"></span></button>
+    <div class="modal-title">Nuovo pacchetto</div>
+    <div class="field"><label>Corso *</label><select id="ap-corso"></select></div>
+    <div class="field"><label>Data inizio</label><input type="date" id="ap-data"></div>
+    <div class="field"><label>Tipo pagamento</label>
+      <select id="ap-metodo"><option>Bonifico</option><option>Contanti</option><option>Carta</option><option>Da saldare</option></select>
+    </div>
+    <div class="field"><label>Importo pagato (€)</label><input type="number" id="ap-importo" placeholder="0" step="0.01"></div>
+    <div class="field"><label>Note</label><input type="text" id="ap-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="salvaAddPacchetto()">Aggiungi pacchetto</button>
+  </div>
+</div>
+
+<!-- MODAL AGGIUNGI PAGAMENTO -->
+<div class="overlay" id="ov-add-pag">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-add-pag')"><span class="ti ti-x"></span></button>
+    <div class="modal-title">Registra pagamento</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Pacchetto: <strong id="pag-corso"></strong></div>
+    <div class="field"><label>Data</label><input type="date" id="pag-data"></div>
+    <div class="field"><label>Importo (€) *</label><input type="number" id="pag-importo" placeholder="0" step="0.01"></div>
+    <div class="field"><label>Metodo</label>
+      <select id="pag-metodo"><option>Bonifico</option><option>Contanti</option><option>Carta</option></select>
+    </div>
+    <div class="field"><label>Note</label><input type="text" id="pag-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="salvaAddPagamento()">Salva pagamento</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -497,61 +530,41 @@ const MAX_ATTEMPTS = 3;
 
 async function doLogin(){
   if(loginAttempts >= MAX_ATTEMPTS) return;
-
   const pwd = document.getElementById('pwd-input').value;
   const btn = document.getElementById('login-btn');
   const errDiv = document.getElementById('login-err');
   const waitDiv = document.getElementById('login-wait');
-
   errDiv.textContent = '';
-
-  // Mostra spinner e blocca pulsante
-  btn.disabled = true;
-  btn.style.opacity = '0.6';
-  btn.textContent = 'Connessione…';
+  btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Connessione…';
   waitDiv.style.display = 'block';
   document.getElementById('pwd-input').disabled = true;
-
   try {
-    const r = await fetch(API+'/api/login', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({password: pwd})
-    });
+    const r = await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
     const data = await r.json();
     if(data.token){
-      token = data.token;
-      localStorage.setItem('pilot', token);
-      waitDiv.style.display = 'none';
-      startApp();
+      token=data.token; localStorage.setItem('pilot',token);
+      waitDiv.style.display='none'; startApp();
     } else {
       loginAttempts++;
-      const rimanenti = MAX_ATTEMPTS - loginAttempts;
+      const rim = MAX_ATTEMPTS - loginAttempts;
       if(loginAttempts >= MAX_ATTEMPTS){
-        // Blocca tutto
-        errDiv.innerHTML = '<strong>Troppi tentativi errati.</strong><br>Apri una nuova pagina per riprovare.';
-        errDiv.style.color = 'var(--red)';
-        btn.style.display = 'none';
-        waitDiv.style.display = 'none';
-        document.getElementById('pwd-input').style.display = 'none';
+        errDiv.innerHTML='<strong>Troppi tentativi errati.</strong><br>Apri una nuova pagina per riprovare.';
+        btn.style.display='none'; waitDiv.style.display='none';
+        document.getElementById('pwd-input').style.display='none';
       } else {
-        errDiv.textContent = `Password errata. Tentativi rimanenti: ${rimanenti}`;
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.textContent = 'Accedi';
-        waitDiv.style.display = 'none';
-        document.getElementById('pwd-input').disabled = false;
-        document.getElementById('pwd-input').value = '';
+        errDiv.textContent=`Password errata. Tentativi rimanenti: ${rim}`;
+        btn.disabled=false; btn.style.opacity='1'; btn.textContent='Accedi';
+        waitDiv.style.display='none';
+        document.getElementById('pwd-input').disabled=false;
+        document.getElementById('pwd-input').value='';
         document.getElementById('pwd-input').focus();
       }
     }
   } catch(e) {
-    errDiv.textContent = 'Server non raggiungibile. Riprova tra qualche secondo.';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    btn.textContent = 'Accedi';
-    waitDiv.style.display = 'none';
-    document.getElementById('pwd-input').disabled = false;
+    errDiv.textContent='Server non raggiungibile. Riprova tra qualche secondo.';
+    btn.disabled=false; btn.style.opacity='1'; btn.textContent='Accedi';
+    waitDiv.style.display='none';
+    document.getElementById('pwd-input').disabled=false;
   }
 }
 
@@ -566,21 +579,15 @@ async function checkToken(){
 function doLogout(){
   if(token) POST('/api/logout');
   token=''; localStorage.removeItem('pilot');
-  loginAttempts = 0;
-  // Reset completo schermata login
-  const btn = document.getElementById('login-btn');
-  const pwd = document.getElementById('pwd-input');
-  const waitDiv = document.getElementById('login-wait');
-  const errDiv = document.getElementById('login-err');
-  btn.disabled = false;
-  btn.style.opacity = '1';
-  btn.style.display = '';
-  btn.textContent = 'Accedi';
-  pwd.disabled = false;
-  pwd.style.display = '';
-  pwd.value = '';
-  waitDiv.style.display = 'none';
-  errDiv.textContent = '';
+  loginAttempts=0;
+  const btn=document.getElementById('login-btn');
+  const pwd=document.getElementById('pwd-input');
+  const waitDiv=document.getElementById('login-wait');
+  const errDiv=document.getElementById('login-err');
+  if(btn){btn.disabled=false;btn.style.opacity='1';btn.style.display='';btn.textContent='Accedi';}
+  if(pwd){pwd.disabled=false;pwd.style.display='';pwd.value='';}
+  if(waitDiv) waitDiv.style.display='none';
+  if(errDiv) errDiv.textContent='';
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
 }
@@ -594,18 +601,18 @@ async function startApp(){
 }
 
 async function loadAll(){
-  // Prima processa le sessioni passate (scala lezioni automaticamente)
+  // Processa sessioni passate con nuovo sistema presenze v2
   try {
-    const proc = await POST('/api/sessioni/processa', {});
+    const proc = await POST('/api/v2/sessioni/processa', {});
     if(proc && proc.processate > 0){
       toast(`Auto-scalate lezioni: ${proc.processate} session${proc.processate===1?'e':'i'} processata${proc.processate===1?'':'e'}`);
     }
   } catch(e) { console.warn('Processa sessioni:', e); }
 
-  const [i,s,c,ist,cas]=await Promise.all([
-    GET('/api/iscritti'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/cassa')
+  const [iv2,s,c,ist,cas]=await Promise.all([
+    GET('/api/v2/iscritte'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/cassa')
   ]);
-  if(i) iscritte=i;
+  if(iv2) iscritte=iv2;
   if(s) sessioni=s;
   if(c) corsi=c;
   if(ist) istruttori=ist;
@@ -657,12 +664,13 @@ function updateTopbar(){
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
 function renderDash(){
-  const daRin=iscritte.filter(i=>lezRim(i)<=2&&i.lezTot>0);
-  const daSal=iscritte.filter(i=>resto(i)>0);
+  // v2: pacchetti_attivi e totale_pagato sono pre-calcolati dal backend
+  const daRin=iscritte.filter(i=>i.pacchetti_attivi===0);
+  const daSal=[];  // calcolato per pacchetto, non per iscritta globale
   const todaySes=sessioni.filter(s=>{const d=new Date(s.data+'T00:00:00');d.setHours(0,0,0,0);return d.getTime()===oggi.getTime();});
   document.getElementById('d-isc').textContent=iscritte.length;
   document.getElementById('d-rin').textContent=daRin.length;
-  document.getElementById('d-sal').textContent=euro(daSal.reduce((a,i)=>a+resto(i),0));
+  document.getElementById('d-sal').textContent='—';  // calcolato per pacchetto
   document.getElementById('d-sog').textContent=todaySes.length;
 
   // Saldo cassa
@@ -708,52 +716,156 @@ function renderIsc(){
   document.getElementById('isc-list').innerHTML=list.map(isc=>{
     const rim=lezRim(isc),pct=isc.lezTot>0?Math.round(isc.lezFatte/isc.lezTot*100):0,r=resto(isc);
     const bc=rim===0?'b-danger':(rim<=2?'b-warn':'b-ok'),fc=rim===0?'var(--red)':(rim<=2?'var(--warn)':'var(--green)');
+    const pa = isc.pacchetti_attivi || 0;
     return `<div class="card card-click" onclick="openIsc('${isc.id}')">
-      <div class="row"><div style="font-size:15px;font-weight:700">${isc.nome}</div><span class="badge ${bc}">${rim} lez.</span></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:3px">${isc.pacchetto||'—'} · ${isc.pagamento||'—'}</div>
-      ${r>0?`<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:4px">Da saldare: ${euro(r)}</div>`:''}
-      <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${fc}"></div></div>
-      <div style="font-size:11px;color:var(--muted)">${isc.lezFatte} / ${isc.lezTot} lezioni effettuate</div>
+      <div class="row">
+        <div style="font-size:15px;font-weight:700">${isc.nome}${isc.cognome?' '+isc.cognome:''}</div>
+        <span class="badge ${pa>0?'b-ok':'b-danger'}">${pa} pacchett${pa===1?'o':'i'}</span>
+      </div>
+      ${isc.telefono?`<div style="font-size:12px;color:var(--muted);margin-top:3px">📞 ${isc.telefono}</div>`:''}
+      ${isc.note?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${isc.note}</div>`:''}
     </div>`;
   }).join('');
 }
 
-function openIsc(id){
+async function openIsc(id){
   const isc=iscritte.find(x=>String(x.id)===String(id)); if(!isc) return;
-  document.getElementById('mi-nome').textContent=isc.nome;
-  const rim=lezRim(isc),r=resto(isc);
-  const ultSes=sessioni.filter(s=>s.partecipanti.includes(isc.nome)).sort((a,b)=>a.data>b.data?-1:1).slice(0,5);
-  let h=`<div class="stat-grid" style="margin-bottom:14px">
-    <div class="stat"><div class="stat-val" style="color:var(--pink)">${rim}</div><div class="stat-lbl">Lez. rimanenti</div></div>
-    <div class="stat"><div class="stat-val" style="color:${r>0?'var(--red)':'var(--green)'}">${euro(r>0?r:isc.pagato)}</div><div class="stat-lbl">${r>0?'Da saldare':'Pagato'}</div></div>
-  </div>
-  <table class="dtable">
-    <tr><td>Pacchetto</td><td>${isc.pacchetto||'—'}</td></tr>
-    <tr><td>Pagamento</td><td>${isc.pagamento||'—'}</td></tr>
-    <tr><td>Quota</td><td>${euro(isc.quota)}</td></tr>
-    <tr><td>Pagato</td><td>${euro(isc.pagato)}</td></tr>
-    ${isc.note?`<tr><td>Note</td><td>${isc.note}</td></tr>`:''}
-  </table>`;
-  if(ultSes.length){
-    h+='<div class="sec" style="margin-top:14px">Ultime sessioni</div>';
-    ultSes.forEach(s=>{h+=`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--bg)">${fmtShort(s.data)} · ${s.orario} · ${s.tipo}</div>`;});
-  }
-  h+=`<div class="divider"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <button class="btn" onclick="modLez('${id}',-1)"><span class="ti ti-minus"></span> Lezione</button>
-    <button class="btn btn-primary" onclick="modLez('${id}',1)"><span class="ti ti-plus"></span> Lezione</button>
-  </div>`;
-  document.getElementById('mi-body').innerHTML=h;
+  document.getElementById('mi-nome').textContent=isc.nome+(isc.cognome?' '+isc.cognome:'');
+  document.getElementById('mi-body').innerHTML='<div class="loading"><div class="spin"></div>Caricamento…</div>';
   document.getElementById('ov-isc').classList.add('open');
+  const scheda = await GET(`/api/v2/iscritte/${id}/scheda`);
+  if(!scheda) return;
+  const {iscritta, pacchetti, pagamenti, ultime_presenze} = scheda;
+  const attivi = pacchetti.filter(p=>p.stato==='attivo');
+  const storici = pacchetti.filter(p=>p.stato!=='attivo');
+  let h = '';
+  // Pacchetti attivi
+  if(attivi.length){
+    h += '<div class="sec">Pacchetti attivi</div>';
+    attivi.forEach(p=>{
+      const pct = p.lezioni_tot>0?Math.round(p.lezioni_fatte/p.lezioni_tot*100):0;
+      const fc = p.lezioni_rim===0?'var(--red)':(p.lezioni_rim<=2?'var(--warn)':'var(--green)');
+      const resto = p.tot_pagato !== undefined ? (p.lezioni_tot*(p.corso_prezzo||0) - p.tot_pagato) : 0;
+      // Sotto-contatori per pacchetti misti Mat+Reformer
+      const subCount = p.misto ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+          <div style="background:var(--blue-l,#E3F2FD);border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:var(--blue,#1565C0)">${p.lezioni_reformer_rim||0}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Reformer rim.</div>
+            <div style="font-size:10px;color:var(--muted)">${p.lezioni_reformer_fatte||0}/${p.lezioni_reformer_tot||0}</div>
+          </div>
+          <div style="background:#E8F5E9;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#2E7D32">${p.lezioni_mat_rim||0}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Mat rim.</div>
+            <div style="font-size:10px;color:var(--muted)">${p.lezioni_mat_fatte||0}/${p.lezioni_mat_tot||0}</div>
+          </div>
+        </div>` : '';
+      h += `<div class="card" style="margin-bottom:8px">
+        <div class="row" style="margin-bottom:6px">
+          <div style="font-weight:700;font-size:14px">${p.corso_nome||'—'}</div>
+          <span class="badge ${p.lezioni_rim===0?'b-danger':(p.lezioni_rim<=2?'b-warn':'b-ok')}">${p.lezioni_rim} lez.</span>
+        </div>
+        <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${fc}"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${p.lezioni_fatte}/${p.lezioni_tot} lezioni totali · inizio ${fmtShort(p.data_inizio)}</div>
+        ${subCount}
+        ${resto>0?`<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:6px">Da saldare: ${euro(resto)}</div>`:''}
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button class="btn btn-sm" onclick="modLezPacchetto(${p.id},-1,${id})"><span class="ti ti-minus"></span></button>
+          <button class="btn btn-sm btn-primary" onclick="modLezPacchetto(${p.id},1,${id})"><span class="ti ti-plus"></span></button>
+          <button class="btn btn-sm" onclick="openAddPagamento(${id},${p.id},'${p.corso_nome}')" style="margin-left:auto"><span class="ti ti-cash"></span> Pagamento</button>
+        </div>
+      </div>`;
+    });
+  } else {
+    h += '<div style="font-size:13px;color:var(--muted);padding:8px 0 4px">Nessun pacchetto attivo.</div>';
+  }
+  h += `<button class="btn btn-full" style="margin-bottom:14px" onclick="openAddPacchetto(${id})"><span class="ti ti-plus"></span> Aggiungi pacchetto</button>`;
+  // Storico pagamenti
+  if(pagamenti.length){
+    h += '<div class="sec">Storico pagamenti</div><div class="card" style="margin-bottom:14px">';
+    pagamenti.forEach(pg=>{
+      h += `<div class="mov-row"><div><div class="mov-desc">${pg.metodo}${pg.note?' · '+pg.note:''}</div><div class="mov-meta">${fmtShort(pg.data)}</div></div><div class="mov-importo" style="color:var(--green)">+${euro(pg.importo)}</div></div>`;
+    });
+    h += '</div>';
+  }
+  // Ultime presenze
+  if(ultime_presenze.length){
+    h += '<div class="sec">Ultime sessioni</div><div class="card" style="margin-bottom:14px">';
+    ultime_presenze.forEach(p=>{h+=`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--bg)">${fmtShort(p.data)} · ${p.orario} · ${p.tipo}</div>`;});
+    h += '</div>';
+  }
+  // Anagrafica
+  h += `<div class="sec">Anagrafica</div><table class="dtable">
+    <tr><td>Telefono</td><td>${iscritta.telefono||'—'}</td></tr>
+    <tr><td>Email</td><td>${iscritta.email||'—'}</td></tr>
+    ${iscritta.note?`<tr><td>Note</td><td>${iscritta.note}</td></tr>`:''}
+  </table>`;
+  // Storici
+  if(storici.length){
+    h += '<div class="sec" style="margin-top:14px">Pacchetti precedenti</div>';
+    storici.forEach(p=>{h+=`<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--bg);color:var(--muted)">${p.corso_nome} · ${p.lezioni_fatte}/${p.lezioni_tot} lez. · <span class="badge b-pink">${p.stato}</span></div>`;});
+  }
+  document.getElementById('mi-body').innerHTML=h;
 }
 
-async function modLez(id,d){
-  const isc=iscritte.find(x=>String(x.id)===String(id)); if(!isc) return;
-  isc.lezFatte=Math.max(0,(isc.lezFatte||0)+d);
-  isc.lezRim=lezRim(isc);
-  await POST('/api/iscritti',iscritte);
-  toast(d>0?'Lezione aggiunta':'Lezione rimossa');
-  openIsc(id); renderIsc(); renderDash();
+async function modLezPacchetto(pid, delta, iscritaId){
+  const pacs = await GET(`/api/v2/iscritte/${iscritaId}/pacchetti`);
+  const p = (pacs||[]).find(x=>x.id===pid); if(!p) return;
+  const newVal = Math.max(0, Math.min(p.lezioni_tot, p.lezioni_fatte+delta));
+  await fetch(API+`/api/v2/pacchetti/${pid}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify({lezioni_fatte:newVal,stato:newVal>=p.lezioni_tot?'esaurito':'attivo',note:p.note||''})});
+  toast(delta>0?'Lezione aggiunta':'Lezione rimossa');
+  openIsc(iscritaId);
+  const iv2=await GET('/api/v2/iscritte');
+  if(iv2){iscritte=iv2; renderIsc(); renderDash();}
+}
+
+let _addPacchettoIscritaId=null;
+function openAddPacchetto(iid){
+  _addPacchettoIscritaId=iid;
+  closeOv('ov-isc');
+  document.getElementById('ov-add-pac').classList.add('open');
+  document.getElementById('ap-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('ap-pagato') && (document.getElementById('ap-pagato').value='');
+  document.getElementById('ap-importo').value='';
+  document.getElementById('ap-note').value='';
+  document.getElementById('ap-corso').innerHTML=corsi.map(c=>`<option value="${c.id}" data-lez="${c.lezioni}" data-prezzo="${c.prezzo}">${c.nome} — €${c.prezzo}</option>`).join('');
+  document.getElementById('ap-corso').onchange=function(){const opt=this.selectedOptions[0];if(opt)document.getElementById('ap-importo').value=opt.dataset.prezzo||'';};
+  document.getElementById('ap-corso').dispatchEvent(new Event('change'));
+}
+
+async function salvaAddPacchetto(){
+  const iid=_addPacchettoIscritaId; if(!iid) return;
+  const corso_id=parseInt(document.getElementById('ap-corso').value);
+  const metodo=document.getElementById('ap-metodo').value;
+  const importo_pagato=parseFloat(document.getElementById('ap-importo').value)||0;
+  const data_inizio=document.getElementById('ap-data').value;
+  const note=document.getElementById('ap-note').value;
+  await POST(`/api/v2/iscritte/${iid}/pacchetti`,{corso_id,data_inizio,importo_pagato,metodo,note});
+  closeOv('ov-add-pac');
+  toast('Pacchetto aggiunto!');
+  const iv2=await GET('/api/v2/iscritte');
+  if(iv2){iscritte=iv2; renderIsc(); renderDash();}
+  openIsc(iid);
+}
+
+let _addPagIid=null, _addPagPid=null;
+function openAddPagamento(iid,pid,corsoNome){
+  _addPagIid=iid; _addPagPid=pid;
+  document.getElementById('pag-corso').textContent=corsoNome||'';
+  document.getElementById('pag-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('pag-importo').value='';
+  document.getElementById('pag-note').value='';
+  document.getElementById('ov-add-pag').classList.add('open');
+}
+
+async function salvaAddPagamento(){
+  if(!_addPagIid) return;
+  const importo=parseFloat(document.getElementById('pag-importo').value)||0;
+  if(!importo){toast('Inserisci un importo',true);return;}
+  await POST(`/api/v2/iscritte/${_addPagIid}/pagamenti`,{pacchetto_id:_addPagPid,data:document.getElementById('pag-data').value,importo,metodo:document.getElementById('pag-metodo').value,note:document.getElementById('pag-note').value});
+  closeOv('ov-add-pag');
+  toast('Pagamento registrato!');
+  openIsc(_addPagIid);
 }
 
 async function aggiungiIsc(){
@@ -761,12 +873,25 @@ async function aggiungiIsc(){
   if(!nome){toast('Inserisci il nome',true);return;}
   const pac=document.getElementById('n-pac').value;
   if(!pac){toast('Seleziona un pacchetto',true);return;}
-  const nuova={id:Date.now(),nome,pacchetto:pac,pagamento:document.getElementById('n-pag').value,quota:parseFloat(document.getElementById('n-quota').value)||0,pagato:parseFloat(document.getElementById('n-pagato').value)||0,lezTot:parseInt(document.getElementById('n-lez').value)||13,lezFatte:0,note:document.getElementById('n-note').value};
-  nuova.resto=nuova.quota-nuova.pagato; nuova.lezRim=nuova.lezTot;
-  iscritte.push(nuova);
-  await POST('/api/iscritti',iscritte);
-  ['n-nome','n-quota','n-pagato','n-lez','n-note'].forEach(id=>document.getElementById(id).value='');
+  // 1. Crea iscritta
+  const r = await POST('/api/v2/iscritte',{
+    nome, cognome:'', telefono:'', email:'', note:document.getElementById('n-note').value
+  });
+  if(!r||!r.id){toast('Errore creazione iscritta',true);return;}
+  // 2. Aggiungi pacchetto con eventuale pagamento
+  const corso = corsi.find(c=>c.nome===pac);
+  await POST(`/api/v2/iscritte/${r.id}/pacchetti`,{
+    corso_id: corso?corso.id:null,
+    corso_nome: pac,
+    lezioni_tot: parseInt(document.getElementById('n-lez').value)||13,
+    importo_pagato: parseFloat(document.getElementById('n-pagato').value)||0,
+    metodo: document.getElementById('n-pag').value,
+    data_inizio: new Date().toISOString().split('T')[0]
+  });
+  ['n-nome','n-pagato','n-lez','n-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('n-pac').value='';
+  const iv2=await GET('/api/v2/iscritte');
+  if(iv2){iscritte=iv2;}
   toast(nome+' aggiunta!'); goTab('isc'); renderIsc(); renderDash(); updateTopbar();
 }
 
@@ -814,38 +939,81 @@ async function creaSessione(){
   closeOv('ov-ses'); toast('Sessione creata!'); renderSes(); renderDash();
 }
 
-function openPren(sid){
+// selPart v2: [{iscritta_id, pacchetto_id, nome}]
+let selPartV2 = [];
+
+async function openPren(sid){
   activeSes=sessioni.find(s=>s.id===sid||s.id===Number(sid)); if(!activeSes) return;
-  selPart=[...activeSes.partecipanti];
   document.getElementById('pren-info').innerHTML=`<strong>${activeSes.tipo}</strong> · ${activeSes.orario}<br>${fmtData(activeSes.data)} · ${activeSes.istr}`;
-  document.getElementById('pren-picker').innerHTML=iscritte.map(isc=>{
-    const rim=lezRim(isc),sel=selPart.includes(isc.nome),nolez=rim<=0&&!sel;
-    return `<div class="picker-item ${sel?'sel':''} ${nolez?'no-lez':''}" id="pi-${isc.id}" onclick="togglePart('${isc.id}','${isc.nome}')">${isc.nome.split(' ')[0]} ${(isc.nome.split(' ')[1]||'')} <span style="opacity:.55;font-size:10px">(${rim})</span></div>`;
-  }).join('');
+  document.getElementById('pren-picker').innerHTML='<div class="loading"><div class="spin"></div>Caricamento…</div>';
   document.getElementById('ov-pren').classList.add('open');
+
+  // Carica presenze attuali della sessione
+  const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
+  selPartV2 = presenze.map(p=>({iscritta_id:p.iscritta_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
+
+  // Carica pacchetti per ogni iscritta (compatibili con tipo sessione)
+  const tipoSes = activeSes.tipo || '';
+  let html = '';
+  for(const isc of iscritte){
+    const pacs = await GET(`/api/v2/iscritte/${isc.id}/pacchetti`) || [];
+    // Pacchetti attivi compatibili con il tipo sessione
+    const compatibili = pacs.filter(p=>p.stato==='attivo' && p.lezioni_rim>0);
+    const attivi = pacs.filter(p=>p.stato==='attivo');
+    const inSes = selPartV2.find(x=>x.iscritta_id===isc.id);
+    const sel = !!inSes;
+
+    if(!attivi.length && !sel) continue; // Nascondi chi non ha pacchetti
+
+    let packSelect = '';
+    if(compatibili.length > 1){
+      // Più pacchetti compatibili — mostra select
+      packSelect = `<select id="pac-sel-${isc.id}" style="font-size:10px;padding:2px;border-radius:4px;border:1px solid var(--border);margin-left:4px">
+        ${compatibili.map(p=>`<option value="${p.id}" ${inSes&&inSes.pacchetto_id===p.id?'selected':''}>${p.corso_nome} (${p.lezioni_rim})</option>`).join('')}
+      </select>`;
+    }
+
+    const rimTot = compatibili.reduce((a,p)=>a+p.lezioni_rim,0);
+    const nolez = rimTot<=0 && !sel;
+
+    html += `<div class="picker-item ${sel?'sel':''} ${nolez?'no-lez':''}"
+      id="pi-${isc.id}"
+      onclick="togglePartV2(${isc.id})"
+      style="display:flex;align-items:center;gap:4px">
+      <span>${isc.nome}${isc.cognome?' '+isc.cognome:''}</span>
+      ${packSelect}
+      <span style="opacity:.55;font-size:10px">(${rimTot})</span>
+    </div>`;
+  }
+  document.getElementById('pren-picker').innerHTML = html || '<div style="font-size:13px;color:var(--muted)">Nessuna iscritta con pacchetti attivi</div>';
 }
 
-function togglePart(id,nome){
-  const isc=iscritte.find(x=>String(x.id)===String(id)); if(!isc) return;
-  const inS=selPart.includes(nome);
-  if(!inS&&lezRim(isc)<=0){toast('Lezioni esaurite!',true);return;}
-  if(inS) selPart=selPart.filter(x=>x!==nome);
-  else selPart.push(nome);
-  document.getElementById('pi-'+id).classList.toggle('sel',selPart.includes(nome));
+function togglePartV2(iid){
+  const isc = iscritte.find(x=>x.id===iid); if(!isc) return;
+  const inS = selPartV2.find(x=>x.iscritta_id===iid);
+  if(inS){
+    selPartV2 = selPartV2.filter(x=>x.iscritta_id!==iid);
+    document.getElementById('pi-'+iid)?.classList.remove('sel');
+  } else {
+    // Trova pacchetto selezionato (da select se presente, altrimenti il primo compatibile)
+    const selEl = document.getElementById('pac-sel-'+iid);
+    const pacId = selEl ? parseInt(selEl.value) : null;
+    const nome = isc.nome+(isc.cognome?' '+isc.cognome:'');
+    selPartV2.push({iscritta_id:iid, pacchetto_id:pacId, nome});
+    document.getElementById('pi-'+iid)?.classList.add('sel');
+  }
 }
 
 async function conferma(){
   if(!activeSes) return;
-  const prev=activeSes.partecipanti;
-  const aggiunti=selPart.filter(n=>!prev.includes(n));
-  const rimossi=prev.filter(n=>!selPart.includes(n));
-  aggiunti.forEach(nome=>{const isc=iscritte.find(x=>x.nome===nome);if(isc){isc.lezFatte++;isc.lezRim=lezRim(isc);}});
-  rimossi.forEach(nome=>{const isc=iscritte.find(x=>x.nome===nome);if(isc&&isc.lezFatte>0){isc.lezFatte--;isc.lezRim=lezRim(isc);}});
-  activeSes.partecipanti=[...selPart];
-  await Promise.all([POST('/api/iscritti',iscritte),POST('/api/sessioni',sessioni)]);
+  await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {presenze: selPartV2});
+  // Aggiorna lista partecipanti locale per la UI
+  activeSes.partecipanti = selPartV2.map(p=>p.nome);
   closeOv('ov-pren');
-  toast(`Salvato · ${aggiunti.length} aggiunt${aggiunti.length===1?'a':'e'}`);
-  renderSes(); renderIsc(); renderDash();
+  toast(`Salvato · ${selPartV2.length} partecipant${selPartV2.length===1?'e':'i'}`);
+  renderSes(); renderDash();
+  const iv2=await GET('/api/v2/iscritte');
+  if(iv2){iscritte=iv2; renderIsc();}
 }
 
 // ══ CASSA ════════════════════════════════════════════════════════════════════
