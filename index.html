@@ -221,11 +221,11 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 
   <div class="tabs">
     <div class="tab active" onclick="goTab('dash')"><span class="ti ti-chart-bar"></span>Home</div>
-    <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Clienti</div>
     <div class="tab" onclick="goTab('ses')"><span class="ti ti-calendar"></span>Sessioni</div>
-    <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
-    <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuova</div>
+    <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Clienti</div>
+    <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuovo</div>
     <div class="tab" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttori</div>
+    <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
     <div class="tab" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</div>
   </div>
 
@@ -691,7 +691,7 @@ function goTab(t){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(tb=>tb.classList.remove('active'));
   document.getElementById('page-'+t).classList.add('active');
-  const idx=['dash','isc','ses','cas','add','istr-recap','cfg'].indexOf(t);
+  const idx=['dash','ses','isc','add','istr-recap','cas','cfg'].indexOf(t);
   document.querySelectorAll('.tab')[idx].classList.add('active');
   if(t==='istr-recap') renderIstrRecap();
 }
@@ -807,9 +807,13 @@ function renderIsc(){
     const pa = isc.pacchetti_attivi || 0;
     const certColor = isc.cert_stato==='valido'?'b-ok':(isc.cert_stato==='scaduto'||isc.cert_stato==='non presentato'?'b-danger':'b-warn');
     const certEmoji = isc.cert_stato==='valido'?'🟢':(isc.cert_stato==='scaduto'||isc.cert_stato==='non presentato'?'🔴':'🟡');
-    return `<div class="card card-click" onclick="openIsc('${isc.id}')">
+    const sospeso = isc.stato === 'sospeso';
+    return `<div class="card card-click" onclick="openIsc('${isc.id}')" style="${sospeso?'opacity:.55':''}">
       <div class="row">
-        <div style="font-size:15px;font-weight:700">${isc.nome}${isc.cognome?' '+isc.cognome:''}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:15px;font-weight:700">${isc.nome}${isc.cognome?' '+isc.cognome:''}</div>
+          ${sospeso?'<span class="badge b-danger">SOSPESO</span>':''}
+        </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span title="Certificato medico: ${isc.cert_stato||'non presentato'}">${certEmoji}</span>
           <span class="badge ${pa>0?'b-ok':'b-danger'}">${pa} pacchett${pa===1?'o':'i'}</span>
@@ -913,6 +917,18 @@ async function openIsc(id){
     h += '<div class="sec" style="margin-top:14px">Pacchetti precedenti</div>';
     storici.forEach(p=>{h+=`<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--bg);color:var(--muted)">${p.corso_nome} · ${p.lezioni_fatte}/${p.lezioni_tot} lez. · <span class="badge b-pink">${p.stato}</span></div>`;});
   }
+  // Pulsanti azioni cliente in fondo
+  h += `<div class="divider"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    ${iscritta.stato==='sospeso'
+      ? `<button class="btn btn-primary" onclick="riattiva(${id})"><span class="ti ti-player-play"></span> Riattiva</button>`
+      : `<button class="btn" style="border-color:var(--warn);color:var(--warn)" onclick="sospendi(${id})"><span class="ti ti-pause"></span> Sospendi</button>`
+    }
+    <button class="btn btn-red" onclick="cancellaCliente(${id})">
+      <span class="ti ti-trash"></span> Cancella
+    </button>
+  </div>`;
+
   document.getElementById('mi-body').innerHTML=h;
 }
 
@@ -1400,6 +1416,58 @@ async function downloadDb(){
 }
 
 // ══ UTILS UI ═════════════════════════════════════════════════════════════════
+async function sospendi(iid){
+  const cliente = clienti.find(x=>x.id===iid);
+  const nome = cliente ? cliente.nome+' '+(cliente.cognome||'') : '';
+  if(!confirm(`Vuoi sospendere ${nome.trim()}?\n\nIl cliente non potrà più prenotare lezioni. I dati rimangono invariati.\nPuoi riattivarlo in qualsiasi momento.`)) return;
+  const r = await fetch(API+`/api/v2/iscritte/${iid}/sospendi`, {
+    method:'POST', headers:{'Content-Type':'application/json','X-Auth-Token':token}
+  });
+  const data = await r.json();
+  if(data.ok){
+    closeOv('ov-isc');
+    toast(`${nome.trim()} sospeso.`);
+    const iv2=await GET('/api/v2/iscritte');
+    if(iv2){clienti=iv2; renderIsc(); renderDash();}
+  } else {
+    toast('Errore nella sospensione', true);
+  }
+}
+
+async function cancellaCliente(iid){
+  const cliente = clienti.find(x=>x.id===iid);
+  const nome = cliente ? cliente.nome+' '+(cliente.cognome||'') : '';
+  const conf1 = confirm(`⚠️ ATTENZIONE\n\nStai per cancellare definitivamente ${nome.trim()}.\n\nVerranno eliminati:\n• Tutti i dati anagrafici\n• Tutti i pacchetti\n• Tutti i pagamenti\n• Tutte le presenze\n\nQuesta operazione è IRREVERSIBILE.\n\nVuoi continuare?`);
+  if(!conf1) return;
+  const conf2 = confirm(`Confermi la cancellazione definitiva di ${nome.trim()}?`);
+  if(!conf2) return;
+  const r = await fetch(API+`/api/v2/iscritte/${iid}`, {
+    method:'DELETE', headers:{'X-Auth-Token':token}
+  });
+  const data = await r.json();
+  if(data.ok){
+    closeOv('ov-isc');
+    toast(`${nome.trim()} cancellato definitivamente.`);
+    const iv2=await GET('/api/v2/iscritte');
+    if(iv2){clienti=iv2; renderIsc(); renderDash();}
+  } else {
+    toast('Errore nella cancellazione', true);
+  }
+}
+
+async function riattiva(iid){
+  const r = await fetch(API+`/api/v2/iscritte/${iid}/riattiva`, {
+    method:'POST', headers:{'Content-Type':'application/json','X-Auth-Token':token}
+  });
+  const data = await r.json();
+  if(data.ok){
+    toast('Cliente riattivato!');
+    const iv2=await GET('/api/v2/iscritte');
+    if(iv2){clienti=iv2; renderIsc(); renderDash();}
+    openIsc(iid);
+  }
+}
+
 async function approvaCert(iid){
   if(!confirm('Approvi il certificato medico?')) return;
   await POST(`/api/v2/certificati/${iid}/approva`,{});
