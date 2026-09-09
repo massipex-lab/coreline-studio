@@ -1151,11 +1151,18 @@ function renderSes(){
     const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);
     const fut=sd>=oggi;
     const chips=s.partecipanti.map(n=>`<span class="pchip">${n.split(' ')[0]}</span>`).join('');
+    const postiMax = s.posti_max || 6;
+    const nPren = s.partecipanti.length;
+    const postiColor = nPren >= postiMax ? 'var(--red)' : (nPren >= postiMax-2 ? 'var(--warn)' : 'var(--cl-dark)');
     h+=`<div class="ses-card">
       <div class="row">
-        <div><div class="ses-title">${s.tipo}</div><div class="ses-meta">${s.orario} · ${s.istr}${s.note?' · '+s.note:''}</div></div>
+        <div>
+          <div class="ses-title">${s.tipo}</div>
+          <div class="ses-meta">${s.orario} · ${s.istr}${s.note?' · '+s.note:''}</div>
+        </div>
         <div style="display:flex;gap:6px;align-items:center">
-          ${fut?`<button class="btn btn-primary btn-sm btn-icon" onclick="openPren(${s.id})"><span class="ti ti-user-plus"></span></button>`:`<span class="badge b-pink">${s.partecipanti.length}</span>`}
+          <span style="font-size:13px;font-weight:700;color:${postiColor}">${nPren}/${postiMax}</span>
+          ${fut?`<button class="btn btn-primary btn-sm btn-icon" onclick="openPren(${s.id})"><span class="ti ti-user-plus"></span></button>`:''}
           <button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteSessione(${s.id},'${s.tipo}'))" title="Cancella sessione"><span class="ti ti-trash"></span></button>
         </div>
       </div>
@@ -1229,10 +1236,20 @@ async function creaSessione(){
   const tipo=document.getElementById('ns-tipo').value;
   const istr=document.getElementById('ns-istr').value;
   if(!data||!tipo||!istr){toast('Compila data, corso e istruttore',true);return;}
-  const nuova={id:Date.now(),data,orario:document.getElementById('ns-ora-start').value+'-'+document.getElementById('ns-ora-end').value,tipo,istr,partecipanti:[],note:document.getElementById('ns-note').value};
-  sessioni.push(nuova);
-  await POST('/api/sessioni',sessioni);
-  closeOv('ov-ses'); toast('Sessione creata!'); renderSes(); renderDash();
+  const orario=document.getElementById('ns-ora-start').value+'-'+document.getElementById('ns-ora-end').value;
+  const posti_max=parseInt(document.getElementById('ns-posti').value)||6;
+  const r=await POST('/api/v2/sessioni/crea',{
+    data, orario, tipo, istr,
+    posti_max,
+    note:document.getElementById('ns-note').value
+  });
+  if(r&&r.ok){
+    closeOv('ov-ses');
+    toast('Sessione creata!');
+    const s=await GET('/api/sessioni'); if(s){sessioni=s; renderSes(); renderDash();}
+  } else {
+    toast('Errore nella creazione',true);
+  }
 }
 
 // selPart v2: [{iscritta_id, pacchetto_id, nome}]
@@ -1332,6 +1349,12 @@ function togglePartV2(iid){
 
 async function conferma(){
   if(!activeSes) return;
+  const postiMax = activeSes.posti_max || 6;
+  const totPartecipanti = selPartV2.length + ospiti.length;
+  if(totPartecipanti > postiMax){
+    toast('Hai superato il limite di '+postiMax+' partecipanti!', true);
+    return;
+  }
   await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {
     presenze: selPartV2.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),
     ospiti: ospiti.map(o=>o.nome)
