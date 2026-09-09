@@ -414,6 +414,9 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
       </select>
     </div>
     <div class="field"><label>Categoria</label><select id="mv-cat"></select></div>
+    <div class="field"><label>Metodo</label>
+      <select id="mv-metodo"><option>Contanti</option><option>Bonifico</option><option>Carta</option></select>
+    </div>
     <div class="field"><label>Descrizione</label><input type="text" id="mv-desc" placeholder="Es. Abbonamento Giulia Rossi"></div>
     <div class="field"><label>Importo (€) *</label><input type="number" id="mv-imp" placeholder="0" step="0.01"></div>
     <div class="field"><label>Note</label><input type="text" id="mv-note" placeholder="Opzionale"></div>
@@ -699,14 +702,14 @@ async function loadAll(){
     }
   } catch(e) { console.warn('Processa sessioni:', e); }
 
-  const [iv2,s,c,ist,cas]=await Promise.all([
-    GET('/api/v2/iscritte'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/cassa')
+  const [iv2,s,c,ist,mov]=await Promise.all([
+    GET('/api/v2/iscritte'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/v2/movimenti')
   ]);
   if(iv2) clienti=iv2;
   if(s) sessioni=s;
   if(c) corsi=c;
   if(ist) istruttori=ist;
-  if(cas) cassa=cas;
+  if(mov) cassa=mov;
   // Carica certificati da approvare per dashboard
   try {
     const certsResp = await GET('/api/v2/certificati/da-approvare');
@@ -729,6 +732,19 @@ function goTab(t){
   const idx=['dash','ses','isc','add','istr-recap','cas','cfg'].indexOf(t);
   document.querySelectorAll('.tab')[idx].classList.add('active');
   if(t==='istr-recap') renderIstrRecap();
+  // Quando si torna in Home ricarica i dati dal server
+  if(t==='dash') {
+    Promise.all([
+      GET('/api/v2/iscritte'),
+      GET('/api/v2/movimenti'),
+      GET('/api/v2/certificati/da-approvare')
+    ]).then(([iv2, newMov, certsResp]) => {
+      if(iv2) clienti=iv2;
+      if(newMov) cassa=newMov;
+      if(certsResp){ certDaApprovare=certsResp.da_approvare||[]; certMancanti=certsResp.mancanti||[]; certPresenti=certsResp.presenti||[]; }
+      renderDash(); updateTopbar();
+    });
+  }
 }
 
 // ══ SELECTS DINAMICI ═════════════════════════════════════════════════════════
@@ -758,7 +774,7 @@ function updateCatOptions(){
 
 // ══ TOPBAR ═══════════════════════════════════════════════════════════════════
 function updateTopbar(){
-  document.getElementById('top-inc').textContent=euro(clienti.reduce((a,i)=>a+(i.totale_pagato||i.pagato||0),0));
+  document.getElementById('top-inc').textContent=euro(cassa.filter(m=>m.tipo==='entrata').reduce((a,m)=>a+m.importo,0));
 }
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
@@ -921,7 +937,23 @@ async function openIsc(id){
   }
   h += `<button class="btn btn-full" style="margin-bottom:14px" onclick="openAddPacchetto(${id})"><span class="ti ti-plus"></span> Aggiungi pacchetto</button>`;
   // Storico pagamenti
-  if(pagamenti.length){
+  // Filtra movimenti per questa iscritta
+  const movCliente = cassa.filter(m=>m.iscritta_id===parseInt(id));
+  if(movCliente.length){
+    h += '<div class="sec">Storico pagamenti</div><div class="card" style="margin-bottom:14px">';
+    movCliente.sort((a,b)=>a.data>b.data?-1:1).forEach(m=>{
+      h += `<div class="mov-row">
+        <div><div class="mov-desc">${m.descrizione||m.categoria||'—'}</div>
+        <div class="mov-meta">${fmtShort(m.data)}${m.metodo?' · '+m.metodo:''}</div></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="mov-importo" style="color:var(--green)">+${euro(m.importo)}</div>
+          <button class="btn-ghost" onclick="withLoading(this,()=>deleteMov(${m.id}))" style="color:var(--red)" title="Elimina"><span class="ti ti-trash" style="font-size:13px"></span></button>
+        </div>
+      </div>`;
+    });
+    h += '</div>';
+  } else if(pagamenti.length){
+    // Fallback: pagamenti vecchi non ancora migrati
     h += '<div class="sec">Storico pagamenti</div><div class="card" style="margin-bottom:14px">';
     pagamenti.forEach(pg=>{
       h += `<div class="mov-row"><div><div class="mov-desc">${pg.metodo}${pg.note?' · '+pg.note:''}</div><div class="mov-meta">${fmtShort(pg.data)}</div></div><div class="mov-importo" style="color:var(--green)">+${euro(pg.importo)}</div></div>`;
@@ -1032,6 +1064,10 @@ async function salvaAddPagamento(){
   await POST(`/api/v2/iscritte/${_addPagIid}/pagamenti`,{pacchetto_id:_addPagPid,data:document.getElementById('pag-data').value,importo,metodo:document.getElementById('pag-metodo').value,note:document.getElementById('pag-note').value});
   closeOv('ov-add-pag');
   toast('Pagamento registrato!');
+  const newMov2=await GET('/api/v2/movimenti');
+  if(newMov2){cassa=newMov2; renderCas(); renderDash();}
+  const iv2b=await GET('/api/v2/iscritte');
+  if(iv2b){clienti=iv2b; renderIsc(); updateTopbar();}
   openIsc(_addPagIid);
 }
 
@@ -1057,9 +1093,16 @@ async function aggiungiIsc(){
   });
   ['n-nome','n-pagato','n-lez','n-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('n-pac').value='';
-  const iv2=await GET('/api/v2/iscritte');
-  if(iv2){clienti=iv2;}
-  toast(nome+' aggiunto!'); goTab('isc'); renderIsc(); renderDash(); updateTopbar();
+  // Ricarica tutto dal server per avere dati aggiornati (incluso cassa)
+  const [iv2, newCas] = await Promise.all([
+    GET('/api/v2/iscritte'),
+    GET('/api/v2/movimenti')
+  ]);
+  if(iv2) clienti=iv2;
+  if(newCas) cassa=newCas;
+  toast(nome+' aggiunto!');
+  goTab('isc');
+  renderIsc(); renderDash(); renderCas(); updateTopbar();
 }
 
 // ══ SESSIONI ═════════════════════════════════════════════════════════════════
@@ -1227,8 +1270,8 @@ function setCasT(t){
 }
 
 function renderCas(){
-  const entrate=cassa.filter(m=>m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
-  const uscite=cassa.filter(m=>m.tipo==='Uscita').reduce((a,m)=>a+m.importo,0);
+  const entrate=cassa.filter(m=>m.tipo==='entrata').reduce((a,m)=>a+m.importo,0);
+  const uscite=cassa.filter(m=>m.tipo==='uscita').reduce((a,m)=>a+m.importo,0);
   document.getElementById('cas-saldo').innerHTML=`
     <div class="saldo-box">
       <div class="lbl">Saldo</div>
@@ -1236,17 +1279,17 @@ function renderCas(){
       <div class="sub">Entrate ${euro(entrate)} — Uscite ${euro(uscite)}</div>
     </div>`;
   let list=[...cassa].sort((a,b)=>a.data>b.data?-1:1);
-  if(casTab==='entrate') list=list.filter(m=>m.tipo==='Entrata');
-  if(casTab==='uscite') list=list.filter(m=>m.tipo==='Uscita');
+  if(casTab==='entrate') list=list.filter(m=>m.tipo==='entrata');
+  if(casTab==='uscite') list=list.filter(m=>m.tipo==='uscita');
   if(!list.length){document.getElementById('cas-list').innerHTML='<div class="empty"><span class="ti ti-cash-off"></span>Nessun movimento</div>';return;}
   let h='',lastD='';
   list.forEach(m=>{
     if(m.data!==lastD){h+=`<div class="ses-day">${fmtData(m.data)}</div>`;lastD=m.data;}
-    const isE=m.tipo==='Entrata';
+    const isE=m.tipo==='entrata';
     h+=`<div class="mov-row">
       <div style="flex:1">
         <div class="mov-desc">${m.descrizione||m.categoria||'—'}</div>
-        <div class="mov-meta">${m.categoria}${m.note?' · '+m.note:''}</div>
+        <div class="mov-meta">${m.categoria}${m.metodo?' · '+m.metodo:''}${m.note?' · '+m.note:''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <div class="mov-importo" style="color:${isE?'var(--green)':'var(--red)'}">${isE?'+':'−'}${euro(m.importo)}</div>
@@ -1278,31 +1321,35 @@ function openEditMov(mid){
 async function salvaMov(mid){
   const importo=parseFloat(document.getElementById('mv-imp').value);
   if(!importo||importo<=0){toast('Inserisci un importo valido',true);return;}
-  await fetch(API+`/api/v2/cassa/${mid}`,{
+  await fetch(API+`/api/v2/movimenti/${mid}`,{
     method:'PUT',
     headers:{'Content-Type':'application/json','X-Auth-Token':token},
     body:JSON.stringify({
       data:document.getElementById('mv-data').value,
-      tipo:document.getElementById('mv-tipo').value,
+      tipo:document.getElementById('mv-tipo').value.toLowerCase(),
       categoria:document.getElementById('mv-cat').value,
       descrizione:document.getElementById('mv-desc').value,
-      importo, note:document.getElementById('mv-note').value
+      importo, metodo:document.getElementById('mv-metodo')?.value||'Contanti',
+      note:document.getElementById('mv-note').value
     })
   });
   closeOv('ov-mov');
   toast('Movimento aggiornato!');
-  const newCas=await GET('/api/cassa'); if(newCas){cassa=newCas; renderCas(); renderDash();}
-  // Ripristina pulsante per nuovo inserimento
+  const newMov=await GET('/api/v2/movimenti'); if(newMov){cassa=newMov; renderCas(); renderDash();}
   const btn=document.querySelector('#ov-mov .btn-primary');
   btn.onclick=()=>withLoading(btn,aggiungiMov);
   btn.textContent='Aggiungi movimento';
 }
 
 async function deleteMov(mid){
-  if(!confirm('Eliminare questo movimento di cassa?')) return;
-  await fetch(API+`/api/v2/cassa/${mid}`,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  if(!confirm('Eliminare questo movimento?')) return;
+  await fetch(API+`/api/v2/movimenti/${mid}`,{method:'DELETE',headers:{'X-Auth-Token':token}});
   toast('Movimento eliminato.');
-  const newCas=await GET('/api/cassa'); if(newCas){cassa=newCas; renderCas(); renderDash();}
+  const newMov=await GET('/api/v2/movimenti');
+  if(newMov){cassa=newMov; renderCas(); renderDash();}
+  // Aggiorna anche clienti per saldi
+  const iv2=await GET('/api/v2/iscritte');
+  if(iv2){clienti=iv2; renderIsc(); updateTopbar();}
 }
 
 function openNuovaMov(){
@@ -1318,9 +1365,16 @@ function openNuovaMov(){
 async function aggiungiMov(){
   const imp=parseFloat(document.getElementById('mv-imp').value);
   if(!imp||imp<=0){toast('Inserisci un importo valido',true);return;}
-  const mov={id:Date.now(),data:document.getElementById('mv-data').value,tipo:document.getElementById('mv-tipo').value,categoria:document.getElementById('mv-cat').value,descrizione:document.getElementById('mv-desc').value,importo:imp,note:document.getElementById('mv-note').value};
-  cassa.push(mov);
-  await POST('/api/cassa',cassa);
+  const tipo=document.getElementById('mv-tipo').value.toLowerCase();
+  await POST('/api/v2/movimenti',{
+    data:document.getElementById('mv-data').value,
+    tipo, categoria:document.getElementById('mv-cat').value,
+    descrizione:document.getElementById('mv-desc').value,
+    importo:imp, metodo:document.getElementById('mv-metodo')?.value||'Contanti',
+    note:document.getElementById('mv-note').value
+  });
+  const newMov=await GET('/api/v2/movimenti');
+  if(newMov) cassa=newMov;
   closeOv('ov-mov'); toast('Movimento aggiunto!'); renderCas(); renderDash();
 }
 
@@ -1501,6 +1555,18 @@ async function uploadDb(input){
   if(btn2) btnLoading(btn2, false);
 }
 
+async function migraDati(){
+  const r = await POST('/api/v2/movimenti/migra', {});
+  const el = document.getElementById('migra-result');
+  if(r && r.ok){
+    el.innerHTML = `<span style="color:var(--green)">✓ Migrazione completata: ${r.totale} movimenti importati (${r.migrati_da_cassa} da cassa, ${r.migrati_da_pagamenti} da pagamenti)</span>`;
+    const newMov=await GET('/api/v2/movimenti');
+    if(newMov){cassa=newMov; renderCas(); renderDash(); updateTopbar();}
+  } else {
+    el.innerHTML = `<span style="color:var(--muted)">${r?.message||'Errore'}</span>`;
+  }
+}
+
 async function downloadDb(){
   const a=document.createElement('a');
   a.href=API+'/api/download';
@@ -1552,7 +1618,7 @@ async function cancellaCliente(iid){
     toast(nome + ' cancellato.' + (cancellaCassa ? ' Flusso cassa rimosso.' : ' Flusso cassa mantenuto.'));
     const iv2 = await GET('/api/v2/iscritte');
     if(iv2){clienti=iv2; renderIsc(); renderDash();}
-    const newCas = await GET('/api/cassa');
+    const newCas = await GET('/api/v2/movimenti');
     if(newCas){cassa=newCas; renderCas();}
   } else {
     toast('Errore nella cancellazione', true);
