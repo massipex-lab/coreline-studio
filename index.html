@@ -1150,7 +1150,7 @@ function renderSes(){
     if(s.data!==lastD){h+=`<div class="ses-day">${fmtData(s.data)}</div>`;lastD=s.data;}
     const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);
     const fut=sd>=oggi;
-    const chips=s.partecipanti.map(n=>`<span class="pchip">${n.split(' ')[0]}</span>`).join('');
+    const chips=s.partecipanti.map(n=>`<span class="pchip">${n}</span>`).join('');
     const postiMax = s.posti_max || 6;
     const nPren = s.partecipanti.length;
     const postiColor = nPren >= postiMax ? 'var(--red)' : (nPren >= postiMax-2 ? 'var(--warn)' : 'var(--cl-dark)');
