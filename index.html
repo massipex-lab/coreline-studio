@@ -327,6 +327,19 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
     <!-- CONFIG -->
     <div class="page" id="page-cfg">
+      <div class="sec">Configurazione studio</div>
+      <div class="card" style="margin-bottom:14px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Posti massimi per tipo sessione</div>
+        <div class="field-row">
+          <div class="field"><label>Reformer (default)</label><input type="number" id="cfg-posti-ref" min="1" max="20" placeholder="6"></div>
+          <div class="field"><label>Mat / Matwork</label><input type="number" id="cfg-posti-mat" min="1" max="20" placeholder="8"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Privata</label><input type="number" id="cfg-posti-priv" min="1" max="20" placeholder="1"></div>
+          <div class="field"><label>Default globale</label><input type="number" id="cfg-posti-def" min="1" max="20" placeholder="6"></div>
+        </div>
+        <button class="btn btn-primary" onclick="withLoading(this,salvaConfigPosti)">Salva configurazione</button>
+      </div>
       <div class="sec">Corsi</div>
       <div class="card" id="corsi-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoCorso()"><span class="ti ti-plus"></span> Aggiungi corso</button>
@@ -403,6 +416,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     </div>
     <div class="field"><label>Tipo corso *</label><select id="ns-tipo"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Istruttrice/Istruttore *</label><select id="ns-istr"><option value="">— seleziona —</option></select></div>
+    <div class="field"><label>Posti massimi</label><input type="number" id="ns-posti" min="1" max="20" value="6"></div>
     <div class="field"><label>Note</label><input type="text" id="ns-note" placeholder="Opzionale"></div>
     <button class="btn btn-primary btn-full" onclick="withLoading(this,creaSessione)">Crea sessione</button>
   </div>
@@ -552,6 +566,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div class="field"><label>Data inizio *</label><input type="date" id="ric-inizio"></div>
       <div class="field"><label>Data fine *</label><input type="date" id="ric-fine"></div>
     </div>
+    <div class="field"><label>Posti massimi</label><input type="number" id="ric-posti" min="1" max="20" value="6"></div>
     <div class="field"><label>Note</label><input type="text" id="ric-note" placeholder="Opzionale"></div>
     <button class="btn btn-primary btn-full" onclick="withLoading(this,creaRicorrenza)">Crea sessioni ricorrenti</button>
   </div>
@@ -567,7 +582,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
 let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
-let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[];
+let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[], studioConfig={};
 
 // ── UTILITY: gestione bottoni durante azioni async ────────────────────────────
 function btnLoading(btnEl, loading, originalText=null){
@@ -727,6 +742,8 @@ async function loadAll(){
       certPresenti = certsResp.presenti || [];
     }
   } catch(e){}
+  // Carica config studio
+  try { const cfg=await GET('/api/v2/config'); if(cfg) studioConfig=cfg; } catch(e){}
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
@@ -1155,6 +1172,7 @@ function renderSes(){
 
 function openNuovaSes(){
   document.getElementById('ns-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('ns-posti').value=getPostiMax('');
   document.getElementById('ns-note').value='';
   document.getElementById('ov-ses').classList.add('open');
 }
@@ -1168,6 +1186,8 @@ function openRicorrente(){
   // Popola selects corsi e istruttori
   document.getElementById('ric-tipo').innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option>${c.nome}</option>`).join('');
   document.getElementById('ric-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
+  document.getElementById('ric-posti').value=getPostiMax('');
+  document.getElementById('ric-tipo').onchange=function(){ document.getElementById('ric-posti').value=getPostiMax(this.value); };
   document.getElementById('ov-ric').classList.add('open');
 }
 
@@ -1183,6 +1203,7 @@ async function creaRicorrenza(){
   const r=await POST('/api/v2/ricorrenze',{
     giorni_settimana:giorni, orario:document.getElementById('ric-ora').value,
     tipo, istr, data_inizio:inizio, data_fine:fine,
+    posti_max:parseInt(document.getElementById('ric-posti').value)||6,
     note:document.getElementById('ric-note').value
   });
   closeOv('ov-ric');
@@ -1495,6 +1516,18 @@ function renderIstrRecap(){
   }).join('');
 }
 
+async function salvaConfigPosti(){
+  await POST('/api/v2/config',{
+    posti_max_reformer: document.getElementById('cfg-posti-ref').value||'6',
+    posti_max_mat: document.getElementById('cfg-posti-mat').value||'8',
+    posti_max_privata: document.getElementById('cfg-posti-priv').value||'1',
+    posti_max_default: document.getElementById('cfg-posti-def').value||'6'
+  });
+  const cfg=await GET('/api/v2/config');
+  if(cfg) studioConfig=cfg;
+  toast('Configurazione salvata!');
+}
+
 function renderCfg(){
   // Corsi
   document.getElementById('corsi-list').innerHTML=corsi.length
@@ -1717,6 +1750,14 @@ async function salvaEditCert(){
   const iv2=await GET('/api/v2/iscritte');
   if(iv2){clienti=iv2; renderIsc();}
   openIsc(iid);
+}
+
+function getPostiMax(tipo){
+  const t=(tipo||'').toLowerCase();
+  if(t.includes('privat')) return parseInt(studioConfig?.posti_max_privata?.valore||1);
+  if(t.includes('mat')&&!t.includes('reformer')) return parseInt(studioConfig?.posti_max_mat?.valore||8);
+  if(t.includes('reformer')) return parseInt(studioConfig?.posti_max_reformer?.valore||6);
+  return parseInt(studioConfig?.posti_max_default?.valore||6);
 }
 
 function closeOv(id){
