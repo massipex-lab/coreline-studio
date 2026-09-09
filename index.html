@@ -1529,7 +1529,7 @@ function renderCfg(){
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="ti ti-pencil" onclick="openEditCorso(${i})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
-          <span class="ti ti-trash" onclick="withLoading({disabled:false,style:{},innerHTML:''},()=>deleteCorso(${c.id},'${(c.nome||'').replace(/'/g,'\'')}',${ hasPac}))" style="cursor:pointer;color:var(--red);font-size:16px" title="${hasPac?'Attenzione: ci sono pacchetti attivi':'Cancella corso'}"></span>
+          <span class="ti ti-trash" onclick="deleteCorso(${c.id},'${(c.nome||'').replace(/'/g,"'")}',${hasPac})" style="cursor:pointer;color:var(--red);font-size:16px" title="${hasPac?'Attenzione: ci sono pacchetti attivi':'Cancella corso'}"></span>
         </div>
       </div>`;
     }).join('')
