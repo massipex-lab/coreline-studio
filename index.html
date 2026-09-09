@@ -92,6 +92,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .btn-primary{background:var(--cl-dark);color:#fff;border-color:var(--cl-dark)}
 .btn-green{background:var(--green);color:#fff;border-color:var(--green)}
 .btn-red{background:var(--red);color:#fff;border-color:var(--red)}
+.ric-giorno{width:18px;height:18px;accent-color:var(--cl-dark);cursor:pointer;flex-shrink:0}
 .btn-full{width:100%;justify-content:center}
 .btn-sm{padding:6px 12px;font-size:12px}
 .btn-icon{padding:8px 10px}
@@ -1227,6 +1228,7 @@ async function creaSessione(){
 
 // selPart v2: [{iscritta_id, pacchetto_id, nome}]
 let selPartV2 = [];
+let ospiti = []; // [{nome}] ospiti non clienti
 
 async function openPren(sid){
   activeSes=sessioni.find(s=>s.id===sid||s.id===Number(sid)); if(!activeSes) return;
@@ -1237,6 +1239,9 @@ async function openPren(sid){
   // Carica presenze attuali della sessione
   const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
   selPartV2 = presenze.map(p=>({iscritta_id:p.iscritta_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
+  ospiti = [];
+  document.getElementById('ospiti-list').innerHTML = '';
+  document.getElementById('ospite-nome').value = '';
 
   // Carica tutti i pacchetti attivi in una sola chiamata
   const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
@@ -1274,6 +1279,28 @@ async function openPren(sid){
   document.getElementById('pren-picker').innerHTML = html || '<div style="font-size:13px;color:var(--muted)">Nessun cliente con pacchetti attivi</div>';
 }
 
+function aggiungiOspite(){
+  const nome = document.getElementById('ospite-nome').value.trim();
+  if(!nome) return;
+  ospiti.push({nome});
+  document.getElementById('ospite-nome').value = '';
+  renderOspiti();
+}
+
+function rimuoviOspite(idx){
+  ospiti.splice(idx,1);
+  renderOspiti();
+}
+
+function renderOspiti(){
+  document.getElementById('ospiti-list').innerHTML = ospiti.map((o,i)=>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border-radius:6px;margin-bottom:4px;font-size:13px">
+      <span>👤 ${o.nome} <span style="font-size:10px;color:var(--muted)">(ospite)</span></span>
+      <span class="ti ti-x" onclick="rimuoviOspite(${i})" style="cursor:pointer;color:var(--muted);font-size:14px"></span>
+    </div>`
+  ).join('');
+}
+
 function togglePartV2(iid){
   const isc = clienti.find(x=>x.id===iid); if(!isc) return;
   const inS = selPartV2.find(x=>x.iscritta_id===iid);
@@ -1292,9 +1319,11 @@ function togglePartV2(iid){
 
 async function conferma(){
   if(!activeSes) return;
-  await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {presenze: selPartV2.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id}))});
-  // Aggiorna lista partecipanti locale per la UI
-  activeSes.partecipanti = selPartV2.map(p=>p.nome);
+  await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {
+    presenze: selPartV2.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),
+    ospiti: ospiti.map(o=>o.nome)
+  });
+  activeSes.partecipanti = [...selPartV2.map(p=>p.nome), ...ospiti.map(o=>o.nome)];
   closeOv('ov-pren');
   toast(`Salvato · ${selPartV2.length} partecipant${selPartV2.length===1?'e':'i'}`);
   renderSes(); renderDash();
