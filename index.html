@@ -806,8 +806,14 @@ function renderDash(){
 
   // Alerts
   let h='';
-  daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}${i.cognome?' '+i.cognome:''}</span><span class="badge b-warn">Nessun pacchetto</span></div>`;});
-  daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row"><span>${i.nome}${i.cognome?' '+i.cognome:''}</span><span class="badge b-danger">${euro(i.totale_da_saldare)}</span></div>`;});
+  daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row">
+    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--pink);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="badge b-warn">Nessun pacchetto</span>
+  </div>`;});
+  daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row">
+    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--pink);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="badge b-danger">${euro(i.totale_da_saldare)}</span>
+  </div>`;});
   document.getElementById('dash-alerts').innerHTML=h||'<div class="empty"><span class="ti ti-circle-check" style="color:var(--green)"></span>Tutto ok!</div>';
 
   // Sessioni oggi
@@ -826,7 +832,7 @@ function renderDash(){
     hCert = certAlert.map(c=>`
       <div class="alert-row">
         <div>
-          <div style="font-weight:600">${c.nome} ${c.cognome||''}</div>
+          <div style="font-weight:600;cursor:pointer;color:var(--pink)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
           <div style="font-size:11px;color:var(--muted)">
             ${c.stato==='in attesa approvazione'?'🟡 In attesa':c.stato==='non presentato'?'🔴 Non presentato':c.stato==='scaduto'?'🔴 Scaduto':'🟡 Grace period'}
             ${c.cert_medico_scadenza?' · Scad: '+fmtShort(c.cert_medico_scadenza):''}
