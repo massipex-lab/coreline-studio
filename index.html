@@ -282,7 +282,6 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <!-- CASSA -->
     <div class="page" id="page-cas">
       <div id="cas-saldo" style="margin-bottom:14px"></div>
-      <div class="search-wrap" style="margin-bottom:10px"><span class="ti ti-search"></span><input type="text" id="srch-cas" placeholder="Cerca movimento…" oninput="renderCas()"></div>
       <div class="row" style="margin-bottom:12px">
         <div class="chips" style="margin:0">
           <div class="chip on" id="ct-tutti" onclick="setCasT('tutti')">Tutti</div>
@@ -291,6 +290,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
         </div>
         <button class="btn btn-primary btn-sm" onclick="openNuovaMov()"><span class="ti ti-plus"></span> Movimento</button>
       </div>
+      <div class="search-wrap" style="margin-bottom:10px"><span class="ti ti-search"></span><input type="text" id="srch-cas" placeholder="Cerca movimento…" oninput="renderCas()"></div>
       <div id="cas-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
 
@@ -1284,9 +1284,16 @@ function renderCas(){
       <div class="val">${euro(entrate-uscite)}</div>
       <div class="sub">Entrate ${euro(entrate)} — Uscite ${euro(uscite)}</div>
     </div>`;
+  const qCas=(document.getElementById('srch-cas')?.value||'').toLowerCase().trim();
   let list=[...cassa].sort((a,b)=>a.data>b.data?-1:1);
   if(casTab==='entrate') list=list.filter(m=>m.tipo==='entrata');
   if(casTab==='uscite') list=list.filter(m=>m.tipo==='uscita');
+  if(qCas) list=list.filter(m=>
+    (m.descrizione||'').toLowerCase().includes(qCas)||
+    (m.categoria||'').toLowerCase().includes(qCas)||
+    (m.note||'').toLowerCase().includes(qCas)||
+    String(m.importo||'').includes(qCas)
+  );
   if(!list.length){document.getElementById('cas-list').innerHTML='<div class="empty"><span class="ti ti-cash-off"></span>Nessun movimento</div>';return;}
   let h='',lastD='';
   list.forEach(m=>{
