@@ -1154,7 +1154,10 @@ function renderSes(){
     h+=`<div class="ses-card">
       <div class="row">
         <div><div class="ses-title">${s.tipo}</div><div class="ses-meta">${s.orario} · ${s.istr}${s.note?' · '+s.note:''}</div></div>
-        ${fut?`<button class="btn btn-primary btn-sm btn-icon" onclick="openPren(${s.id})"><span class="ti ti-user-plus"></span></button>`:`<span class="badge b-pink">${s.partecipanti.length}</span>`}
+        <div style="display:flex;gap:6px;align-items:center">
+          ${fut?`<button class="btn btn-primary btn-sm btn-icon" onclick="openPren(${s.id})"><span class="ti ti-user-plus"></span></button>`:`<span class="badge b-pink">${s.partecipanti.length}</span>`}
+          <button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="deleteSessione(${s.id},'${s.tipo}')" title="Cancella sessione"><span class="ti ti-trash"></span></button>
+        </div>
       </div>
       <div class="pchips">${chips||'<span style="font-size:12px;color:var(--muted)">Nessuna prenotazione</span>'}</div>
     </div>`;
@@ -1167,6 +1170,18 @@ function openNuovaSes(){
   document.getElementById('ns-posti').value=getPostiMax();
   document.getElementById('ns-note').value='';
   document.getElementById('ov-ses').classList.add('open');
+}
+
+async function deleteSessione(sid, tipo){
+  if(!confirm('Cancellare la sessione "'+tipo+'"? Verranno rimosse anche le prenotazioni.')) return;
+  const r = await fetch(API+'/api/sessioni/'+sid,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  const data = await r.json();
+  if(data.ok){
+    toast('Sessione cancellata.');
+    const s=await GET('/api/sessioni'); if(s){sessioni=s; renderSes(); renderDash();}
+  } else {
+    toast(data.error||'Impossibile cancellare',true);
+  }
 }
 
 function openRicorrente(){
