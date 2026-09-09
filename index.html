@@ -853,8 +853,14 @@ function setFilt(f){
 }
 
 function renderIsc(){
-  const q=(document.getElementById('srch').value||'').toLowerCase();
-  let list=clienti.filter(i=>i.nome.toLowerCase().includes(q));
+  const q=(document.getElementById('srch').value||'').toLowerCase().trim();
+  let list=clienti.filter(i=>{
+    const nomeCompleto=(i.nome+' '+(i.cognome||'')).toLowerCase();
+    const cognomeNome=((i.cognome||'')+' '+i.nome).toLowerCase();
+    // Cerca su nome, cognome, nome+cognome, cognome+nome
+    return !q || nomeCompleto.includes(q) || cognomeNome.includes(q) ||
+      i.nome.toLowerCase().includes(q) || (i.cognome||'').toLowerCase().includes(q);
+  });
   if(filtro==='rinnovo') list=list.filter(i=>lezRim(i)<=2&&i.lezTot>0);
   if(filtro==='saldo') list=list.filter(i=>resto(i)>0);
   if(!list.length){document.getElementById('isc-list').innerHTML='<div class="empty"><span class="ti ti-mood-empty"></span>Nessun risultato</div>';return;}
