@@ -10,7 +10,7 @@
 /* ── RESET & VARS ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --pink:#C2185B;--pink-d:#880E4F;--pink-l:#FCE4EC;--pink-m:#F06292;
+  --pink:#96a387;--pink-d:#7a8d6c;--pink-l:#EBF0E6;--pink-m:#a8ae9d;--cl-light:#c6cbbf;--cl-mid:#a8ae9d;--cl-dark:#96a387;
   --green:#2E7D32;--green-l:#E8F5E9;
   --blue:#1565C0;--blue-l:#E3F2FD;
   --purple:#7B1FA2;--teal:#00695C;--gold:#F57F17;
@@ -21,22 +21,22 @@
   --r-sm:8px;--r-md:12px;--r-lg:18px;
   --shadow:0 2px 12px rgba(0,0,0,.08);
 }
-html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow-x:hidden}
+html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow-x:hidden}
 
 /* ── LOGIN ── */
-#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 24px;background:linear-gradient(160deg,var(--pink-d) 0%,var(--pink) 60%,var(--pink-m) 100%)}
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 24px;background:var(--cl-light)}
 .login-logo{font-size:56px;margin-bottom:12px}
 .login-title{color:#fff;font-size:26px;font-weight:700;margin-bottom:4px;letter-spacing:-0.5px}
 .login-sub{color:rgba(255,255,255,.7);font-size:14px;margin-bottom:36px}
 .login-box{background:#fff;border-radius:var(--r-lg);padding:28px 24px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
 .login-box label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .login-box input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:16px;margin-bottom:16px;outline:none;transition:border .15s}
-.login-box input:focus{border-color:var(--pink)}
+.login-box input:focus{border-color:var(--cl-dark)}
 .login-err{color:var(--red);font-size:13px;margin-bottom:10px;text-align:center;min-height:18px}
 
 /* ── TOPBAR ── */
 #app{display:none;flex-direction:column;height:100vh}
-.topbar{background:var(--pink);color:#fff;padding:48px 16px 14px;flex-shrink:0}
+.topbar{background:var(--cl-light);color:#fff;padding:12px 16px 14px;flex-shrink:0}
 .topbar-row{display:flex;justify-content:space-between;align-items:center}
 .topbar h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
 .topbar .sub{font-size:11px;opacity:.75;margin-top:2px}
@@ -48,7 +48,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:0 0 auto;padding:10px 12px 8px;text-align:center;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;min-width:60px}
 .tab .ti{display:block;font-size:19px;margin-bottom:2px}
-.tab.active{color:var(--pink);border-bottom-color:var(--pink)}
+.tab.active{color:var(--cl-dark);border-bottom-color:var(--cl-dark)}
 
 /* ── PAGES ── */
 .pages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -57,7 +57,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 
 /* ── LOADING ── */
 .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);font-size:13px;gap:10px}
-.spin{width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--pink);border-radius:50%;animation:spin .7s linear infinite}
+.spin{width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--cl-dark);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── CARDS ── */
@@ -76,7 +76,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 
 /* ── BADGES ── */
 .badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700}
-.b-ok{background:var(--green-l);color:var(--green)}
+.b-ok{background:#EBF0E6;color:#4a6a3a}
 .b-warn{background:var(--warn-l);color:var(--warn)}
 .b-danger{background:var(--red-l);color:var(--red)}
 .b-blue{background:var(--blue-l);color:var(--blue)}
@@ -105,7 +105,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 .search-wrap{position:relative;margin-bottom:12px}
 .search-wrap .ti{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
 .search-wrap input{width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:14px;background:#fff;outline:none}
-.search-wrap input:focus{border-color:var(--pink)}
+.search-wrap input:focus{border-color:var(--cl-dark)}
 
 /* ── CHIPS (filtri) ── */
 .chips{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
@@ -116,7 +116,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 .field{margin-bottom:13px}
 .field label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
 .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:#fff;color:var(--text);-webkit-appearance:none;outline:none;transition:border .15s}
-.field input:focus,.field select:focus{border-color:var(--pink)}
+.field input:focus,.field select:focus{border-color:var(--cl-dark)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* ── SESSION CARD ── */
@@ -145,7 +145,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 /* ── PICKER PARTECIPANTI ── */
 .picker-grid{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
 .picker-item{padding:6px 12px;border-radius:20px;background:var(--bg);border:1.5px solid transparent;font-size:12px;font-weight:600;cursor:pointer;transition:all .1s}
-.picker-item.sel{background:var(--pink-l);border-color:var(--pink);color:var(--pink)}
+.picker-item.sel{background:var(--pink-l);border-color:var(--cl-dark);color:var(--cl-dark)}
 .picker-item.no-lez{opacity:.35;cursor:not-allowed}
 
 /* ── DETAIL TABLE ── */
@@ -181,21 +181,23 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 .setting-arrow{color:var(--muted);font-size:18px}
 
 /* ── SALDO BOX ── */
-.saldo-box{background:linear-gradient(135deg,var(--green) 0%,#43A047 100%);color:#fff;border-radius:var(--r-md);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.saldo-box{background:var(--cl-mid);color:#fff;border-radius:var(--r-md);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
 .saldo-box .lbl{font-size:11px;opacity:.8;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .saldo-box .val{font-size:32px;font-weight:700;margin:4px 0 2px}
 .saldo-box .sub{font-size:12px;opacity:.8}
 </style>
 <!-- Tabler Icons CDN -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- ══ LOGIN ══════════════════════════════════════════════════════════════ -->
 <div id="login-screen">
-  <div class="login-logo">🌸</div>
-  <div class="login-title">Coreline Pilates Monza - BackOffice</div>
-  <div class="login-sub">Gestione corsi e clienti</div>
+  <div style="font-family:'Cormorant Garamond',serif;font-weight:300;font-size:44px;color:#fff;letter-spacing:4px;text-transform:lowercase;margin-bottom:4px;text-align:center">c<span style="display:inline-block;width:28px;height:28px;border:2px solid #fff;border-radius:50%;vertical-align:middle;margin:0 2px -4px"></span>reline</div>
+  <div style="font-size:8px;color:#fff;letter-spacing:5px;text-transform:uppercase;opacity:.8;margin-bottom:6px;text-align:center">Pilates &amp; Fitness Studio</div>
+  <div style="font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase;margin-bottom:24px;text-align:center">BackOffice</div>
+
   <div class="login-box">
     <label>Password</label>
     <input type="password" id="pwd-input" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')doLogin()">
@@ -214,8 +216,11 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
 <div id="app">
   <div class="topbar">
     <div class="topbar-row">
-      <div><div class="sub" id="topbar-date"></div><h1>🌸 Coreline Pilates Monza - BackOffice</h1></div>
-      <div class="incasso"><div class="val" id="top-inc">—</div><div class="lbl">incassato</div></div>
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-weight:300;font-size:22px;color:#fff;letter-spacing:3px;text-transform:lowercase;line-height:1">c<span style="display:inline-block;width:14px;height:14px;border:1.5px solid #fff;border-radius:50%;vertical-align:middle;margin:0 1px -2px"></span>reline</div>
+        <div style="font-size:7px;color:#fff;letter-spacing:3px;text-transform:uppercase;opacity:.8" id="topbar-date"></div>
+      </div>
+      <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:600;color:#fff">—</div><div class="lbl">incassato</div></div>
     </div>
   </div>
 
@@ -233,7 +238,7 @@ html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background
     <!-- DASHBOARD -->
     <div class="page active" id="page-dash">
       <div class="stat-grid">
-        <div class="stat"><div class="stat-val" style="color:var(--pink)" id="d-isc">—</div><div class="stat-lbl">Clienti</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--cl-dark)" id="d-isc">—</div><div class="stat-lbl">Clienti</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-rin">—</div><div class="stat-lbl">Da rinnovare</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--red)" id="d-sal">—</div><div class="stat-lbl">Da saldare</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--blue)" id="d-sog">—</div><div class="stat-lbl">Sessioni oggi</div></div>
@@ -807,11 +812,11 @@ function renderDash(){
   // Alerts
   let h='';
   daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row">
-    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--pink);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
     <span class="badge b-warn">Nessun pacchetto</span>
   </div>`;});
   daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row">
-    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--pink);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
     <span class="badge b-danger">${euro(i.totale_da_saldare)}</span>
   </div>`;});
   document.getElementById('dash-alerts').innerHTML=h||'<div class="empty"><span class="ti ti-circle-check" style="color:var(--green)"></span>Tutto ok!</div>';
@@ -832,7 +837,7 @@ function renderDash(){
     hCert = certAlert.map(c=>`
       <div class="alert-row">
         <div>
-          <div style="font-weight:600;cursor:pointer;color:var(--pink)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
+          <div style="font-weight:600;cursor:pointer;color:var(--cl-dark)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
           <div style="font-size:11px;color:var(--muted)">
             ${c.stato==='in attesa approvazione'?'🟡 In attesa':c.stato==='non presentato'?'🔴 Non presentato':c.stato==='scaduto'?'🔴 Scaduto':'🟡 Grace period'}
             ${c.cert_medico_scadenza?' · Scad: '+fmtShort(c.cert_medico_scadenza):''}
