@@ -1232,22 +1232,22 @@ async function openPren(sid){
   const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
   selPartV2 = presenze.map(p=>({cliente_id:p.cliente_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
 
-  // Carica pacchetti per ogni cliente (compatibili con tipo sessione)
-  const tipoSes = activeSes.tipo || '';
+  // Carica tutti i pacchetti attivi in una sola chiamata
+  const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
+
   let html = '';
   for(const isc of clienti){
-    const pacs = await GET(`/api/v2/iscritte/${isc.id}/pacchetti`) || [];
-    // Pacchetti attivi compatibili con il tipo sessione
+    if(isc.stato==='sospeso') continue;
+    const pacs = tuttiPac[isc.id] || [];
     const compatibili = pacs.filter(p=>p.stato==='attivo' && p.lezioni_rim>0);
     const attivi = pacs.filter(p=>p.stato==='attivo');
-    const inSes = selPartV2.find(x=>x.cliente_id===isc.id);
+    const inSes = selPartV2.find(x=>x.iscritta_id===isc.id);
     const sel = !!inSes;
 
-    if(!attivi.length && !sel) continue; // Nascondi chi non ha pacchetti
+    if(!attivi.length && !sel) continue;
 
     let packSelect = '';
     if(compatibili.length > 1){
-      // Più pacchetti compatibili — mostra select
       packSelect = `<select id="pac-sel-${isc.id}" style="font-size:10px;padding:2px;border-radius:4px;border:1px solid var(--border);margin-left:4px">
         ${compatibili.map(p=>`<option value="${p.id}" ${inSes&&inSes.pacchetto_id===p.id?'selected':''}>${p.corso_nome} (${p.lezioni_rim})</option>`).join('')}
       </select>`;
@@ -1265,7 +1265,7 @@ async function openPren(sid){
       <span style="opacity:.55;font-size:10px">(${rimTot})</span>
     </div>`;
   }
-  document.getElementById('pren-picker').innerHTML = html || '<div style="font-size:13px;color:var(--muted)">Nessuna cliente con pacchetti attivi</div>';
+  document.getElementById('pren-picker').innerHTML = html || '<div style="font-size:13px;color:var(--muted)">Nessun cliente con pacchetti attivi</div>';
 }
 
 function togglePartV2(iid){
@@ -1539,7 +1539,7 @@ function renderCfg(){
     ?istruttori.map((ist,i)=>`<div class="setting-item">
         <div onclick="openEditIstr(${i})" style="flex:1;cursor:pointer">
           <div class="setting-label">${ist.nome}${ist.cognome?' '+ist.cognome:''}</div>
-          <div class="setting-sub">${ist.telefono||ist.email||'—'}</div>
+          <div class="setting-sub">${ist.telefono||ist.email||''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="ti ti-pencil" onclick="openEditIstr(${i})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
