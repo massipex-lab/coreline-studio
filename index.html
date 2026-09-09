@@ -1288,14 +1288,21 @@ function renderCas(){
   let list=[...cassa].sort((a,b)=>a.data>b.data?-1:1);
   if(casTab==='entrate') list=list.filter(m=>m.tipo==='entrata');
   if(casTab==='uscite') list=list.filter(m=>m.tipo==='uscita');
-  if(qCas) list=list.filter(m=>
-    (m.descrizione||'').toLowerCase().includes(qCas)||
-    (m.categoria||'').toLowerCase().includes(qCas)||
-    (m.note||'').toLowerCase().includes(qCas)||
-    String(m.importo||'').includes(qCas)||
-    fmtData(m.data).toLowerCase().includes(qCas)||
-    fmtShort(m.data).toLowerCase().includes(qCas)
-  );
+  if(qCas) list=list.filter(m=>{
+    if(!m.data) return false;
+    // Formato dd/mm o dd/mm/yyyy
+    const parts = m.data.split('-'); // yyyy-mm-dd
+    const ddmm = parts.length===3 ? parts[2]+'/'+parts[1] : '';
+    const ddmmyyyy = parts.length===3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : '';
+    return (m.descrizione||'').toLowerCase().includes(qCas)||
+      (m.categoria||'').toLowerCase().includes(qCas)||
+      (m.note||'').toLowerCase().includes(qCas)||
+      String(m.importo||'').includes(qCas)||
+      fmtData(m.data).toLowerCase().includes(qCas)||
+      fmtShort(m.data).toLowerCase().includes(qCas)||
+      ddmm.includes(qCas)||
+      ddmmyyyy.includes(qCas);
+  });
   if(!list.length){document.getElementById('cas-list').innerHTML='<div class="empty"><span class="ti ti-cash-off"></span>Nessun movimento</div>';return;}
   let h='',lastD='';
   list.forEach(m=>{
