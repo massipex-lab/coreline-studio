@@ -388,12 +388,12 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="picker-grid" id="pren-picker"></div>
     <div class="divider"></div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:700;color:var(--cl-dark);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Aggiungi ospite (non cliente)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--cl-dark);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Aggiungi ospite</div>
       <div style="display:flex;gap:8px">
         <input type="text" id="ospite-nome" placeholder="Nome e cognome ospite" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;font-family:inherit">
         <button class="btn btn-sm" onclick="aggiungiOspite()"><span class="ti ti-user-plus"></span></button>
       </div>
-      <div id="ospiti-list" style="margin-top:8px"></div>
+      <div id="ospiti-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
     <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="withLoading(this,conferma)">Conferma prenotazione</button>
     <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Le lezioni vengono scalate automaticamente a fine giornata. Usa questo pannello per modifiche manuali dell'ultimo secondo.</p>
@@ -1266,7 +1266,7 @@ async function openPren(sid){
   const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
   selPartV2 = presenze.map(p=>({iscritta_id:p.iscritta_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
   // Ricarica ospiti dal campo ospiti salvato in DB
-  ospiti = (activeSes.ospiti||[]).map(n=>({nome:n}));
+  ospiti = (activeSes.ospiti||[]).map(n=>({nome:n, sel:true}));
   document.getElementById('ospite-nome').value = '';
   renderOspiti();
 
@@ -1313,8 +1313,13 @@ function toggleGiorno(btn){
 function aggiungiOspite(){
   const nome = document.getElementById('ospite-nome').value.trim();
   if(!nome) return;
-  ospiti.push({nome});
+  ospiti.push({nome, sel:true});
   document.getElementById('ospite-nome').value = '';
+  renderOspiti();
+}
+
+function toggleOspite(idx){
+  ospiti[idx].sel = !ospiti[idx].sel;
   renderOspiti();
 }
 
@@ -1325,9 +1330,14 @@ function rimuoviOspite(idx){
 
 function renderOspiti(){
   document.getElementById('ospiti-list').innerHTML = ospiti.map((o,i)=>
-    `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border-radius:6px;margin-bottom:4px;font-size:13px">
-      <span>👤 ${o.nome} <span style="font-size:10px;color:var(--muted)">(ospite)</span></span>
-      <span class="ti ti-x" onclick="rimuoviOspite(${i})" style="cursor:pointer;color:var(--muted);font-size:14px"></span>
+    `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+      border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;user-select:none;
+      background:${o.sel?'#7B6E5D':'#F0EDE8'};color:${o.sel?'#fff':'#7B6E5D'};
+      border:1.5px solid ${o.sel?'#7B6E5D':'#D5CFC8'};transition:all .15s"
+      onclick="toggleOspite(${i})">
+      👤 ${o.nome}
+      <span onclick="event.stopPropagation();rimuoviOspite(${i})"
+        style="font-size:12px;opacity:.7;margin-left:2px;font-weight:700">&times;</span>
     </div>`
   ).join('');
 }
@@ -1351,14 +1361,14 @@ function togglePartV2(iid){
 async function conferma(){
   if(!activeSes) return;
   const postiMax = activeSes.posti_max || 6;
-  const totPartecipanti = selPartV2.length + ospiti.length;
+  const totPartecipanti = selPartV2.length + ospiti.filter(o=>o.sel).length;
   if(totPartecipanti > postiMax){
     toast('Hai superato il limite di '+postiMax+' partecipanti!', true);
     return;
   }
   await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {
     presenze: selPartV2.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),
-    ospiti: ospiti.map(o=>o.nome)
+    ospiti: ospiti.filter(o=>o.sel).map(o=>o.nome)
   });
   activeSes.partecipanti = [...selPartV2.map(p=>p.nome), ...ospiti.map(o=>o.nome)];
   closeOv('ov-pren');
