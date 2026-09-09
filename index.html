@@ -231,7 +231,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="tab" onclick="goTab('ses')"><span class="ti ti-calendar"></span>Sessioni</div>
     <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Clienti</div>
     <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuovo</div>
-    <div class="tab" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttori</div>
+    <div class="tab" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttrici/Istruttori</div>
     <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
     <div class="tab" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</div>
   </div>
@@ -336,7 +336,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div class="card" id="corsi-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoCorso()"><span class="ti ti-plus"></span> Aggiungi corso</button>
 
-      <div class="sec">Istruttori/Istruttori</div>
+      <div class="sec">Istruttrici/Istruttori</div>
       <div class="card" id="istr-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore/istruttrice</button>
 
@@ -1536,11 +1536,17 @@ function renderCfg(){
     :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun corso. Aggiungine uno.</div>';
   // Istruttori
   document.getElementById('istr-list').innerHTML=istruttori.length
-    ?istruttori.map((ist,i)=>`<div class="setting-item" onclick="openEditIstr(${i})">
-        <div><div class="setting-label">${ist.nome}${ist.cognome?' '+ist.cognome:''}</div><div class="setting-sub">${ist.telefono||ist.email||'—'}</div></div>
-        <span class="ti ti-chevron-right setting-arrow"></span>
+    ?istruttori.map((ist,i)=>`<div class="setting-item">
+        <div onclick="openEditIstr(${i})" style="flex:1;cursor:pointer">
+          <div class="setting-label">${ist.nome}${ist.cognome?' '+ist.cognome:''}</div>
+          <div class="setting-sub">${ist.telefono||ist.email||'—'}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="ti ti-pencil" onclick="openEditIstr(${i})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
+          <span class="ti ti-trash" onclick="deleteIstr(${ist.id||i},encodeURIComponent('${ist.nome||''}${ist.cognome?' '+ist.cognome:''}'))" style="cursor:pointer;color:var(--red);font-size:16px"></span>
+        </div>
       </div>`).join('')
-    :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun istruttore. Aggiungine uno.</div>';
+    :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun istruttore/istruttrice. Aggiungine uno.</div>';
 }
 
 function openNuovoCorso(){
@@ -1549,6 +1555,34 @@ function openNuovoCorso(){
   ['c-nome','c-lez','c-prezzo','c-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ov-corso').classList.add('open');
 }
+async function deleteCorso(cid, nome, hasPac){
+  const msg = hasPac ? 'Ci sono pacchetti attivi. Il backend bloccherà se ci sono lezioni da fare. Procedere?' : 'Cancellare il corso? Operazione irreversibile.';
+  if(!confirm(msg)) return;
+  const r = await fetch(API+'/api/corsi/'+cid,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  const data = await r.json();
+  if(data.ok){
+    toast('Corso cancellato.');
+    const newCorsi=await GET('/api/corsi');
+    if(newCorsi){corsi=newCorsi; renderCfg(); populateSelects();}
+  } else {
+    toast(data.error||'Impossibile cancellare',true);
+  }
+}
+
+async function deleteIstr(iid, nomeEnc){
+  const nome = decodeURIComponent(nomeEnc);
+  if(!confirm('Cancellare ' + nome + '? Possibile solo se non ha sessioni future.')) return;
+  const r = await fetch(API+'/api/istruttori/'+iid,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  const data = await r.json();
+  if(data.ok){
+    toast(nome + ' cancellato.');
+    const newIstr=await GET('/api/istruttori');
+    if(newIstr){istruttori=newIstr; renderCfg();}
+  } else {
+    toast(data.error||'Impossibile cancellare',true);
+  }
+}
+
 function openEditCorso(i){
   editCorsoIdx=i; const c=corsi[i];
   document.getElementById('corso-modal-title').textContent='Modifica corso';
