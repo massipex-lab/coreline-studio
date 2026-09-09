@@ -819,8 +819,8 @@ function renderDash(){
         </div>
         <div style="display:flex;gap:6px">
           ${c.stato==='in attesa approvazione'?`
-            <button class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="approvaCert(${c.id})">✓</button>
-            <button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="rifiutaCert(${c.id})">✗</button>
+            <button class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="withLoading(this,()=>approvaCert(${c.id}))">✓</button>
+            <button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="withLoading(this,()=>rifiutaCert(${c.id}))">✗</button>
           `:''}
         </div>
       </div>`).join('');
@@ -910,8 +910,8 @@ async function openIsc(id){
         ${subCount}
         ${resto>0?`<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:6px">Da saldare: ${euro(resto)}</div>`:''}
         <div style="display:flex;gap:6px;margin-top:10px">
-          <button class="btn btn-sm" onclick="modLezPacchetto(${p.id},-1,${id})"><span class="ti ti-minus"></span></button>
-          <button class="btn btn-sm btn-primary" onclick="modLezPacchetto(${p.id},1,${id})"><span class="ti ti-plus"></span></button>
+          <button class="btn btn-sm" onclick="withLoading(this,()=>modLezPacchetto(${p.id},-1,${id}))"><span class="ti ti-minus"></span></button>
+          <button class="btn btn-sm btn-primary" onclick="withLoading(this,()=>modLezPacchetto(${p.id},1,${id}))"><span class="ti ti-plus"></span></button>
           <button class="btn btn-sm" onclick="openAddPagamento(${id},${p.id},'${p.corso_nome}')" style="margin-left:auto"><span class="ti ti-cash"></span> Pagamento</button>
         </div>
       </div>`;
@@ -964,10 +964,10 @@ async function openIsc(id){
   h += `<div class="divider"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     ${iscritta.stato==='sospeso'
-      ? `<button class="btn btn-primary" onclick="riattiva(${id})"><span class="ti ti-player-play"></span> Riattiva</button>`
-      : `<button class="btn" style="border-color:var(--warn);color:var(--warn)" onclick="sospendi(${id})"><span class="ti ti-pause"></span> Sospendi</button>`
+      ? `<button class="btn btn-primary" onclick="withLoading(this,()=>riattiva(${id}))"><span class="ti ti-player-play"></span> Riattiva</button>`
+      : `<button class="btn" style="border-color:var(--warn);color:var(--warn)" onclick="withLoading(this,()=>sospendi(${id}))"><span class="ti ti-pause"></span> Sospendi</button>`
     }
-    <button class="btn btn-red" onclick="cancellaCliente(${id})">
+    <button class="btn btn-red" onclick="withLoading(this,()=>cancellaCliente(${id}))">
       <span class="ti ti-trash"></span> Cancella
     </button>
   </div>`;
@@ -1251,7 +1251,7 @@ function renderCas(){
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <div class="mov-importo" style="color:${isE?'var(--green)':'var(--red)'}">${isE?'+':'−'}${euro(m.importo)}</div>
         <button class="btn-ghost" title="Modifica" onclick="openEditMov(${m.id})"><span class="ti ti-pencil" style="font-size:15px;color:var(--muted)"></span></button>
-        <button class="btn-ghost" title="Elimina" onclick="deleteMov(${m.id})" style="color:var(--red)"><span class="ti ti-trash" style="font-size:15px"></span></button>
+        <button class="btn-ghost" title="Elimina" style="color:var(--red)" onclick="withLoading(this,()=>deleteMov(${m.id}))"><span class="ti ti-trash" style="font-size:15px"></span></button>
       </div>
     </div>`;
   });
