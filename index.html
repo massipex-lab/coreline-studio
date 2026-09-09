@@ -774,7 +774,7 @@ function updateCatOptions(){
 
 // ══ TOPBAR ═══════════════════════════════════════════════════════════════════
 function updateTopbar(){
-  document.getElementById('top-inc').textContent=euro(cassa.filter(m=>m.tipo==='entrata').reduce((a,m)=>a+m.importo,0));
+  document.getElementById('top-inc').textContent=euro(cassa.filter(m=>m.tipo==='entrata'||m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0));
 }
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
@@ -793,14 +793,13 @@ function renderDash(){
   document.getElementById('d-cert-presenti').textContent=certPresenti.length;
   document.getElementById('d-cert-tot').textContent=clienti.length;
 
-  // Saldo cassa
-  const entrate=cassa.filter(m=>m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
-  const uscite=cassa.filter(m=>m.tipo==='Uscita').reduce((a,m)=>a+m.importo,0);
-  const saldo=entrate-uscite;
+  // Saldo cassa (tipo minuscolo — movimenti v2)
+  const entrate=cassa.filter(m=>m.tipo==='entrata'||m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
+  const uscite=cassa.filter(m=>m.tipo==='uscita'||m.tipo==='Uscita').reduce((a,m)=>a+m.importo,0);
   document.getElementById('dash-saldo').innerHTML=`
     <div class="saldo-box">
       <div class="lbl">Saldo cassa</div>
-      <div class="val">${euro(saldo)}</div>
+      <div class="val">${euro(entrate-uscite)}</div>
       <div class="sub">Entrate ${euro(entrate)} — Uscite ${euro(uscite)}</div>
     </div>`;
 
