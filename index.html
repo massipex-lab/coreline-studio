@@ -1265,9 +1265,10 @@ async function openPren(sid){
   // Carica presenze attuali della sessione
   const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
   selPartV2 = presenze.map(p=>({iscritta_id:p.iscritta_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
-  ospiti = [];
-  document.getElementById('ospiti-list').innerHTML = '';
+  // Ricarica ospiti dal campo ospiti salvato in DB
+  ospiti = (activeSes.ospiti||[]).map(n=>({nome:n}));
   document.getElementById('ospite-nome').value = '';
+  renderOspiti();
 
   // Carica tutti i pacchetti attivi in una sola chiamata
   const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
