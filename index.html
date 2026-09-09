@@ -17,11 +17,11 @@
   --red:#C62828;--red-l:#FFEBEE;
   --warn:#E65100;--warn-l:#FFF3E0;
   --bg:#F7F3F7;--border:#E8E0E8;--white:#FFFFFF;
-  --text:#1A1A1A;--muted:#888888;
+  --text:#96a387;--muted:#888888;
   --r-sm:8px;--r-md:12px;--r-lg:18px;
   --shadow:0 2px 12px rgba(0,0,0,.08);
 }
-html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow-x:hidden}
+html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--cl-dark);font-size:14px;overflow-x:hidden}
 
 /* ── LOGIN ── */
 #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 24px;background:var(--cl-light)}
@@ -72,7 +72,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .stat-lbl{font-size:10px;color:var(--muted);margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 
 /* ── SECTION LABEL ── */
-.sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 8px}
+.sec{font-size:10px;font-weight:700;color:var(--cl-dark);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 8px}
 
 /* ── BADGES ── */
 .badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700}
@@ -87,7 +87,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .prog-fill{height:100%;border-radius:3px}
 
 /* ── BUTTONS ── */
-.btn{padding:10px 18px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn{padding:10px 18px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--cl-dark);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--cl-dark);color:#fff;border-color:var(--cl-dark)}
 .btn-green{background:var(--green);color:#fff;border-color:var(--green)}
@@ -115,13 +115,13 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 /* ── FORM ── */
 .field{margin-bottom:13px}
 .field label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
-.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:#fff;color:var(--text);-webkit-appearance:none;outline:none;transition:border .15s}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:#fff;color:var(--cl-dark);-webkit-appearance:none;outline:none;transition:border .15s}
 .field input:focus,.field select:focus{border-color:var(--cl-dark)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* ── SESSION CARD ── */
 .ses-card{background:#fff;border-radius:var(--r-md);padding:13px 15px;margin-bottom:8px;border:1px solid var(--border);box-shadow:var(--shadow)}
-.ses-day{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:14px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.ses-day{font-size:10px;font-weight:700;color:var(--cl-dark);text-transform:uppercase;letter-spacing:.8px;padding:14px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
 .ses-title{font-size:15px;font-weight:700;margin-bottom:2px}
 .ses-meta{font-size:12px;color:var(--muted)}
 .pchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
@@ -130,7 +130,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 /* ── CASSA ── */
 .mov-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--bg)}
 .mov-row:last-child{border:none}
-.mov-desc{font-size:13px;font-weight:500}
+.mov-desc{font-size:13px;font-weight:500;color:var(--cl-dark)}
 .mov-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .mov-importo{font-size:14px;font-weight:700;white-space:nowrap;margin-left:10px}
 
@@ -139,7 +139,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .overlay.open{display:flex}
 .modal{background:#fff;border-radius:var(--r-lg) var(--r-lg) 0 0;padding:16px 16px 40px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative}
 .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
-.modal-title{font-size:17px;font-weight:700;margin-bottom:16px}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px;color:var(--cl-dark)}
 .close-btn{position:absolute;top:16px;right:14px;background:var(--bg);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 
 /* ── PICKER PARTECIPANTI ── */
@@ -150,7 +150,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
 /* ── DETAIL TABLE ── */
 .dtable{width:100%;font-size:13px;border-collapse:collapse}
-.dtable td{padding:7px 0;border-bottom:1px solid var(--bg)}
+.dtable td{padding:7px 0;border-bottom:1px solid var(--bg);color:var(--cl-dark)}
 .dtable td:first-child{color:var(--muted);font-weight:500;width:45%}
 .dtable td:last-child{text-align:right;font-weight:600}
 .dtable tr:last-child td{border:none}
@@ -218,11 +218,12 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="topbar-row">
       <div>
         <div style="font-family:'Cormorant Garamond',serif;font-weight:300;font-size:22px;color:#fff;letter-spacing:3px;text-transform:lowercase;line-height:1">c<span style="display:inline-block;width:14px;height:14px;border:1.5px solid #fff;border-radius:50%;vertical-align:middle;margin:0 1px -2px"></span>reline</div>
-        <div style="font-size:7px;color:#fff;letter-spacing:3px;text-transform:uppercase;opacity:.8" id="topbar-date"></div>
+        <div style="font-size:7px;color:#fff;letter-spacing:3px;text-transform:uppercase;opacity:.8">Pilates &amp; Fitness Studio</div>
       </div>
-      <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:600;color:#fff">—</div><div class="lbl">incassato</div></div>
+      <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
     <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice</div>
+    <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
   <div class="tabs">
