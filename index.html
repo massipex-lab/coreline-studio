@@ -92,7 +92,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .btn-primary{background:var(--cl-dark);color:#fff;border-color:var(--cl-dark)}
 .btn-green{background:var(--green);color:#fff;border-color:var(--green)}
 .btn-red{background:var(--red);color:#fff;border-color:var(--red)}
-.ric-giorno{width:18px;height:18px;accent-color:var(--cl-dark);cursor:pointer;flex-shrink:0}
+.giorno-btn{padding:6px 12px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:13px;cursor:pointer;color:var(--cl-dark);font-family:inherit}
+.giorno-btn.sel{background:var(--cl-dark);color:#fff;border-color:var(--cl-dark)}
 .btn-full{width:100%;justify-content:center}
 .btn-sm{padding:6px 12px;font-size:12px}
 .btn-icon{padding:8px 10px}
@@ -386,7 +387,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Seleziona partecipanti <span style="font-weight:400">(numero tra parentesi = lezioni rimanenti)</span></div>
     <div class="picker-grid" id="pren-picker"></div>
     <div class="divider"></div>
-    <button class="btn btn-primary btn-full" onclick="withLoading(this,conferma)">Conferma prenotazione</button>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--cl-dark);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Aggiungi ospite (non cliente)</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="ospite-nome" placeholder="Nome e cognome ospite" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;font-family:inherit">
+        <button class="btn btn-sm" onclick="aggiungiOspite()"><span class="ti ti-user-plus"></span></button>
+      </div>
+      <div id="ospiti-list" style="margin-top:8px"></div>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="withLoading(this,conferma)">Conferma prenotazione</button>
     <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Le lezioni vengono scalate automaticamente a fine giornata. Usa questo pannello per modifiche manuali dell'ultimo secondo.</p>
   </div>
 </div>
@@ -530,13 +539,13 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="modal-title">Sessione ricorrente</div>
     <div class="field"><label>Giorni della settimana</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
-        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="0" class="ric-giorno"> Lun</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="1" class="ric-giorno"> Mar</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="2" class="ric-giorno"> Mer</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="3" class="ric-giorno"> Gio</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="4" class="ric-giorno"> Ven</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="5" class="ric-giorno"> Sab</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="6" class="ric-giorno"> Dom</label>
+        <button type="button" class="giorno-btn" data-giorno="0" onclick="toggleGiorno(this)">Lun</button>
+        <button type="button" class="giorno-btn" data-giorno="1" onclick="toggleGiorno(this)">Mar</button>
+        <button type="button" class="giorno-btn" data-giorno="2" onclick="toggleGiorno(this)">Mer</button>
+        <button type="button" class="giorno-btn" data-giorno="3" onclick="toggleGiorno(this)">Gio</button>
+        <button type="button" class="giorno-btn" data-giorno="4" onclick="toggleGiorno(this)">Ven</button>
+        <button type="button" class="giorno-btn" data-giorno="5" onclick="toggleGiorno(this)">Sab</button>
+        <button type="button" class="giorno-btn" data-giorno="6" onclick="toggleGiorno(this)">Dom</button>
       </div>
     </div>
     <div class="field-row">
@@ -1176,7 +1185,7 @@ async function deleteSessione(sid, tipo){
 }
 
 function openRicorrente(){
-  document.querySelectorAll('.ric-giorno').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('.giorno-btn').forEach(b=>b.classList.remove('sel'));
   const oggi=new Date().toISOString().split('T')[0];
   document.getElementById('ric-inizio').value=oggi;
   document.getElementById('ric-fine').value='';
@@ -1190,7 +1199,7 @@ function openRicorrente(){
 }
 
 async function creaRicorrenza(){
-  const giorni=[...document.querySelectorAll('.ric-giorno:checked')].map(cb=>parseInt(cb.value));
+  const giorni=[...document.querySelectorAll('.giorno-btn.sel')].map(b=>parseInt(b.dataset.giorno));
   if(!giorni.length){toast('Seleziona almeno un giorno',true);return;}
   const tipo=document.getElementById('ric-tipo').value;
   const istr=document.getElementById('ric-istr').value;
@@ -1277,6 +1286,10 @@ async function openPren(sid){
     </div>`;
   }
   document.getElementById('pren-picker').innerHTML = html || '<div style="font-size:13px;color:var(--muted)">Nessun cliente con pacchetti attivi</div>';
+}
+
+function toggleGiorno(btn){
+  btn.classList.toggle('sel');
 }
 
 function aggiungiOspite(){
