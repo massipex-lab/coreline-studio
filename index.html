@@ -1219,7 +1219,7 @@ async function creaSessione(){
   closeOv('ov-ses'); toast('Sessione creata!'); renderSes(); renderDash();
 }
 
-// selPart v2: [{cliente_id, pacchetto_id, nome}]
+// selPart v2: [{iscritta_id, pacchetto_id, nome}]
 let selPartV2 = [];
 
 async function openPren(sid){
@@ -1230,7 +1230,7 @@ async function openPren(sid){
 
   // Carica presenze attuali della sessione
   const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
-  selPartV2 = presenze.map(p=>({cliente_id:p.cliente_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
+  selPartV2 = presenze.map(p=>({iscritta_id:p.iscritta_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
 
   // Carica tutti i pacchetti attivi in una sola chiamata
   const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
@@ -1270,23 +1270,23 @@ async function openPren(sid){
 
 function togglePartV2(iid){
   const isc = clienti.find(x=>x.id===iid); if(!isc) return;
-  const inS = selPartV2.find(x=>x.cliente_id===iid);
+  const inS = selPartV2.find(x=>x.iscritta_id===iid);
   if(inS){
-    selPartV2 = selPartV2.filter(x=>x.cliente_id!==iid);
+    selPartV2 = selPartV2.filter(x=>x.iscritta_id!==iid);
     document.getElementById('pi-'+iid)?.classList.remove('sel');
   } else {
     // Trova pacchetto selezionato (da select se presente, altrimenti il primo compatibile)
     const selEl = document.getElementById('pac-sel-'+iid);
     const pacId = selEl ? parseInt(selEl.value) : null;
     const nome = isc.nome+(isc.cognome?' '+isc.cognome:'');
-    selPartV2.push({cliente_id:iid, pacchetto_id:pacId, nome});
+    selPartV2.push({iscritta_id:iid, pacchetto_id:pacId, nome});
     document.getElementById('pi-'+iid)?.classList.add('sel');
   }
 }
 
 async function conferma(){
   if(!activeSes) return;
-  await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {presenze: selPartV2});
+  await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {presenze: selPartV2.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id}))});
   // Aggiorna lista partecipanti locale per la UI
   activeSes.partecipanti = selPartV2.map(p=>p.nome);
   closeOv('ov-pren');
