@@ -1292,7 +1292,9 @@ function renderCas(){
     (m.descrizione||'').toLowerCase().includes(qCas)||
     (m.categoria||'').toLowerCase().includes(qCas)||
     (m.note||'').toLowerCase().includes(qCas)||
-    String(m.importo||'').includes(qCas)
+    String(m.importo||'').includes(qCas)||
+    fmtData(m.data).toLowerCase().includes(qCas)||
+    fmtShort(m.data).toLowerCase().includes(qCas)
   );
   if(!list.length){document.getElementById('cas-list').innerHTML='<div class="empty"><span class="ti ti-cash-off"></span>Nessun movimento</div>';return;}
   let h='',lastD='';
