@@ -1244,11 +1244,15 @@ function renderCas(){
     if(m.data!==lastD){h+=`<div class="ses-day">${fmtData(m.data)}</div>`;lastD=m.data;}
     const isE=m.tipo==='Entrata';
     h+=`<div class="mov-row">
-      <div>
+      <div style="flex:1">
         <div class="mov-desc">${m.descrizione||m.categoria||'—'}</div>
         <div class="mov-meta">${m.categoria}${m.note?' · '+m.note:''}</div>
       </div>
-      <div class="mov-importo" style="color:${isE?'var(--green)':'var(--red)'}">${isE?'+':'−'}${euro(m.importo)}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <div class="mov-importo" style="color:${isE?'var(--green)':'var(--red)'}">${isE?'+':'−'}${euro(m.importo)}</div>
+        <button class="btn-ghost" title="Modifica" onclick="openEditMov(${m.id})"><span class="ti ti-pencil" style="font-size:15px;color:var(--muted)"></span></button>
+        <button class="btn-ghost" title="Elimina" onclick="deleteMov(${m.id})" style="color:var(--red)"><span class="ti ti-trash" style="font-size:15px"></span></button>
+      </div>
     </div>`;
   });
   document.getElementById('cas-list').innerHTML=`<div class="card">${h}</div>`;
