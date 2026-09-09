@@ -1520,10 +1520,19 @@ async function salvaConfigPosti(){
 function renderCfg(){
   // Corsi
   document.getElementById('corsi-list').innerHTML=corsi.length
-    ?corsi.map((c,i)=>`<div class="setting-item" onclick="openEditCorso(${i})">
-        <div><div class="setting-label">${c.nome}</div><div class="setting-sub">${c.lezioni} lezioni · ${euro(c.prezzo)}</div></div>
-        <span class="ti ti-chevron-right setting-arrow"></span>
-      </div>`).join('')
+    ?corsi.map((c,i)=>{
+      const hasPac=(c.pacchetti_attivi||0)>0;
+      return `<div class="setting-item">
+        <div onclick="openEditCorso(${i})" style="flex:1;cursor:pointer">
+          <div class="setting-label">${c.nome}</div>
+          <div class="setting-sub">${c.lezioni} lezioni · ${euro(c.prezzo)}${hasPac?` · <span style="color:var(--warn);font-weight:600">${c.pacchetti_attivi} pacchett${c.pacchetti_attivi===1?'o attivo':'i attivi'}</span>`:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="ti ti-pencil" onclick="openEditCorso(${i})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
+          <span class="ti ti-trash" onclick="withLoading({disabled:false,style:{},innerHTML:''},()=>deleteCorso(${c.id},'${(c.nome||'').replace(/'/g,'\'')}',${ hasPac}))" style="cursor:pointer;color:var(--red);font-size:16px" title="${hasPac?'Attenzione: ci sono pacchetti attivi':'Cancella corso'}"></span>
+        </div>
+      </div>`;
+    }).join('')
     :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun corso. Aggiungine uno.</div>';
   // Istruttori
   document.getElementById('istr-list').innerHTML=istruttori.length
