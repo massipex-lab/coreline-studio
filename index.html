@@ -397,14 +397,9 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <button class="close-btn" onclick="closeOv('ov-ses')"><span class="ti ti-x"></span></button>
     <div class="modal-title">Nuova sessione</div>
     <div class="field"><label>Data *</label><input type="date" id="ns-data"></div>
-    <div class="field"><label>Orario</label>
-      <select id="ns-ora">
-        <option>09:00–10:00</option><option>10:00–11:00</option><option>11:00–12:00</option>
-        <option>12:00–13:00</option><option>13:00–14:00</option><option>14:00–15:00</option>
-        <option>15:00–16:00</option><option>16:00–17:00</option><option>17:00–18:00</option>
-        <option>18:00–19:00</option><option>19:00–20:00</option><option>19:30–20:30</option>
-        <option>20:00–21:00</option><option>20:30–21:30</option>
-      </select>
+    <div class="field-row">
+      <div class="field"><label>Inizio</label><input type="time" id="ns-ora-start" value="09:00"></div>
+      <div class="field"><label>Fine</label><input type="time" id="ns-ora-end" value="10:00"></div>
     </div>
     <div class="field"><label>Tipo corso *</label><select id="ns-tipo"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Istruttrice/Istruttore *</label><select id="ns-istr"><option value="">— seleziona —</option></select></div>
@@ -543,14 +538,9 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
         <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" value="6" class="ric-giorno"> Dom</label>
       </div>
     </div>
-    <div class="field"><label>Orario</label>
-      <select id="ric-ora">
-        <option>09:00–10:00</option><option>10:00–11:00</option><option>11:00–12:00</option>
-        <option>12:00–13:00</option><option>13:00–14:00</option><option>14:00–15:00</option>
-        <option>15:00–16:00</option><option>16:00–17:00</option><option>17:00–18:00</option>
-        <option>18:00–19:00</option><option>19:00–20:00</option><option>19:30–20:30</option>
-        <option>20:00–21:00</option><option>20:30–21:30</option>
-      </select>
+    <div class="field-row">
+      <div class="field"><label>Inizio</label><input type="time" id="ric-ora-start" value="09:00"></div>
+      <div class="field"><label>Fine</label><input type="time" id="ric-ora-end" value="10:00"></div>
     </div>
     <div class="field"><label>Tipo corso *</label><select id="ric-tipo"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Istruttore/Istruttrice *</label><select id="ric-istr"><option value="">— seleziona —</option></select></div>
@@ -1208,7 +1198,8 @@ async function creaRicorrenza(){
   if(!tipo||!istr||!inizio||!fine){toast('Compila tutti i campi obbligatori',true);return;}
   if(fine<=inizio){toast('La data fine deve essere dopo la data inizio',true);return;}
   const r=await POST('/api/v2/ricorrenze',{
-    giorni_settimana:giorni, orario:document.getElementById('ric-ora').value,
+    giorni_settimana:giorni, 
+    orario:document.getElementById('ric-ora-start').value+'-'+document.getElementById('ric-ora-end').value,
     tipo, istr, data_inizio:inizio, data_fine:fine,
     posti_max:parseInt(document.getElementById('ric-posti').value)||6,
     note:document.getElementById('ric-note').value
@@ -1228,7 +1219,7 @@ async function creaSessione(){
   const tipo=document.getElementById('ns-tipo').value;
   const istr=document.getElementById('ns-istr').value;
   if(!data||!tipo||!istr){toast('Compila data, corso e istruttore',true);return;}
-  const nuova={id:Date.now(),data,orario:document.getElementById('ns-ora').value,tipo,istr,partecipanti:[],note:document.getElementById('ns-note').value};
+  const nuova={id:Date.now(),data,orario:document.getElementById('ns-ora-start').value+'-'+document.getElementById('ns-ora-end').value,tipo,istr,partecipanti:[],note:document.getElementById('ns-note').value};
   sessioni.push(nuova);
   await POST('/api/sessioni',sessioni);
   closeOv('ov-ses'); toast('Sessione creata!'); renderSes(); renderDash();
