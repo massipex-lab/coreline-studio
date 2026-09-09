@@ -1370,7 +1370,8 @@ async function conferma(){
     presenze: selPartV2.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),
     ospiti: ospiti.filter(o=>o.sel).map(o=>o.nome)
   });
-  activeSes.partecipanti = [...selPartV2.map(p=>p.nome), ...ospiti.map(o=>o.nome)];
+  activeSes.partecipanti = [...selPartV2.map(p=>p.nome), ...ospiti.filter(o=>o.sel).map(o=>o.nome+' (ospite)')];
+  activeSes.ospiti = ospiti.filter(o=>o.sel).map(o=>o.nome);
   closeOv('ov-pren');
   toast(`Salvato · ${selPartV2.length} partecipant${selPartV2.length===1?'e':'i'}`);
   renderSes(); renderDash();
