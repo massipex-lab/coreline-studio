@@ -758,7 +758,7 @@ function updateCatOptions(){
 
 // ══ TOPBAR ═══════════════════════════════════════════════════════════════════
 function updateTopbar(){
-  document.getElementById('top-inc').textContent=euro(clienti.reduce((a,i)=>a+i.pagato,0));
+  document.getElementById('top-inc').textContent=euro(clienti.reduce((a,i)=>a+(i.totale_pagato||i.pagato||0),0));
 }
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
