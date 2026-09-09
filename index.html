@@ -36,7 +36,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
 /* ── TOPBAR ── */
 #app{display:none;flex-direction:column;height:100vh}
-.topbar{background:var(--cl-light);color:#fff;padding:12px 16px 14px;flex-shrink:0}
+.topbar{background:var(--cl-mid);color:#fff;padding:12px 16px 14px;flex-shrink:0}
 .topbar-row{display:flex;justify-content:space-between;align-items:center}
 .topbar h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
 .topbar .sub{font-size:11px;opacity:.75;margin-top:2px}
@@ -181,7 +181,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .setting-arrow{color:var(--muted);font-size:18px}
 
 /* ── SALDO BOX ── */
-.saldo-box{background:var(--cl-mid);color:#fff;border-radius:var(--r-md);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.saldo-box{background:var(--green-dash,#2e7d32);color:#fff;border-radius:var(--r-md);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
 .saldo-box .lbl{font-size:11px;opacity:.8;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .saldo-box .val{font-size:32px;font-weight:700;margin:4px 0 2px}
 .saldo-box .sub{font-size:12px;opacity:.8}
@@ -804,10 +804,12 @@ function renderDash(){
   // Saldo cassa (tipo minuscolo — movimenti v2)
   const entrate=cassa.filter(m=>m.tipo==='entrata'||m.tipo==='Entrata').reduce((a,m)=>a+m.importo,0);
   const uscite=cassa.filter(m=>m.tipo==='uscita'||m.tipo==='Uscita').reduce((a,m)=>a+m.importo,0);
+  const saldoVal = entrate-uscite;
+  const saldoBg = saldoVal >= 0 ? 'linear-gradient(135deg,#2e7d32,#43a047)' : 'linear-gradient(135deg,#b71c1c,#e53935)';
   document.getElementById('dash-saldo').innerHTML=`
-    <div class="saldo-box">
+    <div class="saldo-box" style="background:${saldoBg}">
       <div class="lbl">Saldo cassa</div>
-      <div class="val">${euro(entrate-uscite)}</div>
+      <div class="val">${euro(saldoVal)}</div>
       <div class="sub">Entrate ${euro(entrate)} — Uscite ${euro(uscite)}</div>
     </div>`;
 
