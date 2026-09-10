@@ -554,7 +554,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     </div>
     <div class="field">
       <label>Lezioni abilitate *</label>
-      <div id="pc-lezioni-check" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
+      <div id="pc-lezioni-check" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
     </div>
     <div class="field"><label>Note</label><input type="text" id="pc-note" placeholder="Opzionale"></div>
     <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaPC)">Salva pacchetto</button>
@@ -1952,23 +1952,44 @@ function openEditPC(id){
   document.getElementById('pc-prezzo').value = pc ? pc.prezzo : '';
   document.getElementById('pc-nlez').value = pc ? pc.n_lezioni : '';
   document.getElementById('pc-note').value = pc ? (pc.note||'') : '';
-  // Checkbox lezioni
-  const selIds = pc ? (pc.lezioni_ids||[]) : [];
-  document.getElementById('pc-lezioni-check').innerHTML = lezioni.map(l=>`
-    <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid ${selIds.includes(l.id)?'var(--cl-dark)':'var(--border)'};border-radius:20px;cursor:pointer;font-size:13px;background:${selIds.includes(l.id)?'var(--cl-dark)':'#fff'};color:${selIds.includes(l.id)?'#fff':'var(--cl-dark)'}">
-      <input type="checkbox" value="${l.id}" style="display:none" ${selIds.includes(l.id)?'checked':''} onchange="this.closest('label').style.background=this.checked?'var(--cl-dark)':'#fff';this.closest('label').style.color=this.checked?'#fff':'var(--cl-dark)';this.closest('label').style.borderColor=this.checked?'var(--cl-dark)':'var(--border)'">
-      ${l.nome}
-    </label>`).join('');
+  // Lezioni con n_lezioni per tipo
+  const selLezioni = pc ? (pc.lezioni||[]) : [];
+  document.getElementById('pc-lezioni-check').innerHTML = lezioni.map(l=>{
+    const found = selLezioni.find(x=>x.id===l.id);
+    const checked = !!found;
+    const nLez = found ? found.n_lezioni : 0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);background:#fff" id="pc-lez-row-${l.id}">
+      <input type="checkbox" id="pc-lez-chk-${l.id}" value="${l.id}" ${checked?'checked':''} onchange="togglePCLez(${l.id})" style="accent-color:var(--cl-dark);width:16px;height:16px;cursor:pointer">
+      <label for="pc-lez-chk-${l.id}" style="flex:1;font-size:13px;cursor:pointer;color:var(--cl-dark)">${l.nome}</label>
+      <input type="number" id="pc-lez-n-${l.id}" value="${nLez}" min="0" max="99" placeholder="0" style="width:70px;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;${checked?'':'opacity:.4;pointer-events:none'}">
+      <span style="font-size:11px;color:var(--muted)">lez.</span>
+    </div>`;
+  }).join('');
   document.getElementById('ov-pc').classList.add('open');
+}
+
+function togglePCLez(lid){
+  const chk=document.getElementById('pc-lez-chk-'+lid);
+  const inp=document.getElementById('pc-lez-n-'+lid);
+  if(inp){
+    inp.style.opacity=chk.checked?'1':'0.4';
+    inp.style.pointerEvents=chk.checked?'auto':'none';
+    if(chk.checked&&parseInt(inp.value)===0) inp.value='';
+  }
 }
 
 async function salvaPC(){
   const id = document.getElementById('pc-id').value;
   const nome = document.getElementById('pc-nome').value.trim();
   if(!nome){toast('Inserisci il nome del pacchetto',true);return;}
-  const lezioni_ids=[...document.querySelectorAll('#pc-lezioni-check input:checked')].map(x=>parseInt(x.value));
-  if(!lezioni_ids.length){toast('Seleziona almeno una lezione',true);return;}
-  const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,n_lezioni:parseInt(document.getElementById('pc-nlez').value)||0,lezioni_ids,note:document.getElementById('pc-note').value};
+  const lezioniSel=[...document.querySelectorAll('#pc-lezioni-check input[type=checkbox]:checked')].map(chk=>{
+    const lid=parseInt(chk.value);
+    const nLez=parseInt(document.getElementById('pc-lez-n-'+lid)?.value)||0;
+    return {id:lid, n_lezioni:nLez};
+  });
+  if(!lezioniSel.length){toast('Seleziona almeno una lezione',true);return;}
+  const totLezioni=lezioniSel.reduce((a,l)=>a+l.n_lezioni,0);
+  const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,n_lezioni:totLezioni||parseInt(document.getElementById('pc-nlez').value)||0,lezioni:lezioniSel,lezioni_ids:lezioniSel.map(l=>l.id),note:document.getElementById('pc-note').value};
   if(id){
     await fetch(API+'/api/v2/pacchetti-commerciali/'+id,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify(body)});
   } else {
