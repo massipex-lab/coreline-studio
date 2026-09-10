@@ -329,18 +329,41 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
     <!-- CONFIG -->
     <div class="page" id="page-cfg">
-      <div class="sec">Configurazione sessioni</div>
-      <div class="card" style="margin-bottom:14px">
-        <div class="field"><label>Max numero di partecipanti (default)</label><input type="number" id="cfg-posti-def" min="1" max="20" placeholder="6"></div>
-        <button class="btn btn-primary" onclick="withLoading(this,salvaConfigPosti)">Salva configurazione</button>
+      <!-- AREA 1: LEZIONI -->
+      <div class="sec">1 · Lezioni</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="text" id="srch-lez" placeholder="Cerca lezione…" oninput="renderCfg()" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
+        <select id="ord-lez" onchange="renderCfg()" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
+          <option value="desc">Più recenti</option>
+          <option value="asc">Meno recenti</option>
+        </select>
       </div>
-      <div class="sec">Corsi</div>
-      <div class="card" id="corsi-list"></div>
-      <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoCorso()"><span class="ti ti-plus"></span> Aggiungi corso</button>
+      <div class="card" id="lezioni-list" style="margin-bottom:10px"></div>
+      <button class="btn btn-full" onclick="openEditLezione(null)" style="margin-bottom:20px"><span class="ti ti-plus"></span> Aggiungi lezione</button>
 
-      <div class="sec">Istruttrici/Istruttori</div>
+      <!-- AREA 2: PACCHETTI COMMERCIALI -->
+      <div class="sec">2 · Pacchetti commerciali</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="text" id="srch-pc" placeholder="Cerca pacchetto…" oninput="renderCfg()" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
+        <select id="ord-pc" onchange="renderCfg()" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
+          <option value="desc">Più recenti</option>
+          <option value="asc">Meno recenti</option>
+        </select>
+      </div>
+      <div class="card" id="pc-list" style="margin-bottom:10px"></div>
+      <button class="btn btn-full" onclick="openEditPC(null)" style="margin-bottom:20px"><span class="ti ti-plus"></span> Aggiungi pacchetto</button>
+
+      <!-- Migrazione -->
+      <div class="card" style="margin-bottom:20px;background:#FFF8E1">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px">⚡ <strong>Migrazione dati</strong> — esegui una sola volta per convertire i corsi esistenti.</div>
+        <button class="btn btn-full" onclick="withLoading(this,migraLezioni)">Migra corsi → lezioni e pacchetti</button>
+        <div id="migra-lez-result" style="margin-top:8px;font-size:13px"></div>
+      </div>
+
+      <!-- AREA 3: ISTRUTTORI -->
+      <div class="sec">3 · Istruttori</div>
       <div class="card" id="istr-list"></div>
-      <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore/istruttrice</button>
+      <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore</button>
 
       <div class="sec">Database</div>
       <div class="card">
