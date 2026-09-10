@@ -1958,10 +1958,13 @@ function openEditPC(id){
     const found = selLezioni.find(x=>x.id===l.id);
     const checked = !!found;
     const nLez = found ? found.n_lezioni : 0;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);background:#fff" id="pc-lez-row-${l.id}">
-      <input type="checkbox" id="pc-lez-chk-${l.id}" value="${l.id}" ${checked?'checked':''} onchange="togglePCLez(${l.id})" style="accent-color:var(--cl-dark);width:16px;height:16px;cursor:pointer">
-      <label for="pc-lez-chk-${l.id}" style="flex:1;font-size:13px;cursor:pointer;color:var(--cl-dark)">${l.nome}</label>
-      <input type="number" id="pc-lez-n-${l.id}" value="${nLez}" min="0" max="99" placeholder="0" style="width:70px;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;${checked?'':'opacity:.4;pointer-events:none'}">
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid ${checked?'var(--cl-dark)':'var(--border)'};border-radius:var(--r-md);background:${checked?'#f0f2ee':'#fff'};cursor:pointer" id="pc-lez-row-${l.id}" onclick="togglePCLez(${l.id})">
+      <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${checked?'var(--cl-dark)':'var(--border)'};background:${checked?'var(--cl-dark)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${checked?'<span style="color:#fff;font-size:12px;font-weight:700">✓</span>':''}
+      </div>
+      <input type="hidden" id="pc-lez-chk-${l.id}" value="${l.id}" data-checked="${checked?'1':'0'}">
+      <span style="flex:1;font-size:13px;color:var(--cl-dark);font-weight:${checked?'600':'400'}">${l.nome}</span>
+      <input type="number" id="pc-lez-n-${l.id}" value="${nLez||''}" min="0" max="99" placeholder="0" onclick="event.stopPropagation()" style="width:70px;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;${checked?'':'opacity:.4;pointer-events:none'}">
       <span style="font-size:11px;color:var(--muted)">lez.</span>
     </div>`;
   }).join('');
@@ -1971,10 +1974,30 @@ function openEditPC(id){
 function togglePCLez(lid){
   const chk=document.getElementById('pc-lez-chk-'+lid);
   const inp=document.getElementById('pc-lez-n-'+lid);
+  const row=document.getElementById('pc-lez-row-'+lid);
+  if(!chk||!row) return;
+  const wasChecked=chk.dataset.checked==='1';
+  const nowChecked=!wasChecked;
+  chk.dataset.checked=nowChecked?'1':'0';
+  // Aggiorna stile riga
+  row.style.borderColor=nowChecked?'var(--cl-dark)':'var(--border)';
+  row.style.background=nowChecked?'#f0f2ee':'#fff';
+  // Aggiorna cerchio
+  const circle=row.querySelector('div');
+  if(circle){
+    circle.style.borderColor=nowChecked?'var(--cl-dark)':'var(--border)';
+    circle.style.background=nowChecked?'var(--cl-dark)':'transparent';
+    circle.innerHTML=nowChecked?'<span style="color:#fff;font-size:12px;font-weight:700">✓</span>':'';
+  }
+  // Aggiorna label
+  const label=row.querySelector('span');
+  if(label) label.style.fontWeight=nowChecked?'600':'400';
+  // Aggiorna input
   if(inp){
-    inp.style.opacity=chk.checked?'1':'0.4';
-    inp.style.pointerEvents=chk.checked?'auto':'none';
-    if(chk.checked&&parseInt(inp.value)===0) inp.value='';
+    inp.style.opacity=nowChecked?'1':'0.4';
+    inp.style.pointerEvents=nowChecked?'auto':'none';
+    if(nowChecked&&!inp.value) inp.focus();
+    if(!nowChecked) inp.value='';
   }
 }
 
@@ -1982,11 +2005,13 @@ async function salvaPC(){
   const id = document.getElementById('pc-id').value;
   const nome = document.getElementById('pc-nome').value.trim();
   if(!nome){toast('Inserisci il nome del pacchetto',true);return;}
-  const lezioniSel=[...document.querySelectorAll('#pc-lezioni-check input[type=checkbox]:checked')].map(chk=>{
-    const lid=parseInt(chk.value);
-    const nLez=parseInt(document.getElementById('pc-lez-n-'+lid)?.value)||0;
-    return {id:lid, n_lezioni:nLez};
-  });
+  const lezioniSel=[...document.querySelectorAll('#pc-lezioni-check input[type=hidden]')]
+    .filter(chk=>chk.dataset.checked==='1')
+    .map(chk=>{
+      const lid=parseInt(chk.value);
+      const nLez=parseInt(document.getElementById('pc-lez-n-'+lid)?.value)||0;
+      return {id:lid, n_lezioni:nLez};
+    });
   if(!lezioniSel.length){toast('Seleziona almeno una lezione',true);return;}
   const totLezioni=lezioniSel.reduce((a,l)=>a+l.n_lezioni,0);
   const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,n_lezioni:totLezioni||parseInt(document.getElementById('pc-nlez').value)||0,lezioni:lezioniSel,lezioni_ids:lezioniSel.map(l=>l.id),note:document.getElementById('pc-note').value};
