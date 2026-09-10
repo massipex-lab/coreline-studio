@@ -768,12 +768,11 @@ async function loadAll(){
     }
   } catch(e) { console.warn('Processa sessioni:', e); }
 
-  const [iv2,s,c,ist,mov]=await Promise.all([
-    GET('/api/v2/iscritte'),GET('/api/sessioni'),GET('/api/corsi'),GET('/api/istruttori'),GET('/api/v2/movimenti')
+  const [iv2,s,ist,mov]=await Promise.all([
+    GET('/api/v2/iscritte'),GET('/api/sessioni'),GET('/api/istruttori'),GET('/api/v2/movimenti')
   ]);
   if(iv2) clienti=iv2;
   if(s) sessioni=s;
-  if(c) corsi=c;
   if(ist) istruttori=ist;
   if(mov) cassa=mov;
   // Carica certificati da approvare per dashboard
@@ -1726,11 +1725,11 @@ function openNuovoCorso(){
 async function deleteCorso(cid, nome, hasPac){
   const msg = hasPac ? 'Ci sono pacchetti attivi. Il backend bloccherà se ci sono lezioni da fare. Procedere?' : 'Cancellare il corso? Operazione irreversibile.';
   if(!confirm(msg)) return;
-  const r = await fetch(API+'/api/corsi/'+cid,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  const r = await fetch(API+'/api/v2/lezioni/'+cid,{method:'DELETE',headers:{'X-Auth-Token':token}});
   const data = await r.json();
   if(data.ok){
     toast('Corso cancellato.');
-    const newCorsi=await GET('/api/corsi');
+    const newLez=await GET('/api/v2/lezioni'); if(newLez) lezioni=newLez;
     if(newCorsi){corsi=newCorsi; renderCfg(); populateSelects();}
   } else {
     toast(data.error||'Impossibile cancellare',true);
@@ -1765,7 +1764,7 @@ async function salvaCorso(){
   if(!nome){toast('Inserisci il nome del corso',true);return;}
   const obj={id:editCorsoIdx!==null?corsi[editCorsoIdx].id:Date.now(),nome,lezioni:parseInt(document.getElementById('c-lez').value)||0,prezzo:parseFloat(document.getElementById('c-prezzo').value)||0,note:document.getElementById('c-note').value};
   if(editCorsoIdx!==null) corsi[editCorsoIdx]=obj; else corsi.push(obj);
-  await POST('/api/corsi',corsi);
+  // corsi migrati a lezioni
   closeOv('ov-corso'); toast('Corso salvato!'); renderCfg(); populateSelects();
 }
 
