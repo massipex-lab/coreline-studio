@@ -1674,7 +1674,7 @@ function renderCfg(){
     ?listLez.map(l=>`<div class="setting-item">
         <div style="flex:1">
           <div class="setting-label">${l.nome}</div>
-          <div class="setting-sub">${l.posti_max} posti max${l.sessioni_future>0?` · <span style="color:var(--warn)">${l.sessioni_future} sessioni future</span>`:''} · ${fmtShort(l.created_at)}</div>
+          <div class="setting-sub">${l.posti_max} posti max${l.sessioni_future>0?` · <span style="color:var(--warn)">${l.sessioni_future} sessioni future</span>`:''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="ti ti-pencil" onclick="openEditLezione(${l.id})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
@@ -1693,7 +1693,7 @@ function renderCfg(){
     ?listPC.map(p=>`<div class="setting-item">
         <div style="flex:1">
           <div class="setting-label">${p.nome}</div>
-          <div class="setting-sub">${euro(p.prezzo)} · ${p.n_lezioni} lez. · ${(p.lezioni_nomi||[]).join(', ')||'—'}${p.clienti_attivi>0?` · <span style="color:var(--warn)">${p.clienti_attivi} attivi</span>`:''} · ${fmtShort(p.created_at)}</div>
+          <div class="setting-sub">${euro(p.prezzo)} · ${p.n_lezioni} lez. · ${(p.lezioni_nomi||[]).join(', ')||'—'}${p.clienti_attivi>0?` · <span style="color:var(--warn)">${p.clienti_attivi} attivi</span>`:''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="ti ti-pencil" onclick="openEditPC(${p.id})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
