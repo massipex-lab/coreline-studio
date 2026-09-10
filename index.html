@@ -233,7 +233,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="tab" onclick="goTab('ses')"><span class="ti ti-calendar"></span>Sessioni</div>
     <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Clienti</div>
     <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuovo</div>
-    <div class="tab" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttrici/Istruttori</div>
+    <div class="tab" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttori</div>
     <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
     <div class="tab" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</div>
   </div>
@@ -834,7 +834,7 @@ function populateSelects(){
   selPac.onchange=function(){
     const opt=this.selectedOptions[0];
     if(opt&&opt.dataset.lez) document.getElementById('n-lez').value=opt.dataset.lez;
-    if(opt&&opt.dataset.prezzo){document.getElementById('n-quota').value=opt.dataset.prezzo;document.getElementById('n-pagato').value=opt.dataset.prezzo;}
+    if(opt&&opt.dataset.prezzo) document.getElementById('n-pagato').value=opt.dataset.prezzo;
   };
   // Tipo corso (sessione)
   document.getElementById('ns-tipo').innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option>${c.nome}</option>`).join('');
