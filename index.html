@@ -482,7 +482,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="modal-handle"></div>
     <button class="close-btn" onclick="closeOv('ov-add-pac')"><span class="ti ti-x"></span></button>
     <div class="modal-title">Nuovo pacchetto</div>
-    <div class="field"><label>Corso *</label><select id="ap-corso"></select></div>
+    <div class="field"><label>Pacchetto commerciale *</label><select id="ap-corso"></select></div>
     <div class="field"><label>Data inizio</label><input type="date" id="ap-data"></div>
     <div class="field"><label>Tipo pagamento</label>
       <select id="ap-metodo"><option>Bonifico</option><option>Contanti</option><option>Carta</option><option>Da saldare</option></select>
@@ -1096,19 +1096,27 @@ function openAddPacchetto(iid){
   document.getElementById('ap-pagato') && (document.getElementById('ap-pagato').value='');
   document.getElementById('ap-importo').value='';
   document.getElementById('ap-note').value='';
-  document.getElementById('ap-corso').innerHTML=corsi.map(c=>`<option value="${c.id}" data-lez="${c.lezioni}" data-prezzo="${c.prezzo}">${c.nome} — €${c.prezzo}</option>`).join('');
+  document.getElementById('ap-corso').innerHTML=pacchettiCommerciali.map(p=>`<option value="${p.id}" data-lez="${p.n_lezioni}" data-prezzo="${p.prezzo}" data-nome="${p.nome}">${p.nome} — €${p.prezzo}</option>`).join('');
   document.getElementById('ap-corso').onchange=function(){const opt=this.selectedOptions[0];if(opt)document.getElementById('ap-importo').value=opt.dataset.prezzo||'';};
   document.getElementById('ap-corso').dispatchEvent(new Event('change'));
 }
 
 async function salvaAddPacchetto(){
   const iid=_addPacchettoIscritaId; if(!iid) return;
-  const corso_id=parseInt(document.getElementById('ap-corso').value);
+  const pac_opt=document.getElementById('ap-corso').selectedOptions[0];
+  const pacchetto_commerciale_id=parseInt(document.getElementById('ap-corso').value);
+  const corso_nome=pac_opt?pac_opt.dataset.nome:'';
+  const n_lezioni=parseInt(pac_opt?pac_opt.dataset.lez:0)||0;
+  const prezzo=parseFloat(pac_opt?pac_opt.dataset.prezzo:0)||0;
   const metodo=document.getElementById('ap-metodo').value;
   const importo_pagato=parseFloat(document.getElementById('ap-importo').value)||0;
   const data_inizio=document.getElementById('ap-data').value;
   const note=document.getElementById('ap-note').value;
-  await POST(`/api/v2/iscritte/${iid}/pacchetti`,{corso_id,data_inizio,importo_pagato,metodo,note});
+  await POST(`/api/v2/iscritte/${iid}/pacchetti`,{
+    pacchetto_commerciale_id, corso_nome,
+    lezioni_tot:n_lezioni, corso_prezzo:prezzo,
+    data_inizio, importo_pagato, metodo, note
+  });
   closeOv('ov-add-pac');
   toast('Pacchetto aggiunto!');
   const iv2=await GET('/api/v2/iscritte');
