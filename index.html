@@ -823,14 +823,14 @@ function goTab(t){
 function populateSelects(){
   // Pacchetto (nuova cliente)
   const selPac=document.getElementById('n-pac');
-  selPac.innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option value="${c.nome}" data-lez="${c.lezioni}" data-prezzo="${c.prezzo}">${c.nome}${c.prezzo?' — €'+c.prezzo:''}</option>`).join('');
+  selPac.innerHTML='<option value="">— seleziona —</option>'+pacchettiCommerciali.map(p=>`<option value="${p.id}" data-lez="${p.n_lezioni}" data-prezzo="${p.prezzo}" data-nome="${p.nome}">${p.nome} — €${p.prezzo}</option>`).join('');
   selPac.onchange=function(){
     const opt=this.selectedOptions[0];
     if(opt&&opt.dataset.lez) document.getElementById('n-lez').value=opt.dataset.lez;
     if(opt&&opt.dataset.prezzo) document.getElementById('n-pagato').value=opt.dataset.prezzo;
   };
   // Tipo corso (sessione)
-  document.getElementById('ns-tipo').innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option>${c.nome}</option>`).join('');
+  document.getElementById('ns-tipo').innerHTML='<option value="">— seleziona —</option>'+lezioni.map(l=>`<option value="${l.id}" data-posti="${l.posti_max}">${l.nome}</option>`).join('');
   // Istruttore (sessione)
   document.getElementById('ns-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
   updateCatOptions();
@@ -1261,7 +1261,7 @@ function openRicorrente(){
   document.getElementById('ric-fine').value='';
   document.getElementById('ric-note').value='';
   // Popola selects corsi e istruttori
-  document.getElementById('ric-tipo').innerHTML='<option value="">— seleziona —</option>'+corsi.map(c=>`<option>${c.nome}</option>`).join('');
+  document.getElementById('ric-tipo').innerHTML='<option value="">— seleziona —</option>'+lezioni.map(l=>`<option value="${l.id}" data-posti="${l.posti_max}">${l.nome}</option>`).join('');
   document.getElementById('ric-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
   document.getElementById('ric-posti').value=getPostiMax();
   
@@ -1664,23 +1664,45 @@ async function salvaConfigPosti(){
 }
 
 function renderCfg(){
-  // Corsi
-  document.getElementById('corsi-list').innerHTML=corsi.length
-    ?corsi.map((c,i)=>{
-      const hasPac=(c.pacchetti_attivi||0)>0;
-      return `<div class="setting-item">
-        <div onclick="openEditCorso(${i})" style="flex:1;cursor:pointer">
-          <div class="setting-label">${c.nome}</div>
-          <div class="setting-sub">${c.lezioni} lezioni · ${euro(c.prezzo)}${hasPac?` · <span style="color:var(--warn);font-weight:600">${c.pacchetti_attivi} pacchett${c.pacchetti_attivi===1?'o attivo':'i attivi'}</span>`:''}</div>
+  // AREA 1: Lezioni
+  const qLez=(document.getElementById('srch-lez')?.value||'').toLowerCase();
+  const ordLez=document.getElementById('ord-lez')?.value||'desc';
+  let listLez=[...lezioni].filter(l=>!qLez||l.nome.toLowerCase().includes(qLez));
+  if(ordLez==='asc') listLez.sort((a,b)=>a.created_at>b.created_at?1:-1);
+  else listLez.sort((a,b)=>a.created_at>b.created_at?-1:1);
+  document.getElementById('lezioni-list').innerHTML=listLez.length
+    ?listLez.map(l=>`<div class="setting-item">
+        <div style="flex:1">
+          <div class="setting-label">${l.nome}</div>
+          <div class="setting-sub">${l.posti_max} posti max${l.sessioni_future>0?` · <span style="color:var(--warn)">${l.sessioni_future} sessioni future</span>`:''} · ${fmtShort(l.created_at)}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <span class="ti ti-pencil" onclick="openEditCorso(${i})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
-          <span class="ti ti-trash" onclick="deleteCorso(${c.id},'${(c.nome||'').replace(/'/g,"'")}',${hasPac})" style="cursor:pointer;color:var(--red);font-size:16px" title="${hasPac?'Attenzione: ci sono pacchetti attivi':'Cancella corso'}"></span>
+          <span class="ti ti-pencil" onclick="openEditLezione(${l.id})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
+          <span class="ti ti-trash" onclick="deleteLezione(${l.id},'${l.nome}',${l.sessioni_future>0})" style="cursor:pointer;color:var(--red);font-size:16px"></span>
         </div>
-      </div>`;
-    }).join('')
-    :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun corso. Aggiungine uno.</div>';
-  // Istruttori
+      </div>`).join('')
+    :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessuna lezione. Aggiungine una.</div>';
+
+  // AREA 2: Pacchetti commerciali
+  const qPC=(document.getElementById('srch-pc')?.value||'').toLowerCase();
+  const ordPC=document.getElementById('ord-pc')?.value||'desc';
+  let listPC=[...pacchettiCommerciali].filter(p=>!qPC||p.nome.toLowerCase().includes(qPC));
+  if(ordPC==='asc') listPC.sort((a,b)=>a.created_at>b.created_at?1:-1);
+  else listPC.sort((a,b)=>a.created_at>b.created_at?-1:1);
+  document.getElementById('pc-list').innerHTML=listPC.length
+    ?listPC.map(p=>`<div class="setting-item">
+        <div style="flex:1">
+          <div class="setting-label">${p.nome}</div>
+          <div class="setting-sub">${euro(p.prezzo)} · ${p.n_lezioni} lez. · ${(p.lezioni_nomi||[]).join(', ')||'—'}${p.clienti_attivi>0?` · <span style="color:var(--warn)">${p.clienti_attivi} attivi</span>`:''} · ${fmtShort(p.created_at)}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="ti ti-pencil" onclick="openEditPC(${p.id})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
+          <span class="ti ti-trash" onclick="deletePC(${p.id},'${p.nome}',${p.clienti_attivi>0})" style="cursor:pointer;color:var(--red);font-size:16px"></span>
+        </div>
+      </div>`).join('')
+    :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun pacchetto. Aggiungine uno.</div>';
+
+  // AREA 3: Istruttori
   document.getElementById('istr-list').innerHTML=istruttori.length
     ?istruttori.map((ist,i)=>`<div class="setting-item">
         <div onclick="openEditIstr(${i})" style="flex:1;cursor:pointer">
