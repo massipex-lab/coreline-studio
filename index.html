@@ -510,6 +510,41 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
   </div>
 </div>
 
+<!-- MODAL LEZIONE -->
+<div class="overlay" id="ov-lez">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-lez')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="ov-lez-title">Nuova lezione</div>
+    <input type="hidden" id="lez-id">
+    <div class="field"><label>Nome lezione *</label><input type="text" id="lez-nome" placeholder="Es. Reformer"></div>
+    <div class="field"><label>Max partecipanti</label><input type="number" id="lez-posti" min="1" max="30" value="6"></div>
+    <div class="field"><label>Note</label><input type="text" id="lez-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaLezione)">Salva lezione</button>
+  </div>
+</div>
+
+<!-- MODAL PACCHETTO COMMERCIALE -->
+<div class="overlay" id="ov-pc">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-pc')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="ov-pc-title">Nuovo pacchetto</div>
+    <input type="hidden" id="pc-id">
+    <div class="field"><label>Nome pacchetto *</label><input type="text" id="pc-nome" placeholder="Es. Reformer (10+3)"></div>
+    <div class="field-row">
+      <div class="field"><label>Prezzo (€)</label><input type="number" id="pc-prezzo" min="0" step="0.01" placeholder="0"></div>
+      <div class="field"><label>N. lezioni</label><input type="number" id="pc-nlez" min="1" placeholder="13"></div>
+    </div>
+    <div class="field">
+      <label>Lezioni abilitate *</label>
+      <div id="pc-lezioni-check" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
+    </div>
+    <div class="field"><label>Note</label><input type="text" id="pc-note" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaPC)">Salva pacchetto</button>
+  </div>
+</div>
+
 <!-- MODAL CERTIFICATO MEDICO -->
 <div class="overlay" id="ov-cert">
   <div class="modal">
@@ -574,7 +609,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
 let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
-let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[], studioConfig={};
+let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[], studioConfig={}, lezioni=[], pacchettiCommerciali=[];
 
 // ── UTILITY: gestione bottoni durante azioni async ────────────────────────────
 function btnLoading(btnEl, loading, originalText=null){
@@ -736,6 +771,10 @@ async function loadAll(){
   } catch(e){}
   // Carica config studio
   try { const cfg=await GET('/api/v2/config'); if(cfg) studioConfig=cfg; } catch(e){}
+  // Carica lezioni e pacchetti commerciali
+  const [lz, pc] = await Promise.all([GET('/api/v2/lezioni'), GET('/api/v2/pacchetti-commerciali')]);
+  if(lz) lezioni=lz;
+  if(pc) pacchettiCommerciali=pc;
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
@@ -1820,6 +1859,100 @@ async function riattiva(iid){
     const iv2=await GET('/api/v2/iscritte');
     if(iv2){clienti=iv2; renderIsc(); renderDash();}
     openIsc(iid);
+  }
+}
+
+// ── LEZIONI ──────────────────────────────────────────────────────────────────
+function openEditLezione(id){
+  const l = id ? lezioni.find(x=>x.id===id) : null;
+  document.getElementById('ov-lez-title').textContent = l ? 'Modifica lezione' : 'Nuova lezione';
+  document.getElementById('lez-id').value = l ? l.id : '';
+  document.getElementById('lez-nome').value = l ? l.nome : '';
+  document.getElementById('lez-posti').value = l ? l.posti_max : 6;
+  document.getElementById('lez-note').value = l ? (l.note||'') : '';
+  document.getElementById('ov-lez').classList.add('open');
+}
+
+async function salvaLezione(){
+  const id = document.getElementById('lez-id').value;
+  const nome = document.getElementById('lez-nome').value.trim();
+  if(!nome){toast('Inserisci il nome della lezione',true);return;}
+  const body = {nome, posti_max:parseInt(document.getElementById('lez-posti').value)||6, note:document.getElementById('lez-note').value};
+  if(id){
+    await fetch(API+'/api/v2/lezioni/'+id,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify(body)});
+  } else {
+    await POST('/api/v2/lezioni', body);
+  }
+  closeOv('ov-lez');
+  toast('Lezione salvata!');
+  const lz=await GET('/api/v2/lezioni'); if(lz){lezioni=lz; renderCfg(); populateSelects();}
+}
+
+async function deleteLezione(id, nome, hasSes){
+  const msg = hasSes ? 'Ci sono sessioni future associate. Impossibile cancellare.' : 'Cancellare la lezione "'+nome+'"?';
+  if(hasSes){toast(msg,true);return;}
+  if(!confirm(msg)) return;
+  const r=await fetch(API+'/api/v2/lezioni/'+id,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  const data=await r.json();
+  if(data.ok){toast('Lezione cancellata.');const lz=await GET('/api/v2/lezioni');if(lz){lezioni=lz;renderCfg();populateSelects();}}
+  else toast(data.error||'Errore',true);
+}
+
+// ── PACCHETTI COMMERCIALI ─────────────────────────────────────────────────────
+function openEditPC(id){
+  const pc = id ? pacchettiCommerciali.find(x=>x.id===id) : null;
+  document.getElementById('ov-pc-title').textContent = pc ? 'Modifica pacchetto' : 'Nuovo pacchetto';
+  document.getElementById('pc-id').value = pc ? pc.id : '';
+  document.getElementById('pc-nome').value = pc ? pc.nome : '';
+  document.getElementById('pc-prezzo').value = pc ? pc.prezzo : '';
+  document.getElementById('pc-nlez').value = pc ? pc.n_lezioni : '';
+  document.getElementById('pc-note').value = pc ? (pc.note||'') : '';
+  // Checkbox lezioni
+  const selIds = pc ? (pc.lezioni_ids||[]) : [];
+  document.getElementById('pc-lezioni-check').innerHTML = lezioni.map(l=>`
+    <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid ${selIds.includes(l.id)?'var(--cl-dark)':'var(--border)'};border-radius:20px;cursor:pointer;font-size:13px;background:${selIds.includes(l.id)?'var(--cl-dark)':'#fff'};color:${selIds.includes(l.id)?'#fff':'var(--cl-dark)'}">
+      <input type="checkbox" value="${l.id}" style="display:none" ${selIds.includes(l.id)?'checked':''} onchange="this.closest('label').style.background=this.checked?'var(--cl-dark)':'#fff';this.closest('label').style.color=this.checked?'#fff':'var(--cl-dark)';this.closest('label').style.borderColor=this.checked?'var(--cl-dark)':'var(--border)'">
+      ${l.nome}
+    </label>`).join('');
+  document.getElementById('ov-pc').classList.add('open');
+}
+
+async function salvaPC(){
+  const id = document.getElementById('pc-id').value;
+  const nome = document.getElementById('pc-nome').value.trim();
+  if(!nome){toast('Inserisci il nome del pacchetto',true);return;}
+  const lezioni_ids=[...document.querySelectorAll('#pc-lezioni-check input:checked')].map(x=>parseInt(x.value));
+  if(!lezioni_ids.length){toast('Seleziona almeno una lezione',true);return;}
+  const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,n_lezioni:parseInt(document.getElementById('pc-nlez').value)||0,lezioni_ids,note:document.getElementById('pc-note').value};
+  if(id){
+    await fetch(API+'/api/v2/pacchetti-commerciali/'+id,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify(body)});
+  } else {
+    await POST('/api/v2/pacchetti-commerciali',body);
+  }
+  closeOv('ov-pc');
+  toast('Pacchetto salvato!');
+  const pc=await GET('/api/v2/pacchetti-commerciali'); if(pc){pacchettiCommerciali=pc; renderCfg();}
+}
+
+async function deletePC(id, nome, hasClienti){
+  if(hasClienti){toast('Ci sono clienti con questo pacchetto attivo. Impossibile cancellare.',true);return;}
+  if(!confirm('Cancellare il pacchetto "'+nome+'"?')) return;
+  const r=await fetch(API+'/api/v2/pacchetti-commerciali/'+id,{method:'DELETE',headers:{'X-Auth-Token':token}});
+  const data=await r.json();
+  if(data.ok){toast('Pacchetto cancellato.');const pc=await GET('/api/v2/pacchetti-commerciali');if(pc){pacchettiCommerciali=pc;renderCfg();}}
+  else toast(data.error||'Errore',true);
+}
+
+async function migraLezioni(){
+  const r=await POST('/api/v2/migra-lezioni',{});
+  const el=document.getElementById('migra-lez-result');
+  if(r&&r.ok){
+    el.innerHTML='<span style="color:var(--green)">✓ '+r.message+'</span>';
+    const [lz,pc]=await Promise.all([GET('/api/v2/lezioni'),GET('/api/v2/pacchetti-commerciali')]);
+    if(lz) lezioni=lz; if(pc) pacchettiCommerciali=pc;
+    renderCfg(); populateSelects();
+  } else {
+    el.innerHTML='<span style="color:var(--muted)">'+(r?.message||'Errore')+'</span>';
   }
 }
 
