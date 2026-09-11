@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.13)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.14)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -311,22 +311,21 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
           <div class="field"><label>Nome *</label><input type="text" id="n-nome" placeholder="Es. Giulia"></div>
           <div class="field"><label>Cognome *</label><input type="text" id="n-cognome" placeholder="Es. Rossi"></div>
         </div>
+        <div class="field-row">
+          <div class="field"><label>Telefono</label><input type="tel" id="n-telefono" placeholder="Es. 333 1234567"></div>
+          <div class="field"><label>Email</label><input type="email" id="n-email" placeholder="Es. giulia@email.com"></div>
+        </div>
         <div class="field">
-          <label>Pacchetti *</label>
+          <label>Pacchetti</label>
           <div id="n-pac-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
           <button type="button" class="btn btn-sm" onclick="aggiungiNPac()" style="width:100%"><span class="ti ti-plus"></span> Aggiungi pacchetto</button>
         </div>
-        <div class="field"><label>Totale da pagare</label><div id="n-totale" style="font-size:18px;font-weight:700;color:var(--cl-dark);padding:8px 0">€0</div></div>
-        <div class="field"><label>Tipo pagamento</label>
-          <select id="n-pag"><option>Bonifico</option><option>Contanti</option><option>Carta</option></select>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Pagato (€)</label><input type="number" id="n-pagato" placeholder="0" min="0" step="0.01"></div>
-          <div class="field"><label>Data pagamento</label><input type="date" id="n-data-pag"></div>
-        </div>
-        <div class="field"><label>Causale pagamento</label><input type="text" id="n-causale" placeholder="Es. Acconto iscrizione"></div>
         <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
         <input type="hidden" id="n-lez" value="0">
+        <input type="hidden" id="n-pagato" value="0">
+        <input type="hidden" id="n-data-pag" value="">
+        <input type="hidden" id="n-causale" value="">
+        <input type="hidden" id="n-pag" value="Bonifico">
         <button class="btn btn-primary btn-full" onclick="withLoading(this,aggiungiIsc)"><span class="ti ti-user-plus"></span> Aggiungi cliente</button>
       </div>
     </div>
@@ -1207,7 +1206,10 @@ async function aggiungiIsc(){
   const metodo=document.getElementById('n-pag').value;
   // 1. Crea iscritta
   const r = await POST('/api/v2/iscritte',{
-    nome, cognome, telefono:'', email:'', note:document.getElementById('n-note').value
+    nome, cognome,
+    telefono: document.getElementById('n-telefono')?.value.trim()||'',
+    email: document.getElementById('n-email')?.value.trim()||'',
+    note: document.getElementById('n-note').value
   });
   if(!r||!r.id){toast('Errore creazione iscritta',true);return;}
   // 2. Aggiungi tutti i pacchetti selezionati
