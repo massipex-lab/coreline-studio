@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.1)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.2)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -2019,6 +2019,29 @@ function togglePCLez(lid){
     if(nowChecked&&!inp.value) inp.focus();
     if(!nowChecked) inp.value='';
   }
+}
+
+function aggiungiNPac(){
+  const container=document.getElementById('n-pac-list');
+  if(!container) return;
+  const opts=pacchettiCommerciali.map(p=>`<option value="${p.id}" data-lez="${p.n_lezioni}" data-prezzo="${p.prezzo}" data-nome="${p.nome}">${p.nome} — €${p.prezzo}</option>`).join('');
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:4px';
+  div.innerHTML=`<select class="n-pac-select" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px" onchange="aggiornaTotal()">
+    <option value="">— seleziona —</option>${opts}
+  </select>
+  <span class="ti ti-x" onclick="this.parentElement.remove();aggiornaTotal()" style="cursor:pointer;color:var(--muted);font-size:18px"></span>`;
+  container.appendChild(div);
+}
+
+function aggiornaTotal(){
+  let tot=0;
+  document.querySelectorAll('.n-pac-select').forEach(s=>{
+    const opt=s.selectedOptions[0];
+    if(opt&&opt.dataset.prezzo) tot+=parseFloat(opt.dataset.prezzo)||0;
+  });
+  const el=document.getElementById('n-totale');
+  if(el) el.textContent=euro(tot);
 }
 
 async function salvaPC(){
