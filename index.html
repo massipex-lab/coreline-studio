@@ -307,17 +307,27 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="page" id="page-add">
       <div class="sec">Nuova cliente</div>
       <div class="card">
-        <div class="field"><label>Nome e cognome *</label><input type="text" id="n-nome" placeholder="Es. Giulia Rossi"></div>
-        <div class="field"><label>Pacchetto *</label><select id="n-pac"><option value="">— seleziona —</option></select></div>
+        <div class="field-row">
+          <div class="field"><label>Nome *</label><input type="text" id="n-nome" placeholder="Es. Giulia"></div>
+          <div class="field"><label>Cognome *</label><input type="text" id="n-cognome" placeholder="Es. Rossi"></div>
+        </div>
+        <div class="field">
+          <label>Pacchetti *</label>
+          <div id="n-pac-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+          <button type="button" class="btn btn-sm" onclick="aggiungiNPac()" style="width:100%"><span class="ti ti-plus"></span> Aggiungi pacchetto</button>
+        </div>
+        <div class="field"><label>Totale da pagare</label><div id="n-totale" style="font-size:18px;font-weight:700;color:var(--cl-dark);padding:8px 0">€0</div></div>
         <div class="field"><label>Tipo pagamento</label>
-          <select id="n-pag"><option>Bonifico</option><option>Contanti</option><option>Carta</option><option>Da saldare</option></select>
+          <select id="n-pag"><option>Bonifico</option><option>Contanti</option><option>Carta</option></select>
         </div>
         <div class="field-row">
-          <div class="field"><label>Pagato ora (€)</label><input type="number" id="n-pagato" placeholder="0"></div>
-          <div class="field"><label>Lezioni totali</label><input type="number" id="n-lez" placeholder="13"></div>
+          <div class="field"><label>Pagato (€)</label><input type="number" id="n-pagato" placeholder="0" min="0" step="0.01"></div>
+          <div class="field"><label>Data pagamento</label><input type="date" id="n-data-pag"></div>
         </div>
+        <div class="field"><label>Causale pagamento</label><input type="text" id="n-causale" placeholder="Es. Acconto iscrizione"></div>
         <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
-        <button class="btn btn-primary btn-full" id="btn-aggiungi-isc" onclick="withLoading(this,aggiungiIsc)"><span class="ti ti-user-plus"></span> Aggiungi cliente</button>
+        <input type="hidden" id="n-lez" value="0">
+        <button class="btn btn-primary btn-full" onclick="withLoading(this,aggiungiIsc)"><span class="ti ti-user-plus"></span> Aggiungi cliente</button>
       </div>
     </div>
 
@@ -987,18 +997,16 @@ async function openIsc(id){
       const fc = p.lezioni_rim===0?'var(--red)':(p.lezioni_rim<=2?'var(--warn)':'var(--green)');
       const resto = p.tot_pagato !== undefined ? (p.lezioni_tot*(p.corso_prezzo||0) - p.tot_pagato) : 0;
       // Sotto-contatori per pacchetti misti Mat+Reformer
-      const subCount = p.misto ? `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
-          <div style="background:var(--blue-l,#E3F2FD);border-radius:8px;padding:8px;text-align:center">
-            <div style="font-size:18px;font-weight:700;color:var(--blue,#1565C0)">${p.lezioni_reformer_rim||0}</div>
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Reformer rim.</div>
-            <div style="font-size:10px;color:var(--muted)">${p.lezioni_reformer_fatte||0}/${p.lezioni_reformer_tot||0}</div>
-          </div>
-          <div style="background:#E8F5E9;border-radius:8px;padding:8px;text-align:center">
-            <div style="font-size:18px;font-weight:700;color:#2E7D32">${p.lezioni_mat_rim||0}</div>
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Mat rim.</div>
-            <div style="font-size:10px;color:var(--muted)">${p.lezioni_mat_fatte||0}/${p.lezioni_mat_tot||0}</div>
-          </div>
+      const lezAbilP=Array.isArray(p.lezioni_abilitate)?p.lezioni_abilitate:[];
+      const subCount = lezAbilP.length>1 ? `
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+          ${lezAbilP.map(la=>{
+            const nT=parseInt(la.n_lezioni)||0;
+            const nF=parseInt(la.n_fatte)||0;
+            const nR=Math.max(0,nT-nF);
+            const pL=nT>0?Math.round(nF/nT*100):0;
+            return '<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px"><span>'+la.nome+'</span><span style="color:var(--muted)">'+nF+'/'+nT+' · <b>'+nR+' rim.</b></span></div><div class="prog"><div class="prog-fill" style="width:'+pL+'%"></div></div></div>';
+          }).join('')}
         </div>` : '';
       h += `<div class="card" style="margin-bottom:8px">
         <div class="row" style="margin-bottom:6px">
@@ -1165,26 +1173,42 @@ async function salvaAddPagamento(){
 
 async function aggiungiIsc(){
   const nome=document.getElementById('n-nome').value.trim();
+  const cognome=document.getElementById('n-cognome')?.value.trim()||'';
   if(!nome){toast('Inserisci il nome',true);return;}
-  const pac=document.getElementById('n-pac').value;
-  if(!pac){toast('Seleziona un pacchetto',true);return;}
-  // 1. Crea cliente
+  const pacSelects=document.querySelectorAll('.n-pac-select');
+  if(!pacSelects.length){toast('Aggiungi almeno un pacchetto',true);return;}
+  const importo_pagato=parseFloat(document.getElementById('n-pagato').value)||0;
+  const data_pag=document.getElementById('n-data-pag')?.value||new Date().toISOString().split('T')[0];
+  const causale=document.getElementById('n-causale')?.value.trim()||'';
+  const metodo=document.getElementById('n-pag').value;
+  // 1. Crea iscritta
   const r = await POST('/api/v2/iscritte',{
-    nome, cognome:'', telefono:'', email:'', note:document.getElementById('n-note').value
+    nome, cognome, telefono:'', email:'', note:document.getElementById('n-note').value
   });
-  if(!r||!r.id){toast('Errore creazione cliente',true);return;}
-  // 2. Aggiungi pacchetto con eventuale pagamento
-  const corso = corsi.find(c=>c.nome===pac);
-  await POST(`/api/v2/iscritte/${r.id}/pacchetti`,{
-    corso_id: corso?corso.id:null,
-    corso_nome: pac,
-    lezioni_tot: parseInt(document.getElementById('n-lez').value)||13,
-    importo_pagato: parseFloat(document.getElementById('n-pagato').value)||0,
-    metodo: document.getElementById('n-pag').value,
-    data_inizio: new Date().toISOString().split('T')[0]
-  });
+  if(!r||!r.id){toast('Errore creazione iscritta',true);return;}
+  // 2. Aggiungi tutti i pacchetti selezionati
+  let primoId=null;
+  for(const sel of pacSelects){
+    const opt=sel.selectedOptions[0];
+    if(!sel.value||!opt) continue;
+    const pac_r=await POST(`/api/v2/iscritte/${r.id}/pacchetti`,{
+      pacchetto_commerciale_id: parseInt(sel.value),
+      lezioni_tot: parseInt(opt.dataset.lez)||0,
+      importo_pagato: 0,
+      metodo,
+      data_inizio: new Date().toISOString().split('T')[0]
+    });
+    if(!primoId && pac_r?.id) primoId=pac_r.id;
+  }
+  // 3. Registra pagamento se presente
+  if(importo_pagato>0){
+    await POST(`/api/v2/iscritte/${r.id}/pagamenti`,{
+      importo: importo_pagato, metodo,
+      data: data_pag, causale, pacchetto_id: primoId
+    });
+  }
   ['n-nome','n-pagato','n-lez','n-note'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('n-pac').value='';
+
   // Ricarica tutto dal server per avere dati aggiornati (incluso cassa)
   const [iv2, newCas] = await Promise.all([
     GET('/api/v2/iscritte'),
