@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.10)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.12)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -558,10 +558,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="modal-title" id="ov-pc-title">Nuovo pacchetto</div>
     <input type="hidden" id="pc-id">
     <div class="field"><label>Nome pacchetto *</label><input type="text" id="pc-nome" placeholder="Es. Reformer (10+3)"></div>
-    <div class="field-row">
-      <div class="field"><label>Prezzo (€)</label><input type="number" id="pc-prezzo" min="0" step="0.01" placeholder="0"></div>
-      <div class="field"><label>N. lezioni</label><input type="number" id="pc-nlez" min="1" placeholder="13"></div>
-    </div>
+    <div class="field"><label>Prezzo (€)</label><input type="number" id="pc-prezzo" min="0" step="0.01" placeholder="0"></div>
     <div class="field">
       <label>Lezioni abilitate *</label>
       <div id="pc-lezioni-check" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
@@ -1736,7 +1733,7 @@ function renderCfg(){
     ?listPC.map(p=>`<div class="setting-item">
         <div style="flex:1">
           <div class="setting-label">${p.nome}</div>
-          <div class="setting-sub">${euro(p.prezzo)} · ${p.n_lezioni} lez. · ${(p.lezioni_nomi||[]).join(', ')||'—'}${p.clienti_attivi>0?` · <span style="color:var(--warn)">${p.clienti_attivi} attivi</span>`:''}</div>
+          <div class="setting-sub">${euro(p.prezzo)} · ${(p.lezioni_nomi||[]).join(', ')||'—'}${p.clienti_attivi>0?` · <span style="color:var(--warn)">${p.clienti_attivi} attivi</span>`:''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="ti ti-pencil" onclick="openEditPC(${p.id})" style="cursor:pointer;color:var(--muted);font-size:16px"></span>
@@ -2081,7 +2078,7 @@ async function salvaPC(){
     });
   // lezioni opzionali (es. iscrizione annuale non ha lezioni)
   const totLezioni=lezioniSel.reduce((a,l)=>a+l.n_lezioni,0);
-  const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,n_lezioni:totLezioni||parseInt(document.getElementById('pc-nlez').value)||0,lezioni:lezioniSel,lezioni_ids:lezioniSel.map(l=>l.id),note:document.getElementById('pc-note').value};
+  const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,lezioni:lezioniSel,lezioni_ids:lezioniSel.map(l=>l.id),note:document.getElementById('pc-note').value};
   if(id){
     await fetch(API+'/api/v2/pacchetti-commerciali/'+id,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify(body)});
   } else {
