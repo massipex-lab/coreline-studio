@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.8)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.10)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -635,7 +635,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
 let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
-let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[], studioConfig={}, lezioni=[], pacchettiCommerciali=[];
+let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[], lezioni=[], pacchettiCommerciali=[];
 
 // ── UTILITY: gestione bottoni durante azioni async ────────────────────────────
 function btnLoading(btnEl, loading, originalText=null){
@@ -794,8 +794,6 @@ async function loadAll(){
       certPresenti = certsResp.presenti || [];
     }
   } catch(e){}
-  // Carica config studio
-  try { const cfg=await GET('/api/v2/config'); if(cfg) studioConfig=cfg; } catch(e){}
   // Carica lezioni e pacchetti commerciali
   const [lz, pc] = await Promise.all([GET('/api/v2/lezioni'), GET('/api/v2/pacchetti-commerciali')]);
   if(lz) lezioni=lz;
@@ -1706,14 +1704,7 @@ function renderIstrRecap(){
   }).join('');
 }
 
-async function salvaConfigPosti(){
-  await POST('/api/v2/config',{
-    posti_max_default: document.getElementById('cfg-posti-def').value||'6'
-  });
-  const cfg=await GET('/api/v2/config');
-  if(cfg) studioConfig=cfg;
-  toast('Configurazione salvata!');
-}
+
 
 function renderCfg(){
   // AREA 1: Lezioni
@@ -2088,7 +2079,7 @@ async function salvaPC(){
       const nLez=parseInt(document.getElementById('pc-lez-n-'+lid)?.value)||0;
       return {id:lid, n_lezioni:nLez};
     });
-  if(!lezioniSel.length){toast('Seleziona almeno una lezione',true);return;}
+  // lezioni opzionali (es. iscrizione annuale non ha lezioni)
   const totLezioni=lezioniSel.reduce((a,l)=>a+l.n_lezioni,0);
   const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,n_lezioni:totLezioni||parseInt(document.getElementById('pc-nlez').value)||0,lezioni:lezioniSel,lezioni_ids:lezioniSel.map(l=>l.id),note:document.getElementById('pc-note').value};
   if(id){
@@ -2168,7 +2159,7 @@ async function salvaEditCert(){
 }
 
 function getPostiMax(){
-  return parseInt(studioConfig?.posti_max_default?.valore||6);
+  return 6; // default, sovrascitto da posti_max della lezione selezionata
 }
 
 function closeOv(id){
