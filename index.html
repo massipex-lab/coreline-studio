@@ -830,14 +830,10 @@ function goTab(t){
 
 // ══ SELECTS DINAMICI ═════════════════════════════════════════════════════════
 function populateSelects(){
-  // Pacchetto (nuova cliente)
-  const selPac=document.getElementById('n-pac');
-  selPac.innerHTML='<option value="">— seleziona —</option>'+pacchettiCommerciali.map(p=>`<option value="${p.id}" data-lez="${p.n_lezioni}" data-prezzo="${p.prezzo}" data-nome="${p.nome}">${p.nome} — €${p.prezzo}</option>`).join('');
-  selPac.onchange=function(){
-    const opt=this.selectedOptions[0];
-    if(opt&&opt.dataset.lez) document.getElementById('n-lez').value=opt.dataset.lez;
-    if(opt&&opt.dataset.prezzo) document.getElementById('n-pagato').value=opt.dataset.prezzo;
-  };
+  // Pacchetto (nuova cliente) - usa multi-pacchetto
+  if(document.getElementById('n-pac-list')&&!document.querySelector('.n-pac-select')){
+    aggiungiNPac();
+  }
   // Tipo corso (sessione)
   document.getElementById('ns-tipo').innerHTML='<option value="">— seleziona —</option>'+lezioni.map(l=>`<option value="${l.id}" data-posti="${l.posti_max}">${l.nome}</option>`).join('');
   // Istruttore (sessione)
