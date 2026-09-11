@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.5)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.6)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -995,26 +995,13 @@ async function openIsc(id){
       // Sotto-contatori per pacchetti misti Mat+Reformer
       const lezAbilP=Array.isArray(p.lezioni_abilitate)?p.lezioni_abilitate:[];
 
-      const isMulti = lezAbilP.length > 1;
-      h += `<div class="card" style="margin-bottom:8px">
-        <div class="row" style="margin-bottom:6px">
-          <div style="font-weight:700;font-size:14px">${p.corso_nome||'—'}</div>
-          <span class="badge ${p.lezioni_rim===0?'b-danger':(p.lezioni_rim<=2?'b-warn':'b-ok')}">${p.lezioni_rim} lez.</span>
-        </div>
-        ${isMulti ? 
-          lezAbilP.map(la=>{
-            const nT=parseInt(la.n_lezioni)||0;
-            const nF=parseInt(la.n_fatte)||0;
-            const nR=Math.max(0,nT-nF);
-            const pL=nT>0?Math.round(nF/nT*100):0;
-            return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="font-weight:600">'+la.nome+'</span><span style="color:var(--muted)">'+nF+'/'+nT+' · <b>'+nR+' rim.</b></span></div><div class="prog"><div class="prog-fill" style="width:'+pL+'%"></div></div><div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-sm" onclick="withLoading(this,()=>modLezTipo(${p.id},-1,'+la.id+',${id}))"><span class="ti ti-minus"></span></button><button class="btn btn-sm btn-primary" onclick="withLoading(this,()=>modLezTipo(${p.id},1,'+la.id+',${id}))"><span class="ti ti-plus"></span></button></div></div>';
-          }).join('') + '<div style="font-size:11px;color:var(--muted);margin-top:2px">Tot: ${p.lezioni_fatte}/${p.lezioni_tot} · inizio ${fmtShort(p.data_inizio)}</div>'
-          :
-          '<div class="prog"><div class="prog-fill" style="width:'+pct+'%;background:'+fc+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">${p.lezioni_fatte}/${p.lezioni_tot} lezioni totali · inizio ${fmtShort(p.data_inizio)}</div><div style="display:flex;gap:6px;margin-top:10px"><button class="btn btn-sm" onclick="withLoading(this,()=>modLezPacchetto(${p.id},-1,${id}))"><span class="ti ti-minus"></span></button><button class="btn btn-sm btn-primary" onclick="withLoading(this,()=>modLezPacchetto(${p.id},1,${id}))"><span class="ti ti-plus"></span></button></div>'
-        }
-        ${resto>0?`<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:6px">Da saldare: ${euro(resto)}</div>`:''}
-        <button class="btn btn-sm" onclick="openAddPagamento(${id},${p.id},'${p.corso_nome}')" style="margin-top:8px;width:100%"><span class="ti ti-cash"></span> Pagamento</button>
-      </div>`;
+      h += '<div class="card" style="margin-bottom:8px">';
+      h += '<div class="row" style="margin-bottom:6px"><div style="font-weight:700;font-size:14px">'+(p.corso_nome||'—')+'</div>';
+      h += '<span class="badge '+(p.lezioni_rim===0?'b-danger':(p.lezioni_rim<=2?'b-warn':'b-ok'))+'">'+p.lezioni_rim+' lez.</span></div>';
+      h += renderLezPacchetto(p, id);
+      if(resto>0) h += '<div style="font-size:12px;color:var(--red);font-weight:700;margin-top:6px">Da saldare: '+euro(resto)+'</div>';
+      h += '<button class="btn btn-sm" onclick="openAddPagamento('+id+','+p.id+',\''+p.corso_nome+'\''+')" style="margin-top:8px;width:100%"><span class="ti ti-cash"></span> Pagamento</button>';
+      h += '</div>';
     });
   } else {
     h += '<div style="font-size:13px;color:var(--muted);padding:8px 0 4px">Nessun pacchetto attivo.</div>';
