@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.18)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.19)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -573,21 +573,24 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
   </div>
 </div>
 
-<!-- MODAL MODIFICA ANAGRAFICA -->
+<!-- MODAL MODIFICA ANAGRAFICA + PACCHETTI -->
 <div class="overlay" id="ov-edit-isc">
   <div class="modal">
     <div class="modal-handle"></div>
     <button class="close-btn" onclick="closeOv('ov-edit-isc')"><span class="ti ti-x"></span></button>
     <div class="modal-title">Modifica cliente</div>
     <input type="hidden" id="edit-isc-id">
+    <div class="sec" style="margin-top:0">Anagrafica</div>
     <div class="field-row">
       <div class="field"><label>Nome *</label><input type="text" id="edit-isc-nome"></div>
-      <div class="field"><label>Cognome *</label><input type="text" id="edit-isc-cognome"></div>
+      <div class="field"><label>Cognome</label><input type="text" id="edit-isc-cognome"></div>
     </div>
     <div class="field"><label>Telefono</label><input type="text" id="edit-isc-tel"></div>
     <div class="field"><label>Email</label><input type="email" id="edit-isc-email"></div>
     <div class="field"><label>Note</label><input type="text" id="edit-isc-note"></div>
-    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaEditIscritta)">Salva</button>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaEditIscritta)" style="margin-bottom:16px">Salva anagrafica</button>
+    <div class="sec">Pacchetti attivi</div>
+    <div id="edit-pac-list"></div>
   </div>
 </div>
 
@@ -1033,7 +1036,6 @@ async function openIsc(id){
   h += '<div class="sec">Storico pagamenti</div>';
   h += '<div class="card" style="margin-bottom:14px">';
   if(saldoAperto>0) h += '<div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:10px">Da saldare: '+euro(saldoAperto)+'</div>';
-  h += '<button class="btn btn-full" onclick="openAddPagamento('+id+',null,\'\'" style="margin-bottom:10px"><span class="ti ti-cash"></span> + Registra pagamento</button>';
   if(movCliente.length){
     movCliente.sort((a,b)=>b.data>a.data?1:-1).forEach(m=>{
       h += '<div class="mov-row"><div><div class="mov-desc">'+(m.descrizione||m.categoria||'—')+'</div>';
@@ -1042,9 +1044,19 @@ async function openIsc(id){
       h += '<button class="btn-ghost" onclick="withLoading(this,()=>deleteMov('+m.id+'))" style="color:var(--red)"><span class="ti ti-trash" style="font-size:13px"></span></button></div></div>';
     });
   } else {
-    h += '<div style="font-size:13px;color:var(--muted)">Nessun pagamento registrato.</div>';
+    h += '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Nessun pagamento registrato.</div>';
   }
+  h += '<div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">';
+  h += '<div class="field-row" style="margin-bottom:8px">';
+  h += '<div class="field"><label style="font-size:11px">Importo (€)</label><input type="number" id="inline-pag-imp" min="0" step="0.01" placeholder="0" style="padding:8px;font-size:13px"></div>';
+  h += '<div class="field"><label style="font-size:11px">Data</label><input type="date" id="inline-pag-data" value="'+new Date().toISOString().split("T")[0]+'" style="padding:8px;font-size:13px"></div>';
   h += '</div>';
+  h += '<div class="field-row" style="margin-bottom:8px">';
+  h += '<div class="field"><label style="font-size:11px">Metodo</label><select id="inline-pag-met" style="padding:8px;font-size:13px"><option>Bonifico</option><option>Contanti</option><option>Carta</option></select></div>';
+  h += '<div class="field"><label style="font-size:11px">Causale</label><input type="text" id="inline-pag-causale" placeholder="Opzionale" style="padding:8px;font-size:13px"></div>';
+  h += '</div>';
+  h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>registraPagamentoInline('+id+'))"><span class="ti ti-cash"></span> Registra pagamento</button>';
+  h += '</div></div>';
   // Ultime presenze
   if(ultime_presenze.length){
     h += '<div class="sec">Ultime sessioni</div><div class="card" style="margin-bottom:14px">';
@@ -2136,7 +2148,7 @@ async function migraLezioni(){
   }
 }
 
-function openEditIscritta(id){
+async function openEditIscritta(id){
   const isc=clienti.find(x=>String(x.id)===String(id));
   if(!isc) return;
   document.getElementById('edit-isc-id').value=id;
@@ -2145,7 +2157,30 @@ function openEditIscritta(id){
   document.getElementById('edit-isc-tel').value=isc.telefono||'';
   document.getElementById('edit-isc-email').value=isc.email||'';
   document.getElementById('edit-isc-note').value=isc.note||'';
+  // Carica pacchetti attivi
+  const scheda=await GET('/api/v2/iscritte/'+id+'/scheda');
+  const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo');
+  document.getElementById('edit-pac-list').innerHTML=pacs.length
+    ?pacs.map(p=>`<div class="setting-item" style="margin-bottom:8px">
+        <div style="flex:1"><div class="setting-label">${p.corso_nome||'—'}</div>
+        <div class="setting-sub">inizio ${fmtShort(p.data_inizio)}</div></div>
+        <button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>cancellaPackettoIscritta(${p.id},${id}))"><span class="ti ti-trash"></span> Cancella</button>
+      </div>`).join('')
+    :'<div style="font-size:13px;color:var(--muted)">Nessun pacchetto attivo.</div>';
   document.getElementById('ov-edit-isc').classList.add('open');
+}
+
+async function cancellaPackettoIscritta(pid, iid){
+  if(!confirm('Cancellare questo pacchetto? Verranno rimossi anche il tracking lezioni associato.')) return;
+  const r=await fetch(API+'/api/v2/iscritte/'+iid+'/pacchetti/'+pid,{
+    method:'DELETE', headers:{'X-Auth-Token':token}
+  });
+  const data=await r.json();
+  if(data.ok){
+    toast('Pacchetto cancellato.');
+    openEditIscritta(iid);
+    openIsc(iid);
+  } else toast(data.error||'Errore',true);
 }
 
 async function salvaEditIscritta(){
@@ -2167,6 +2202,17 @@ async function salvaEditIscritta(){
   toast('Cliente aggiornato!');
   const iv=await GET('/api/v2/iscritte'); if(iv) clienti=iv;
   openIsc(id);
+}
+
+async function registraPagamentoInline(iid){
+  const importo=parseFloat(document.getElementById('inline-pag-imp')?.value)||0;
+  if(!importo||importo<=0){toast('Inserisci un importo valido',true);return;}
+  const data=document.getElementById('inline-pag-data')?.value||new Date().toISOString().split('T')[0];
+  const metodo=document.getElementById('inline-pag-met')?.value||'Bonifico';
+  const causale=document.getElementById('inline-pag-causale')?.value||'';
+  const r=await POST('/api/v2/iscritte/'+iid+'/pagamenti',{importo,data,metodo,causale});
+  if(r&&r.ok){toast('Pagamento registrato!');openIsc(iid);}
+  else toast('Errore registrazione pagamento',true);
 }
 
 async function approvaCert(iid){
