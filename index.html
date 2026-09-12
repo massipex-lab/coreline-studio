@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.21)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.24)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -669,8 +669,8 @@ const oggi = new Date(); oggi.setHours(0,0,0,0);
 
 // ══ UTILS ════════════════════════════════════════════════════════════════════
 const euro = n => '€' + Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:2});
-const lezRim = i => Math.max(0,(i.lezTot||0)-(i.lezFatte||0));
-const resto  = i => (i.quota||0)-(i.pagato||0);
+const lezRim = i => Math.max(0,(i.lezioni_tot||i.lezTot||0)-(i.lezioni_fatte||i.lezFatte||0));
+const resto  = i => Math.max(0,(i.totale_da_saldare||0));
 
 function fmtData(s){
   if(!s) return '';
@@ -948,11 +948,11 @@ function renderIsc(){
     return !q || nomeCompleto.includes(q) || cognomeNome.includes(q) ||
       i.nome.toLowerCase().includes(q) || (i.cognome||'').toLowerCase().includes(q);
   });
-  if(filtro==='rinnovo') list=list.filter(i=>lezRim(i)<=2&&i.lezTot>0);
-  if(filtro==='saldo') list=list.filter(i=>resto(i)>0);
+  if(filtro==='rinnovo') list=list.filter(i=>lezRim(i)<=2&&(i.lezioni_tot||i.lezTot||0)>0&&i.stato!=='sospeso');
+  if(filtro==='saldo') list=list.filter(i=>(i.totale_da_saldare||0)>0&&i.stato!=='sospeso');
   if(!list.length){document.getElementById('isc-list').innerHTML='<div class="empty"><span class="ti ti-mood-empty"></span>Nessun risultato</div>';return;}
   document.getElementById('isc-list').innerHTML=list.map(isc=>{
-    const rim=lezRim(isc),pct=isc.lezTot>0?Math.round(isc.lezFatte/isc.lezTot*100):0,r=resto(isc);
+    const rim=lezRim(isc),lTot=isc.lezioni_tot||isc.lezTot||0,lFat=isc.lezioni_fatte||isc.lezFatte||0,pct=lTot>0?Math.round(lFat/lTot*100):0,r=resto(isc);
     const bc=rim===0?'b-danger':(rim<=2?'b-warn':'b-ok'),fc=rim===0?'var(--red)':(rim<=2?'var(--warn)':'var(--green)');
     const pa = isc.pacchetti_attivi || 0;
     const certColor = isc.cert_stato==='valido'?'b-ok':(isc.cert_stato==='scaduto'||isc.cert_stato==='non presentato'?'b-danger':'b-warn');
@@ -1049,20 +1049,28 @@ async function openIsc(id){
   const certS = isSospeso?'n/a':(iscritta.cert_medico_stato||'non presentato');
   const certCol = certS==='valido'?'var(--green)':(certS==='scaduto'||certS==='non presentato'?'var(--red)':'var(--warn)');
   const certEmj = certS==='n/a'?'⏸️':(certS==='valido'?'🟢':(certS==='scaduto'||certS==='non presentato'?'🔴':'🟡'));
-  h += `<div class="sec">Anagrafica</div><table class="dtable">
-    <tr><td>Telefono</td><td>${iscritta.telefono||'—'}</td></tr>
-    <tr><td>Email</td><td>${iscritta.email||'—'}</td></tr>
-    ${iscritta.note?`<tr><td>Note</td><td>${iscritta.note}</td></tr>`:''}
-  </table>
-  <div class="sec" style="margin-top:14px">Certificato medico</div>
+  h += '<div class="sec" style="display:flex;align-items:center;justify-content:space-between">Anagrafica <span class="ti ti-pencil" onclick="toggleEditAnagrafica()" style="cursor:pointer;color:var(--muted);font-size:14px"></span></div>';
+  h += '<div class="card" style="margin-bottom:14px">';
+  h += '<div id="anagrafica-view">';
+  h += '<table class="dtable"><tr><td>Telefono</td><td>'+(iscritta.telefono||'—')+'</td></tr>';
+  h += '<tr><td>Email</td><td>'+(iscritta.email||'—')+'</td></tr>';
+  if(iscritta.note) h += '<tr><td>Note</td><td>'+iscritta.note+'</td></tr>';
+  h += '</table></div>';
+  h += '<div id="anagrafica-edit" style="display:none">';
+  h += '<div class="field-row"><div class="field"><label>Nome *</label><input type="text" id="ae-nome" value="'+(iscritta.nome||'')+'"></div><div class="field"><label>Cognome</label><input type="text" id="ae-cognome" value="'+(iscritta.cognome||'')+'"></div></div>';
+  h += '<div class="field"><label>Telefono</label><input type="text" id="ae-tel" value="'+(iscritta.telefono||'')+'"></div>';
+  h += '<div class="field"><label>Email</label><input type="email" id="ae-email" value="'+(iscritta.email||'')+'"></div>';
+  h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>salvaAnagrafica('+id+'))">Salva anagrafica</button>';
+  h += '</div></div>';
+  h += `<div class="sec" style="margin-top:14px">Certificato medico</div>
   <div class="card" style="margin-bottom:10px">
     <div class="row" style="margin-bottom:8px">
-      <div style="font-size:14px;font-weight:700">${certEmj} ${certS.charAt(0).toUpperCase()+certS.slice(1)}</div>
-      <button class="btn btn-sm" onclick="openEditCert(${id})"><span class="ti ti-pencil"></span></button>
+      <div style="font-size:14px;font-weight:700">\${certEmj} \${certS.charAt(0).toUpperCase()+certS.slice(1)}</div>
+      <button class="btn btn-sm" onclick="openEditCert(\${id})"><span class="ti ti-pencil"></span></button>
     </div>
     <table class="dtable">
-      <tr><td>Data certificato</td><td>${iscritta.cert_medico_data?fmtShort(iscritta.cert_medico_data):'—'}</td></tr>
-      <tr><td>Scadenza</td><td style="color:${certCol};font-weight:600">${iscritta.cert_medico_scadenza?fmtShort(iscritta.cert_medico_scadenza):'—'}</td></tr>
+      <tr><td>Data certificato</td><td>\${iscritta.cert_medico_data?fmtShort(iscritta.cert_medico_data):'—'}</td></tr>
+      <tr><td>Scadenza</td><td style="color:\${certCol};font-weight:600">\${iscritta.cert_medico_scadenza?fmtShort(iscritta.cert_medico_scadenza):'—'}</td></tr>
     </table>
   </div>`;
   // Storici
