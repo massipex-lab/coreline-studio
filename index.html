@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.20)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.21)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -977,7 +977,7 @@ function renderIsc(){
 
 async function openIsc(id){
   const isc=clienti.find(x=>String(x.id)===String(id)); if(!isc) return;
-  document.getElementById('mi-nome').innerHTML=(isc.nome||'')+(isc.cognome?' '+isc.cognome:'')+' <span class="ti ti-pencil" onclick="openEditIscritta('+id+')" style="font-size:14px;cursor:pointer;color:var(--muted);font-weight:400"></span>';
+  document.getElementById('mi-nome').innerHTML=(isc.nome||'')+(isc.cognome?' '+isc.cognome:'')+' <span class="ti ti-pencil" onclick="toggleEditAnagrafica('+id+')" style="font-size:14px;cursor:pointer;color:var(--muted);font-weight:400"></span>';
   document.getElementById('mi-body').innerHTML='<div class="loading"><div class="spin"></div>Caricamento…</div>';
   document.getElementById('ov-isc').classList.add('open');
   const scheda = await GET(`/api/v2/iscritte/${id}/scheda`);
@@ -2129,27 +2129,7 @@ async function migraLezioni(){
   }
 }
 
-async function openEditIscritta(id){
-  const isc=clienti.find(x=>String(x.id)===String(id));
-  if(!isc) return;
-  document.getElementById('edit-isc-id').value=id;
-  document.getElementById('edit-isc-nome').value=isc.nome||'';
-  document.getElementById('edit-isc-cognome').value=isc.cognome||'';
-  document.getElementById('edit-isc-tel').value=isc.telefono||'';
-  document.getElementById('edit-isc-email').value=isc.email||'';
-  document.getElementById('edit-isc-note').value=isc.note||'';
-  // Carica pacchetti attivi
-  const scheda=await GET('/api/v2/iscritte/'+id+'/scheda');
-  const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo');
-  document.getElementById('edit-pac-list').innerHTML=pacs.length
-    ?pacs.map(p=>`<div class="setting-item" style="margin-bottom:8px">
-        <div style="flex:1"><div class="setting-label">${p.corso_nome||'—'}</div>
-        <div class="setting-sub">inizio ${fmtShort(p.data_inizio)}</div></div>
-        <button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>cancellaPackettoIscritta(${p.id},${id}))"><span class="ti ti-trash"></span> Cancella</button>
-      </div>`).join('')
-    :'<div style="font-size:13px;color:var(--muted)">Nessun pacchetto attivo.</div>';
-  document.getElementById('ov-edit-isc').classList.add('open');
-}
+
 
 async function cancellaPackettoIscritta(pid, iid){
   if(!confirm('Cancellare questo pacchetto? Verranno rimossi anche il tracking lezioni associato.')) return;
