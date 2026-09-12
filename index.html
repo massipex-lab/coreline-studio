@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.19)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.20)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -573,26 +573,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
   </div>
 </div>
 
-<!-- MODAL MODIFICA ANAGRAFICA + PACCHETTI -->
-<div class="overlay" id="ov-edit-isc">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <button class="close-btn" onclick="closeOv('ov-edit-isc')"><span class="ti ti-x"></span></button>
-    <div class="modal-title">Modifica cliente</div>
-    <input type="hidden" id="edit-isc-id">
-    <div class="sec" style="margin-top:0">Anagrafica</div>
-    <div class="field-row">
-      <div class="field"><label>Nome *</label><input type="text" id="edit-isc-nome"></div>
-      <div class="field"><label>Cognome</label><input type="text" id="edit-isc-cognome"></div>
-    </div>
-    <div class="field"><label>Telefono</label><input type="text" id="edit-isc-tel"></div>
-    <div class="field"><label>Email</label><input type="email" id="edit-isc-email"></div>
-    <div class="field"><label>Note</label><input type="text" id="edit-isc-note"></div>
-    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaEditIscritta)" style="margin-bottom:16px">Salva anagrafica</button>
-    <div class="sec">Pacchetti attivi</div>
-    <div id="edit-pac-list"></div>
-  </div>
-</div>
+<!-- modal edit rimosso, tutto nella modale principale -->
 
 <!-- MODAL CERTIFICATO MEDICO -->
 <div class="overlay" id="ov-cert">
@@ -2200,6 +2181,33 @@ async function salvaEditIscritta(){
   });
   closeOv('ov-edit-isc');
   toast('Cliente aggiornato!');
+  const iv=await GET('/api/v2/iscritte'); if(iv) clienti=iv;
+  openIsc(id);
+}
+
+function toggleEditAnagrafica(id){
+  const view=document.getElementById('anagrafica-view');
+  const edit=document.getElementById('anagrafica-edit');
+  if(!view||!edit) return;
+  const isEdit=edit.style.display==='none';
+  view.style.display=isEdit?'none':'block';
+  edit.style.display=isEdit?'block':'none';
+}
+
+async function salvaAnagrafica(id){
+  const nome=document.getElementById('ae-nome')?.value.trim();
+  if(!nome){toast('Nome obbligatorio',true);return;}
+  await fetch(API+'/api/v2/iscritte/'+id,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Auth-Token':token},
+    body:JSON.stringify({
+      nome,
+      cognome:document.getElementById('ae-cognome')?.value.trim()||'',
+      telefono:document.getElementById('ae-tel')?.value.trim()||'',
+      email:document.getElementById('ae-email')?.value.trim()||''
+    })
+  });
+  toast('Anagrafica salvata!');
   const iv=await GET('/api/v2/iscritte'); if(iv) clienti=iv;
   openIsc(id);
 }
