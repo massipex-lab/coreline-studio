@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.29)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.30)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -568,6 +568,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <label>Lezioni abilitate *</label>
       <div id="pc-lezioni-check" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
     </div>
+    <div class="field"><label>Durata (mesi)</label><input type="number" id="pc-durata" min="1" max="60" placeholder="Es. 12 — lascia vuoto se non applicabile"></div>
     <div class="field"><label>Note</label><input type="text" id="pc-note" placeholder="Opzionale"></div>
     <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaPC)">Salva pacchetto</button>
   </div>
@@ -948,7 +949,7 @@ function renderIsc(){
     return !q || nomeCompleto.includes(q) || cognomeNome.includes(q) ||
       i.nome.toLowerCase().includes(q) || (i.cognome||'').toLowerCase().includes(q);
   });
-  if(filtro==='rinnovo') list=list.filter(i=>lezRim(i)<=2&&(i.lezioni_tot||i.lezTot||0)>0&&i.stato!=='sospeso');
+  if(filtro==='rinnovo') list=list.filter(i=>(i.da_rinnovare||lezRim(i)<=2&&(i.lezioni_tot||i.lezTot||0)>0)&&i.stato!=='sospeso');
   if(filtro==='saldo') list=list.filter(i=>(i.totale_da_saldare||0)>0&&i.stato!=='sospeso');
   if(!list.length){document.getElementById('isc-list').innerHTML='<div class="empty"><span class="ti ti-mood-empty"></span>Nessun risultato</div>';return;}
   document.getElementById('isc-list').innerHTML=list.map(isc=>{
@@ -1004,6 +1005,13 @@ async function openIsc(id){
       h += '</div>';
       if((p.lezioni_tot||0)>0) h += renderLezPacchetto(p, id);
       else h += '<div style="font-size:12px;color:var(--muted);margin-top:4px">Inizio '+fmtShort(p.data_inizio)+'</div>';
+      if(p.durata_mesi){
+        const scad=new Date(p.data_inizio);
+        scad.setMonth(scad.getMonth()+parseInt(p.durata_mesi));
+        const scadStr=scad.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+        const isScaduto=scad<new Date();
+        h += '<div style="font-size:12px;margin-top:2px;color:'+(isScaduto?'var(--red)':'var(--muted)')+'">Scadenza: '+scadStr+(isScaduto?' · ⚠️ scaduto':'')+'</div>';
+      }
       h += '<div style="display:flex;gap:8px;margin-top:10px">';
       h += '<button class="btn btn-sm" style="flex:1" onclick="openAddPagamento('+id+','+p.id+',\''+p.corso_nome+'\')"><span class="ti ti-cash"></span> Pagamento</button>';
       h += '<button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>cancellaPackettoIscritta('+p.id+','+id+'))" title="Cancella pacchetto"><span class="ti ti-trash"></span></button>';
@@ -2022,6 +2030,7 @@ function openEditPC(id){
   document.getElementById('pc-id').value = pc ? pc.id : '';
   document.getElementById('pc-nome').value = pc ? pc.nome : '';
   document.getElementById('pc-prezzo').value = pc ? pc.prezzo : '';
+  document.getElementById('pc-durata').value = pc ? (pc.durata_mesi||'') : '';
   document.getElementById('pc-note').value = pc ? (pc.note||'') : '';
   // Lezioni con n_lezioni per tipo
   const selLezioni = pc ? (pc.lezioni||[]) : [];
@@ -2108,7 +2117,8 @@ async function salvaPC(){
     });
   // lezioni opzionali (es. iscrizione annuale non ha lezioni)
   const totLezioni=lezioniSel.reduce((a,l)=>a+l.n_lezioni,0);
-  const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,lezioni:lezioniSel,lezioni_ids:lezioniSel.map(l=>l.id),note:document.getElementById('pc-note').value};
+  const durata_mesi=parseInt(document.getElementById('pc-durata').value)||null;
+  const body={nome,prezzo:parseFloat(document.getElementById('pc-prezzo').value)||0,durata_mesi,lezioni:lezioniSel,lezioni_ids:lezioniSel.map(l=>l.id),note:document.getElementById('pc-note').value};
   if(id){
     await fetch(API+'/api/v2/pacchetti-commerciali/'+id,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify(body)});
   } else {
