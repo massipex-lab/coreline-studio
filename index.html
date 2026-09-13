@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.31)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.32)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -576,6 +576,29 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
 <!-- modal edit rimosso, tutto nella modale principale -->
 
+<!-- MODAL DETTAGLIO SESSIONE -->
+<div class="overlay" id="ov-ses-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-ses-detail')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="ses-detail-title">Sessione</div>
+    <input type="hidden" id="ses-detail-id">
+    <div id="ses-detail-info" style="font-size:13px;color:var(--muted);margin-bottom:16px"></div>
+    <div class="sec">Partecipanti</div>
+    <div id="ses-detail-pax" style="margin-bottom:12px"></div>
+    <div class="field">
+      <label>Aggiungi partecipante</label>
+      <select id="ses-add-cliente" style="margin-bottom:8px">
+        <option value="">— seleziona cliente —</option>
+      </select>
+      <select id="ses-add-pacchetto" style="margin-bottom:8px">
+        <option value="">— seleziona pacchetto —</option>
+      </select>
+      <button class="btn btn-primary btn-full" onclick="withLoading(this,aggiungiPartecipante)"><span class="ti ti-user-plus"></span> Aggiungi</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CERTIFICATO MEDICO -->
 <div class="overlay" id="ov-cert">
   <div class="modal">
@@ -804,6 +827,12 @@ async function loadAll(){
   if(lz) lezioni=lz;
   if(pc) pacchettiCommerciali=pc;
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
+  // Auto-processa sessioni passate
+  POST('/api/v2/sessioni/auto-processa',{}).then(r=>{
+    if(r&&r.processate>0){
+      GET('/api/sessioni').then(s=>{if(s){sessioni=s;renderSes();renderDash();}});
+    }
+  });
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
 }
@@ -1300,23 +1329,29 @@ function renderSes(){
     if(s.data!==lastD){h+=`<div class="ses-day">${fmtData(s.data)}</div>`;lastD=s.data;}
     const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);
     const fut=sd>=oggi;
-    const chips=s.partecipanti.map(n=>`<span class="pchip">${n}</span>`).join('');
+    const pList=Array.isArray(s.partecipanti)?s.partecipanti:[];
+    const chips=pList.map(p=>{
+      const nome=typeof p==='object'?(p.nome||'')+(p.cognome?' '+p.cognome:''):p;
+      return `<span class="pchip">${nome}</span>`;
+    }).join('');
+    const ospChips=(s.ospiti||[]).map(o=>`<span class="pchip" style="opacity:.6">${o} (ospite)</span>`).join('');
     const postiMax = s.posti_max || 6;
-    const nPren = s.partecipanti.length;
+    const nPren = pList.length + (s.ospiti||[]).length;
     const postiColor = nPren >= postiMax ? 'var(--red)' : (nPren >= postiMax-2 ? 'var(--warn)' : 'var(--cl-dark)');
-    h+=`<div class="ses-card">
-      <div class="row">
+    const titolo = s.lezione_nome || s.tipo || '—';
+    const istrNome = (istruttori.find(i=>String(i.id)===String(s.istr))||{nome:s.istr}).nome || s.istr;
+    h+=`<div class="ses-card" onclick="openSessione(${s.id})" style="cursor:pointer">
+      <div class="row" style="margin-bottom:6px">
         <div>
-          <div class="ses-title">${s.tipo}</div>
-          <div class="ses-meta">${s.orario} · ${s.istr}${s.note?' · '+s.note:''}</div>
+          <div class="ses-title">${titolo}</div>
+          <div class="ses-meta">${fmtData(s.data)} · ${s.orario} · ${istrNome}</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center">
+        <div style="display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
           <span style="font-size:13px;font-weight:700;color:${postiColor}">${nPren}/${postiMax}</span>
-          ${fut?`<button class="btn btn-primary btn-sm btn-icon" onclick="openPren(${s.id})"><span class="ti ti-user-plus"></span></button>`:''}
-          <button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteSessione(${s.id},'${s.tipo}'))" title="Cancella sessione"><span class="ti ti-trash"></span></button>
+          <button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteSessione(${s.id},'${titolo}'))" title="Cancella sessione"><span class="ti ti-trash"></span></button>
         </div>
       </div>
-      <div class="pchips">${chips||'<span style="font-size:12px;color:var(--muted)">Nessuna prenotazione</span>'}</div>
+      <div class="pchips">${chips+ospChips||'<span style="font-size:12px;color:var(--muted)">Nessun partecipante</span>'}</div>
     </div>`;
   });
   document.getElementById('ses-list').innerHTML=h;
@@ -1327,6 +1362,83 @@ function openNuovaSes(){
   document.getElementById('ns-posti').value=getPostiMax();
   document.getElementById('ns-note').value='';
   document.getElementById('ov-ses').classList.add('open');
+}
+
+async function openSessione(sid){
+  const s=sessioni.find(x=>x.id===sid);
+  if(!s) return;
+  const lNome=s.lezione_nome||s.tipo||'—';
+  const istrObj=istruttori.find(i=>String(i.id)===String(s.istr));
+  const istrNome=istrObj?(istrObj.nome+(istrObj.cognome?' '+istrObj.cognome:'')):(s.istr||'—');
+  document.getElementById('ses-detail-id').value=sid;
+  document.getElementById('ses-detail-title').textContent=lNome;
+  document.getElementById('ses-detail-info').textContent=fmtData(s.data)+' · '+s.orario+' · '+istrNome;
+  // Popola select clienti
+  const sel=document.getElementById('ses-add-cliente');
+  const pList=Array.isArray(s.partecipanti)?s.partecipanti:[];
+  const giaPresenti=new Set(pList.map(p=>typeof p==='object'?p.iscritta_id:null).filter(Boolean));
+  sel.innerHTML='<option value="">— seleziona cliente —</option>'+
+    clienti.filter(c=>!giaPresenti.has(c.id)&&c.stato==='attivo').map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
+  sel.onchange=async function(){
+    const iid=parseInt(this.value);
+    const pSel=document.getElementById('ses-add-pacchetto');
+    pSel.innerHTML='<option value="">— seleziona pacchetto —</option>';
+    if(!iid) return;
+    const scheda=await GET('/api/v2/iscritte/'+iid+'/scheda');
+    const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0);
+    pSel.innerHTML='<option value="">— seleziona pacchetto —</option>'+
+      pacs.map(p=>`<option value="${p.id}">${p.corso_nome||'—'} (${p.lezioni_rim||0} lez. rim.)</option>`).join('');
+  };
+  document.getElementById('ses-add-pacchetto').innerHTML='<option value="">— seleziona pacchetto —</option>';
+  // Mostra partecipanti
+  renderSesDetailPax(s);
+  document.getElementById('ov-ses-detail').classList.add('open');
+}
+
+function renderSesDetailPax(s){
+  const pList=Array.isArray(s.partecipanti)?s.partecipanti:[];
+  const el=document.getElementById('ses-detail-pax');
+  if(!pList.length){el.innerHTML='<div style="font-size:13px;color:var(--muted)">Nessun partecipante</div>';return;}
+  el.innerHTML=pList.map(p=>{
+    const nome=typeof p==='object'?(p.nome||'')+(p.cognome?' '+p.cognome:''):p;
+    const pid=typeof p==='object'?p.id:null;
+    return `<div class="setting-item" style="margin-bottom:6px">
+      <span style="font-size:13px">${nome}</span>
+      ${pid?`<button class="btn-ghost" style="color:var(--red)" onclick="withLoading(this,()=>rimuoviPartecipante(${s.id},${pid}))"><span class="ti ti-x"></span></button>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function aggiungiPartecipante(){
+  const sid=parseInt(document.getElementById('ses-detail-id').value);
+  const iid=parseInt(document.getElementById('ses-add-cliente').value);
+  const pid=parseInt(document.getElementById('ses-add-pacchetto').value)||null;
+  if(!iid){toast('Seleziona un cliente',true);return;}
+  const s=sessioni.find(x=>x.id===sid);
+  const isPast=s&&new Date(s.data+'T00:00:00')<oggi;
+  // Aggiungi presenza
+  const pList=Array.isArray(s?.partecipanti)?s.partecipanti:[];
+  const nuove=[...pList.map(p=>({iscritta_id:typeof p==='object'?p.iscritta_id:null,pacchetto_id:typeof p==='object'?p.pacchetto_id:null})),{iscritta_id:iid,pacchetto_id:pid}].filter(p=>p.iscritta_id);
+  await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:nuove,ospiti:s?.ospiti||[]});
+  // Se sessione passata, scala subito la lezione
+  if(isPast&&pid){
+    await fetch(API+'/api/v2/sessioni/'+sid+'/scala-lezione',{
+      method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':token},
+      body:JSON.stringify({iscritta_id:iid,pacchetto_id:pid})
+    });
+  }
+  toast('Partecipante aggiunto!');
+  const ss=await GET('/api/sessioni');if(ss){sessioni=ss;renderSes();}
+  openSessione(sid);
+}
+
+async function rimuoviPartecipante(sid,presenzaId){
+  const s=sessioni.find(x=>x.id===sid);
+  const pList=(Array.isArray(s?.partecipanti)?s.partecipanti:[]).filter(p=>typeof p==='object'&&p.id!==presenzaId);
+  await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:pList.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),ospiti:s?.ospiti||[]});
+  toast('Partecipante rimosso.');
+  const ss=await GET('/api/sessioni');if(ss){sessioni=ss;renderSes();}
+  openSessione(sid);
 }
 
 async function deleteSessione(sid, tipo){
