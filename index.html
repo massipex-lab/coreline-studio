@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.42)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.43)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1524,11 +1524,21 @@ async function creaSessione(){
   const posti_max=parseInt(document.getElementById('ns-posti').value)||6;
   const lezione_id=parseInt(tipo)||null;
   const lezObj=lezioni.find(l=>l.id===lezione_id);
+  // Recupera pacchetti per ogni partecipante selezionato
+  const paxSelects=[...document.querySelectorAll('.ns-pax-select')].filter(s=>parseInt(s.value));
+  const presenze=[];
+  for(const s of paxSelects){
+    const iid=parseInt(s.value);
+    const scheda=await GET('/api/v2/iscritte/'+iid+'/scheda');
+    const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0);
+    const pid=pacs.length>=1?pacs[0].id:null;
+    presenze.push({iscritta_id:iid,pacchetto_id:pid});
+  }
   const r=await POST('/api/v2/sessioni/crea',{
     data, orario, tipo:lezObj?lezObj.nome:tipo, lezione_id, istr,
     posti_max,
     note:document.getElementById('ns-note').value,
-    presenze:[...document.querySelectorAll('.ns-pax-select')].map(s=>({iscritta_id:parseInt(s.value)})).filter(p=>p.iscritta_id)
+    presenze
   });
   if(r&&r.ok){
     closeOv('ov-ses');
