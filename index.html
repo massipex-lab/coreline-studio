@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.32)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.34)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -446,6 +446,11 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="field"><label>Istruttrice/Istruttore *</label><select id="ns-istr"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Max partecipanti</label><input type="number" id="ns-posti" min="1" max="20" value="6"></div>
     <div class="field"><label>Note</label><input type="text" id="ns-note" placeholder="Opzionale"></div>
+    <div class="field">
+      <label>Partecipanti (opzionale)</label>
+      <div id="ns-pax-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+      <button type="button" class="btn btn-sm" onclick="aggiungiNsPax()" style="width:100%"><span class="ti ti-user-plus"></span> Aggiungi partecipante</button>
+    </div>
     <button class="btn btn-primary btn-full" onclick="withLoading(this,creaSessione)">Crea sessione</button>
   </div>
 </div>
@@ -827,12 +832,7 @@ async function loadAll(){
   if(lz) lezioni=lz;
   if(pc) pacchettiCommerciali=pc;
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
-  // Auto-processa sessioni passate
-  POST('/api/v2/sessioni/auto-processa',{}).then(r=>{
-    if(r&&r.processate>0){
-      GET('/api/sessioni').then(s=>{if(s){sessioni=s;renderSes();renderDash();}});
-    }
-  });
+
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
 }
@@ -1348,6 +1348,7 @@ function renderSes(){
         </div>
         <div style="display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
           <span style="font-size:13px;font-weight:700;color:${postiColor}">${nPren}/${postiMax}</span>
+          <button class="btn btn-sm btn-icon" onclick="openSessione(${s.id})" title="Modifica sessione"><span class="ti ti-pencil"></span></button>
           <button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteSessione(${s.id},'${titolo}'))" title="Cancella sessione"><span class="ti ti-trash"></span></button>
         </div>
       </div>
@@ -1357,10 +1358,25 @@ function renderSes(){
   document.getElementById('ses-list').innerHTML=h;
 }
 
+function aggiungiNsPax(){
+  const container=document.getElementById('ns-pax-list');
+  if(!container) return;
+  const opts=clienti.filter(c=>c.stato==='attivo').map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:8px;align-items:center';
+  div.innerHTML=`<select class="ns-pax-select" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
+    <option value="">— seleziona —</option>${opts}
+  </select>
+  <span class="ti ti-x" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:18px"></span>`;
+  container.appendChild(div);
+}
+
 function openNuovaSes(){
   document.getElementById('ns-data').value=new Date().toISOString().split('T')[0];
   document.getElementById('ns-posti').value=getPostiMax();
   document.getElementById('ns-note').value='';
+  const nsPaxList=document.getElementById('ns-pax-list');
+  if(nsPaxList) nsPaxList.innerHTML='';
   document.getElementById('ov-ses').classList.add('open');
 }
 
@@ -1415,18 +1431,11 @@ async function aggiungiPartecipante(){
   const pid=parseInt(document.getElementById('ses-add-pacchetto').value)||null;
   if(!iid){toast('Seleziona un cliente',true);return;}
   const s=sessioni.find(x=>x.id===sid);
-  const isPast=s&&new Date(s.data+'T00:00:00')<oggi;
   // Aggiungi presenza
   const pList=Array.isArray(s?.partecipanti)?s.partecipanti:[];
   const nuove=[...pList.map(p=>({iscritta_id:typeof p==='object'?p.iscritta_id:null,pacchetto_id:typeof p==='object'?p.pacchetto_id:null})),{iscritta_id:iid,pacchetto_id:pid}].filter(p=>p.iscritta_id);
   await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:nuove,ospiti:s?.ospiti||[]});
-  // Se sessione passata, scala subito la lezione
-  if(isPast&&pid){
-    await fetch(API+'/api/v2/sessioni/'+sid+'/scala-lezione',{
-      method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':token},
-      body:JSON.stringify({iscritta_id:iid,pacchetto_id:pid})
-    });
-  }
+  // lezione scalata automaticamente in set_presenze
   toast('Partecipante aggiunto!');
   const ss=await GET('/api/sessioni');if(ss){sessioni=ss;renderSes();}
   openSessione(sid);
