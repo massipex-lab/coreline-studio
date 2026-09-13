@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.47)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.48)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1492,11 +1492,31 @@ function openRicorrente(){
   document.getElementById('ric-fine').value='';
   document.getElementById('ric-note').value='';
   // Popola selects corsi e istruttori
-  document.getElementById('ric-tipo').innerHTML='<option value="">— seleziona —</option>'+lezioni.map(l=>`<option value="${l.id}" data-posti="${l.posti_max}">${l.nome}</option>`).join('');
+  const ricTipoEl=document.getElementById('ric-tipo');
+  ricTipoEl.innerHTML='<option value="">— seleziona —</option>'+lezioni.map(l=>`<option value="${l.id}" data-posti="${l.posti_max}">${l.nome}</option>`).join('');
+  ricTipoEl.onchange=function(){
+    const opt=this.selectedOptions[0];
+    if(opt&&opt.dataset.posti) document.getElementById('ric-posti').value=opt.dataset.posti;
+  };
+  const ricPaxList=document.getElementById('ric-pax-list');
+  if(ricPaxList) ricPaxList.innerHTML='';
   document.getElementById('ric-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
   document.getElementById('ric-posti').value=getPostiMax();
   
   document.getElementById('ov-ric').classList.add('open');
+}
+
+function aggiungiRicPax(){
+  const container=document.getElementById('ric-pax-list');
+  if(!container) return;
+  const opts=clienti.filter(c=>c.stato==='attivo').map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:8px;align-items:center';
+  div.innerHTML=`<select class="ric-pax-select" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
+    <option value="">— seleziona —</option>${opts}
+  </select>
+  <span class="ti ti-x" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:18px"></span>`;
+  container.appendChild(div);
 }
 
 async function creaRicorrenza(){
@@ -1504,15 +1524,27 @@ async function creaRicorrenza(){
   if(!giorni.length){toast('Seleziona almeno un giorno',true);return;}
   const tipo=document.getElementById('ric-tipo').value;
   const istr=document.getElementById('ric-istr').value;
+  const lezione_id=parseInt(tipo)||null;
+  const lezObjR=lezioni.find(l=>l.id===lezione_id);
   const inizio=document.getElementById('ric-inizio').value;
   const fine=document.getElementById('ric-fine').value;
   if(!tipo||!istr||!inizio||!fine){toast('Compila tutti i campi obbligatori',true);return;}
   if(fine<=inizio){toast('La data fine deve essere dopo la data inizio',true);return;}
+  // Recupera pacchetti per i partecipanti
+  const ricPaxSelects=[...document.querySelectorAll('.ric-pax-select')].filter(s=>parseInt(s.value));
+  const presenze_template=[];
+  for(const s of ricPaxSelects){
+    const iid=parseInt(s.value);
+    const scheda=await GET('/api/v2/iscritte/'+iid+'/scheda');
+    const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0);
+    if(pacs.length>0) presenze_template.push({iscritta_id:iid,pacchetto_id:pacs[0].id});
+  }
   const r=await POST('/api/v2/ricorrenze',{
     giorni_settimana:giorni, 
     orario:document.getElementById('ric-ora-start').value+'-'+document.getElementById('ric-ora-end').value,
     tipo, istr, data_inizio:inizio, data_fine:fine,
     posti_max:parseInt(document.getElementById('ric-posti').value)||6,
+
     note:document.getElementById('ric-note').value
   });
   closeOv('ov-ric');
