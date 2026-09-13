@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.30)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.31)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1178,9 +1178,10 @@ function openAddPacchetto(iid){
   document.getElementById('ap-data').value=new Date().toISOString().split('T')[0];
   document.getElementById('ap-pagato') && (document.getElementById('ap-pagato').value='');
   document.getElementById('ap-importo').value='';
+  document.getElementById('ap-importo').placeholder='0 — lascia vuoto se non pagato ora';
   document.getElementById('ap-note').value='';
   document.getElementById('ap-corso').innerHTML=pacchettiCommerciali.map(p=>`<option value="${p.id}" data-lez="${p.n_lezioni}" data-prezzo="${p.prezzo}" data-nome="${p.nome}">${p.nome} — €${p.prezzo}</option>`).join('');
-  document.getElementById('ap-corso').onchange=function(){const opt=this.selectedOptions[0];if(opt)document.getElementById('ap-importo').value=opt.dataset.prezzo||'';};
+  document.getElementById('ap-corso').onchange=function(){}; // importo non precompilato - inserire manualmente
   document.getElementById('ap-corso').dispatchEvent(new Event('change'));
 }
 
