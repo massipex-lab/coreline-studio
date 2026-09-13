@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.36)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.38)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -834,6 +834,10 @@ async function loadAll(){
   if(lz) lezioni=lz;
   if(pc) pacchettiCommerciali=pc;
   renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
+  // Aggiorna stati pacchetti al load
+  POST('/api/v2/pacchetti/aggiorna-stati',{}).then(()=>{
+    GET('/api/v2/iscritte').then(iv=>{if(iv){clienti=iv;renderIsc();renderDash();}});
+  });
 
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
@@ -1043,9 +1047,8 @@ async function openIsc(id){
         const isScaduto=scad<new Date();
         h += '<div style="font-size:12px;margin-top:2px;color:'+(isScaduto?'var(--red)':'var(--muted)')+'">Scadenza: '+scadStr+(isScaduto?' · ⚠️ scaduto':'')+'</div>';
       }
-      h += '<div style="display:flex;gap:8px;margin-top:10px">';
-      h += '<button class="btn btn-sm" style="flex:1" onclick="openAddPagamento('+id+','+p.id+',\''+p.corso_nome+'\')"><span class="ti ti-cash"></span> Pagamento</button>';
-      h += '<button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>cancellaPackettoIscritta('+p.id+','+id+'))" title="Cancella pacchetto"><span class="ti ti-trash"></span></button>';
+      h += '<div style="display:flex;justify-content:flex-end;margin-top:8px">';
+      h += '<button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>cancellaPackettoIscritta('+p.id+','+id+'))" title="Cancella pacchetto"><span class="ti ti-trash"></span> Cancella</button>';
       h += '</div>';
       h += '</div>';
     });
