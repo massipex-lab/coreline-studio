@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.46)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.47)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -925,10 +925,12 @@ function renderDash(){
   let h='';
   daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row">
     <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="ti ti-pencil" onclick="event.stopPropagation();openIscEdit(${i.id})" style="color:var(--muted);font-size:14px;padding:4px;cursor:pointer"></span>
     <span class="badge b-warn">Nessun pacchetto</span>
   </div>`;});
   daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row">
     <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="ti ti-pencil" onclick="event.stopPropagation();openIscEdit(${i.id})" style="color:var(--muted);font-size:14px;padding:4px;cursor:pointer"></span>
     <span class="badge b-danger">${euro(i.totale_da_saldare)}</span>
   </div>`;});
   document.getElementById('dash-alerts').innerHTML=h||'<div class="empty"><span class="ti ti-circle-check" style="color:var(--green)"></span>Tutto ok!</div>';
@@ -949,7 +951,10 @@ function renderDash(){
     hCert = certAlert.map(c=>`
       <div class="alert-row">
         <div>
-          <div style="font-weight:600;cursor:pointer;color:var(--cl-dark)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-weight:600;cursor:pointer;color:var(--cl-dark)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
+            <span class="ti ti-pencil" onclick="openIscEdit(${c.id})" style="color:var(--muted);font-size:14px;cursor:pointer" title="Modifica cliente"></span>
+          </div>
           <div style="font-size:11px;color:var(--muted)">
             ${c.stato==='in attesa approvazione'?'🟡 In attesa':c.stato==='non presentato'?'🔴 Non presentato':c.stato==='scaduto'?'🔴 Scaduto':'🟡 Grace period'}
             ${c.cert_medico_scadenza?' · Scad: '+fmtShort(c.cert_medico_scadenza):''}
