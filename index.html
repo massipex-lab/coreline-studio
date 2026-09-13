@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.43)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.44)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1040,7 +1040,7 @@ async function openIsc(id){
       if(p.durata_mesi){
         const scad=new Date(p.data_inizio);
         scad.setMonth(scad.getMonth()+parseInt(p.durata_mesi));
-        const scadStr=scad.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+        const scadStr=scad.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
         const isScaduto=scad<new Date();
         h += '<div style="font-size:12px;margin-top:2px;color:'+(isScaduto?'var(--red)':'var(--muted)')+'">Scadenza: '+scadStr+(isScaduto?' · ⚠️ scaduto':'')+'</div>';
       }
@@ -2332,6 +2332,11 @@ async function salvaEditIscritta(){
   toast('Cliente aggiornato!');
   const iv=await GET('/api/v2/iscritte'); if(iv) clienti=iv;
   openIsc(id);
+}
+
+async function openIscEdit(id){
+  await openIsc(id);
+  setTimeout(()=>toggleEditAnagrafica(),100);
 }
 
 function toggleEditAnagrafica(id){
