@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.45)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.46)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1004,6 +1004,7 @@ function renderIsc(){
         <div style="display:flex;gap:6px;align-items:center">
           <span title="Certificato medico: ${isc.cert_stato||'non presentato'}">${certEmoji}</span>
           <span class="badge ${pa>0?'b-ok':'b-danger'}">${pa} pacchett${pa===1?'o':'i'}</span>
+          <span class="ti ti-pencil" onclick="event.stopPropagation();openIscEdit(${isc.id})" style="color:var(--muted);font-size:15px;padding:4px;cursor:pointer" title="Modifica anagrafica"></span>
         </div>
       </div>
       ${isc.telefono?`<div style="font-size:12px;color:var(--muted);margin-top:3px">📞 ${isc.telefono}</div>`:''}
