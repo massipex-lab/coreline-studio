@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.35)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.36)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -596,9 +596,11 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <select id="ses-add-cliente" style="margin-bottom:8px">
         <option value="">— seleziona cliente —</option>
       </select>
-      <select id="ses-add-pacchetto" style="margin-bottom:8px">
-        <option value="">— seleziona pacchetto —</option>
-      </select>
+      <div id="ses-add-pacchetto-wrap" style="margin-bottom:8px">
+        <select id="ses-add-pacchetto">
+          <option value="">— seleziona pacchetto —</option>
+        </select>
+      </div>
       <button class="btn btn-primary btn-full" onclick="withLoading(this,aggiungiPartecipante)"><span class="ti ti-user-plus"></span> Aggiungi</button>
     </div>
   </div>
@@ -1398,12 +1400,23 @@ async function openSessione(sid){
   sel.onchange=async function(){
     const iid=parseInt(this.value);
     const pSel=document.getElementById('ses-add-pacchetto');
+    const pSelWrap=document.getElementById('ses-add-pacchetto-wrap');
     pSel.innerHTML='<option value="">— seleziona pacchetto —</option>';
-    if(!iid) return;
+    if(!iid){if(pSelWrap)pSelWrap.style.display='block';return;}
     const scheda=await GET('/api/v2/iscritte/'+iid+'/scheda');
     const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0);
-    pSel.innerHTML='<option value="">— seleziona pacchetto —</option>'+
-      pacs.map(p=>`<option value="${p.id}">${p.corso_nome||'—'} (${p.lezioni_rim||0} lez. rim.)</option>`).join('');
+    if(pacs.length===1){
+      // Auto-seleziona l'unico pacchetto disponibile
+      pSel.innerHTML=`<option value="${pacs[0].id}" selected>${pacs[0].corso_nome||'—'} (${pacs[0].lezioni_rim||0} lez. rim.)</option>`;
+      if(pSelWrap) pSelWrap.style.display='none';
+    } else if(pacs.length>1){
+      pSel.innerHTML='<option value="">— seleziona pacchetto —</option>'+
+        pacs.map(p=>`<option value="${p.id}">${p.corso_nome||'—'} (${p.lezioni_rim||0} lez. rim.)</option>`).join('');
+      if(pSelWrap) pSelWrap.style.display='block';
+    } else {
+      pSel.innerHTML='<option value="">Nessun pacchetto attivo</option>';
+      if(pSelWrap) pSelWrap.style.display='block';
+    }
   };
   document.getElementById('ses-add-pacchetto').innerHTML='<option value="">— seleziona pacchetto —</option>';
   // Mostra partecipanti
