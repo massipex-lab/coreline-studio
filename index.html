@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.55)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.56)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -931,14 +931,14 @@ function renderDash(){
   // Alerts
   let h='';
   daRin.slice(0,6).forEach(i=>{h+=`<div class="alert-row">
-    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600;flex:1">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="badge b-warn" style="margin-right:6px">Nessun pacchetto</span>
     <button class="btn btn-sm btn-icon" onclick="event.stopPropagation();openIscEdit(${i.id})" title="Modifica"><span class="ti ti-pencil"></span></button>
-    <span class="badge b-warn">Nessun pacchetto</span>
   </div>`;});
   daSal.slice(0,4).forEach(i=>{h+=`<div class="alert-row">
-    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="link-name" onclick="openIsc(${i.id})" style="cursor:pointer;color:var(--cl-dark);font-weight:600;flex:1">${i.nome}${i.cognome?' '+i.cognome:''}</span>
+    <span class="badge b-danger" style="margin-right:6px">${euro(i.totale_da_saldare)}</span>
     <button class="btn btn-sm btn-icon" onclick="event.stopPropagation();openIscEdit(${i.id})" title="Modifica"><span class="ti ti-pencil"></span></button>
-    <span class="badge b-danger">${euro(i.totale_da_saldare)}</span>
   </div>`;});
   document.getElementById('dash-alerts').innerHTML=h||'<div class="empty"><span class="ti ti-circle-check" style="color:var(--green)"></span>Tutto ok!</div>';
 
