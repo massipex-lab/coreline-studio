@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.53)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.54)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -320,6 +320,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
           <div id="n-pac-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
           <button type="button" class="btn btn-sm" onclick="aggiungiNPac()" style="width:100%"><span class="ti ti-plus"></span> Aggiungi pacchetto</button>
         </div>
+        <div class="field"><label>Data registrazione</label><input type="date" id="n-data-reg"></div>
         <div class="field"><label>Note</label><input type="text" id="n-note" placeholder="Opzionale"></div>
         <div class="sec" style="margin-top:12px">Pagamento (opzionale)</div>
         <div class="field"><label>Totale da pagare</label><div id="n-totale" style="font-size:16px;font-weight:700;color:var(--cl-dark);padding:4px 0">€0</div></div>
@@ -404,6 +405,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="modal-handle"></div>
     <button class="close-btn" onclick="closeOv('ov-isc')"><span class="ti ti-x"></span></button>
     <div class="modal-title" id="mi-nome"></div>
+    <div id="mi-data-reg" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
     <div id="mi-body"></div>
   </div>
 </div>
@@ -1026,6 +1028,8 @@ function renderIsc(){
 async function openIsc(id){
   const isc=clienti.find(x=>String(x.id)===String(id)); if(!isc) return;
   document.getElementById('mi-nome').textContent=(isc.nome||'')+(isc.cognome?' '+isc.cognome:'');
+  const drSubEl=document.getElementById('mi-data-reg');
+  if(drSubEl) drSubEl.textContent=isc.data_registrazione?'Registrata il '+fmtShort(isc.data_registrazione):'';
   document.getElementById('mi-body').innerHTML='<div class="loading"><div class="spin"></div>Caricamento…</div>';
   document.getElementById('ov-isc').classList.add('open');
   const scheda = await GET(`/api/v2/iscritte/${id}/scheda`);
@@ -1038,7 +1042,7 @@ async function openIsc(id){
   let h = '';
   // Pacchetti attivi
   if(attivi.length){
-    h += '<div class="sec">Pacchetti attivi</div>';
+    h += '<div class="sec">Sottoscrizioni</div>';
     attivi.forEach(p=>{
       const pct = p.lezioni_tot>0?Math.round(p.lezioni_fatte/p.lezioni_tot*100):0;
       const fc = p.lezioni_rim===0?'var(--red)':(p.lezioni_rim<=2?'var(--warn)':'var(--green)');
@@ -1118,6 +1122,8 @@ async function openIsc(id){
   h += '<div class="field-row"><div class="field"><label>Nome *</label><input type="text" id="ae-nome" value="'+(iscritta.nome||'')+'"></div><div class="field"><label>Cognome</label><input type="text" id="ae-cognome" value="'+(iscritta.cognome||'')+'"></div></div>';
   h += '<div class="field"><label>Telefono</label><input type="text" id="ae-tel" value="'+(iscritta.telefono||'')+'"></div>';
   h += '<div class="field"><label>Email</label><input type="email" id="ae-email" value="'+(iscritta.email||'')+'"></div>';
+  const drDefault=iscritta.data_registrazione||new Date().toISOString().split('T')[0];
+  h += '<div class="field"><label>Data registrazione</label><input type="date" id="ae-data-reg" value="'+drDefault+'"></div>';
   h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>salvaAnagrafica('+id+'))">Salva anagrafica</button>';
   h += '</div></div>';
   h += `<div class="sec" style="margin-top:14px">Certificato medico</div>
@@ -1293,7 +1299,8 @@ async function aggiungiIsc(){
     nome, cognome,
     telefono: document.getElementById('n-telefono')?.value.trim()||'',
     email: document.getElementById('n-email')?.value.trim()||'',
-    note: document.getElementById('n-note').value
+    note: document.getElementById('n-note').value,
+    data_registrazione: document.getElementById('n-data-reg')?.value||new Date().toISOString().split('T')[0]
   });
   if(!r||!r.id){toast('Errore creazione iscritta',true);return;}
   // 2. Aggiungi tutti i pacchetti selezionati
@@ -2406,7 +2413,8 @@ async function salvaAnagrafica(id){
       nome,
       cognome:document.getElementById('ae-cognome')?.value.trim()||'',
       telefono:document.getElementById('ae-tel')?.value.trim()||'',
-      email:document.getElementById('ae-email')?.value.trim()||''
+      email:document.getElementById('ae-email')?.value.trim()||'',
+      data_registrazione:document.getElementById('ae-data-reg')?.value||''
     })
   });
   toast('Anagrafica salvata!');
