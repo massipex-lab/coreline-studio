@@ -224,7 +224,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.54)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.55)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -956,19 +956,17 @@ function renderDash(){
   const certAlert = [...certDaApprovare, ...certMancanti];
   if(certAlert.length){
     hCert = certAlert.map(c=>`
-      <div class="alert-row">
-        <div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="font-weight:600;cursor:pointer;color:var(--cl-dark)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
-            <button class="btn btn-sm btn-icon" onclick="openIscEdit(${c.id})" title="Modifica"><span class="ti ti-pencil"></span></button>
-          </div>
+      <div class="alert-row" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="flex:1">
+          <div style="font-weight:600;cursor:pointer;color:var(--cl-dark)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
           <div style="font-size:11px;color:var(--muted)">
             ${c.stato==='in attesa approvazione'?'🟡 In attesa':c.stato==='non presentato'?'🔴 Non presentato':c.stato==='scaduto'?'🔴 Scaduto':'🟡 Grace period'}
             ${c.cert_medico_scadenza?' · Scad: '+fmtShort(c.cert_medico_scadenza):''}
             ${c.ha_file?'<span style="color:var(--green)"> · 📎 File presente</span>':''}
           </div>
         </div>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-sm btn-icon" onclick="openIscEdit(${c.id})" title="Modifica"><span class="ti ti-pencil"></span></button>
           ${c.stato==='in attesa approvazione'?`
             <button class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="withLoading(this,()=>approvaCert(${c.id}))">✓</button>
             <button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="withLoading(this,()=>rifiutaCert(${c.id}))">✗</button>
@@ -1028,13 +1026,14 @@ function renderIsc(){
 async function openIsc(id){
   const isc=clienti.find(x=>String(x.id)===String(id)); if(!isc) return;
   document.getElementById('mi-nome').textContent=(isc.nome||'')+(isc.cognome?' '+isc.cognome:'');
-  const drSubEl=document.getElementById('mi-data-reg');
-  if(drSubEl) drSubEl.textContent=isc.data_registrazione?'Registrata il '+fmtShort(isc.data_registrazione):'';
+
   document.getElementById('mi-body').innerHTML='<div class="loading"><div class="spin"></div>Caricamento…</div>';
   document.getElementById('ov-isc').classList.add('open');
   const scheda = await GET(`/api/v2/iscritte/${id}/scheda`);
   if(!scheda) return;
   const iscritta = scheda.iscritta || scheda.cliente || {};
+  const drSubEl=document.getElementById('mi-data-reg');
+  if(drSubEl) drSubEl.textContent=iscritta.data_registrazione?'Registrata il '+fmtShort(iscritta.data_registrazione):(isc.data_registrazione?'Registrata il '+fmtShort(isc.data_registrazione):'');
   const {pacchetti=[], pagamenti=[], ultime_presenze=[]} = scheda;
   const attivi = pacchetti.filter(p=>p.stato==='attivo');
   const movCliente = (scheda.movimenti||[]);
