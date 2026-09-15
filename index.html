@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.72)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.75)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1051,8 +1051,12 @@ async function openIsc(id){
       const lezAbilP=Array.isArray(p.lezioni_abilitate)?p.lezioni_abilitate:[];
 
       h += '<div class="card" style="margin-bottom:8px">';
-      h += '<div class="row" style="margin-bottom:6px"><div style="font-weight:700;font-size:14px">'+(p.corso_nome||'—')+'</div>';
-      if(p.lezioni_tot>0) h += '<span class="badge '+(p.lezioni_rim===0?'b-danger':(p.lezioni_rim<=2?'b-warn':'b-ok'))+'">'+p.lezioni_rim+' lez.</span>';
+      h += '<div class="row" style="margin-bottom:6px">';
+      h += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+(p.corso_nome||'—')+'</div>';
+      h += '<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:11px;color:var(--muted)">Inizio:</span>';
+      h += '<input type="date" class="pac-data-inizio" value="'+(p.data_inizio||'')+'" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;color:var(--muted)" onchange="salvaDataPacchetto('+p.id+',this.value,'+id+')">';
+      h += '</div></div>';
+      if((p.lezioni_tot||0)>0) h += '<span class="badge '+(p.lezioni_rim===0?'b-danger':(p.lezioni_rim<=2?'b-warn':'b-ok'))+'">'+p.lezioni_rim+' lez.</span>';
       h += '</div>';
       if((p.lezioni_tot||0)>0) h += renderLezPacchetto(p, id);
       else h += '<div style="font-size:12px;color:var(--muted);margin-top:4px">Inizio '+fmtShort(p.data_inizio)+'</div>';
@@ -2290,9 +2294,16 @@ function aggiungiNPac(){
   const opts=pacchettiCommerciali.map(p=>`<option value="${p.id}" data-lez="${p.n_lezioni}" data-prezzo="${p.prezzo}" data-nome="${p.nome}">${p.nome} — €${p.prezzo}</option>`).join('');
   const div=document.createElement('div');
   div.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:4px';
-  div.innerHTML=`<select class="n-pac-select" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px" onchange="aggiornaTotal()">
-    <option value="">— seleziona —</option>${opts}
-  </select>
+  const oggiStr=new Date().toISOString().split('T')[0];
+  div.innerHTML=`<div style="flex:1;display:flex;flex-direction:column;gap:4px">
+    <select class="n-pac-select" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px" onchange="aggiornaTotal()">
+      <option value="">— seleziona pacchetto —</option>${opts}
+    </select>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;color:var(--muted)">Data inizio:</span>
+      <input type="date" class="n-pac-data" value="${oggiStr}" style="font-size:12px;padding:4px 6px;border:1.5px solid var(--border);border-radius:var(--r-md)">
+    </div>
+  </div>
   <span class="ti ti-x" onclick="this.parentElement.remove();aggiornaTotal()" style="cursor:pointer;color:var(--muted);font-size:18px"></span>`;
   container.appendChild(div);
 }
