@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#C2185B">
 <title>Coreline Pilates Monza</title>
 <style>
@@ -224,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.58)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.60)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1550,10 +1551,11 @@ async function creaRicorrenza(){
     const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0);
     if(pacs.length>0) presenze_template.push({iscritta_id:iid,pacchetto_id:pacs[0].id});
   }
+  const istruttore_id = parseInt(istr)||null;
   const r=await POST('/api/v2/ricorrenze',{
     giorni_settimana:giorni,
     orario:document.getElementById('ric-ora-start').value+'-'+document.getElementById('ric-ora-end').value,
-    tipo:lezObjR?lezObjR.nome:tipo, lezione_id, istr,
+    tipo:lezObjR?lezObjR.nome:tipo, lezione_id, istr, istruttore_id,
     data_inizio:inizio, data_fine:fine,
     posti_max:parseInt(document.getElementById('ric-posti').value)||6,
     note:document.getElementById('ric-note').value,
