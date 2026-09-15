@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.63)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.64)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1361,7 +1361,7 @@ function renderSes(){
     const ospChips=(s.ospiti||[]).map(o=>`<span class="pchip" style="opacity:.6">${o} (ospite)</span>`).join('');
     const postiMax = s.posti_max || 6;
     const nPren = pList.length + (s.ospiti||[]).length;
-    const postiColor = nPren >= postiMax ? 'var(--red)' : (nPren >= postiMax-2 ? 'var(--warn)' : 'var(--cl-dark)');
+    const postiColor = nPren >= postiMax ? 'var(--green)' : 'var(--red)';
     const titolo = s.lezione_nome || s.tipo || '—';
     const istrNome = (istruttori.find(i=>String(i.id)===String(s.istr))||{nome:s.istr}).nome || s.istr;
     h+=`<div class="ses-card" onclick="openSessione(${s.id})" style="cursor:pointer">
