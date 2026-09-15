@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.66)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.67)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1122,8 +1122,7 @@ async function openIsc(id){
   h += '<div class="field-row"><div class="field"><label>Nome *</label><input type="text" id="ae-nome" value="'+(iscritta.nome||'')+'"></div><div class="field"><label>Cognome</label><input type="text" id="ae-cognome" value="'+(iscritta.cognome||'')+'"></div></div>';
   h += '<div class="field"><label>Telefono</label><input type="text" id="ae-tel" value="'+(iscritta.telefono||'')+'"></div>';
   h += '<div class="field"><label>Email</label><input type="email" id="ae-email" value="'+(iscritta.email||'')+'"></div>';
-  const drDefault=iscritta.data_registrazione||new Date().toISOString().split('T')[0];
-  h += '<div class="field"><label>Data registrazione</label><input type="date" id="ae-data-reg" value="'+drDefault+'"></div>';
+  h += '<div class="field"><label>Data registrazione</label><input type="date" id="ae-data-reg" value="'+(iscritta.data_registrazione||isc.data_registrazione||'')+'"></div>';
   h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>salvaAnagrafica('+id+'))">Salva anagrafica</button>';
   h += '</div></div>';
   h += `<div class="sec" style="margin-top:14px">Certificato medico</div>
