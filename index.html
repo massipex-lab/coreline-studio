@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.68)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.69)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1084,7 +1084,7 @@ async function openIsc(id){
       h += '<div class="mov-row"><div><div class="mov-desc">'+(m.descrizione||m.categoria||'—')+'</div>';
       h += '<div class="mov-meta">'+fmtShort(m.data)+(m.metodo?' · '+m.metodo:'')+'</div></div>';
       h += '<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:700;color:var(--green)">+'+euro(m.importo)+'</span>';
-      h += '<button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteMov('+m.id+'))"><span class="ti ti-trash"></span></button></div></div>';
+      h += '<button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteMov('+m.id+','+id+'))"><span class="ti ti-trash"></span></button></div></div>';
     });
   } else {
     h += '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Nessun pagamento registrato.</div>';
@@ -1307,12 +1307,14 @@ async function aggiungiIsc(){
   for(const sel of pacSelects){
     const opt=sel.selectedOptions[0];
     if(!sel.value||!opt) continue;
+    const dataPacEl=sel.closest('div')?.querySelector('.n-pac-data');
+    const dataPacInizio=dataPacEl?dataPacEl.value:new Date().toISOString().split('T')[0];
     const pac_r=await POST(`/api/v2/iscritte/${r.id}/pacchetti`,{
       pacchetto_commerciale_id: parseInt(sel.value),
       lezioni_tot: parseInt(opt.dataset.lez)||0,
       importo_pagato: 0,
       metodo,
-      data_inizio: new Date().toISOString().split('T')[0]
+      data_inizio: dataPacInizio
     });
     if(!primoId && pac_r?.id) primoId=pac_r.id;
   }
@@ -1825,15 +1827,14 @@ async function salvaMov(mid){
   btn.textContent='Aggiungi movimento';
 }
 
-async function deleteMov(mid){
+async function deleteMov(mid, iid=null){
   if(!confirm('Eliminare questo movimento?')) return;
   await fetch(API+`/api/v2/movimenti/${mid}`,{method:'DELETE',headers:{'X-Auth-Token':token}});
   toast('Movimento eliminato.');
-  const newMov=await GET('/api/v2/movimenti');
+  const [newMov, iv2] = await Promise.all([GET('/api/v2/movimenti'), GET('/api/v2/iscritte')]);
   if(newMov){cassa=newMov; renderCas(); renderDash();}
-  // Aggiorna anche clienti per saldi
-  const iv2=await GET('/api/v2/iscritte');
   if(iv2){clienti=iv2; renderIsc(); updateTopbar();}
+  if(iid) openIsc(iid);
 }
 
 function openNuovaMov(){
@@ -2354,6 +2355,18 @@ async function migraLezioni(){
 }
 
 
+
+async function salvaDataPacchetto(pid, data_inizio, iid){
+  if(!data_inizio) return;
+  const r = await fetch(API+'/api/v2/pacchetti-iscritte/'+pid,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Auth-Token':token},
+    body:JSON.stringify({data_inizio})
+  });
+  const d = await r.json();
+  if(d.ok) toast('Data aggiornata!');
+  else toast('Errore aggiornamento data',true);
+}
 
 async function cancellaPackettoIscritta(pid, iid){
   if(!confirm('Cancellare questo pacchetto? Verranno rimossi anche il tracking lezioni associato.')) return;
