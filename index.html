@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.69)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.70)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -2532,15 +2532,7 @@ function toast(msg,warn=false){
   t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-// ══ BOOT ════════════════════════════════════════════════════════════════════
-(async()=>{
-  if(token && await checkToken()){
-    startApp();
-  }
-})();
-</script>
-</body>
-</html>async function uploadExcel(input){
+async function uploadExcel(input){
   const file = input.files[0];
   if(!file) return;
   const btn = input.closest('div').querySelector('button') || input;
@@ -2583,210 +2575,12 @@ function toast(msg,warn=false){
 }
 
 
-async function withLoading(btnEl, fn){
-  btnLoading(btnEl, true);
-  try { await fn(); }
-  catch(e){ console.error(e); toast('Errore imprevisto', true); }
-  finally { btnLoading(btnEl, false); }
-}
-let activeSes=null, selPart=[];
-let editCorsoIdx=null, editIstrIdx=null;
-
-const oggi = new Date(); oggi.setHours(0,0,0,0);
-
-// ══ UTILS ════════════════════════════════════════════════════════════════════
-const euro = n => '€' + Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:2});
-const lezRim = i => Math.max(0,(i.lezioni_tot||i.lezTot||0)-(i.lezioni_fatte||i.lezFatte||0));
-const resto  = i => Math.max(0,(i.totale_da_saldare||0));
-
-function fmtData(s){
-  if(!s) return '';
-  const d=new Date(s+'T00:00:00');
-  return d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
-}
-function fmtShort(s){
-  if(!s) return '—';
-  const d=new Date(s+'T00:00:00');
-  const dd=String(d.getDate()).padStart(2,'0');
-  const mm=String(d.getMonth()+1).padStart(2,'0');
-  const yyyy=d.getFullYear();
-  return dd+'/'+mm+'/'+yyyy;
-}
-function fmtDataIT(s){
-  if(!s) return '';
-  const p=s.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s;
-}
-
-// ══ API ═══════════════════════════════════════════════════════════════════════
-async function api(method, path, body){
-  const opts={method,headers:{'Content-Type':'application/json','X-Auth-Token':token}};
-  if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(API+path,opts);
-  if(r.status===401){doLogout();return null;}
-  return r.json();
-}
-const GET  = path       => api('GET',path);
-const POST = (path,body)=> api('POST',path,body);
-
-// ══ LOGIN/LOGOUT ═════════════════════════════════════════════════════════════
-let loginAttempts = 0;
-const MAX_ATTEMPTS = 3;
-
-async function doLogin(){
-  if(loginAttempts >= MAX_ATTEMPTS) return;
-  const pwd = document.getElementById('pwd-input').value;
-  const btn = document.getElementById('login-btn');
-  const errDiv = document.getElementById('login-err');
-  const waitDiv = document.getElementById('login-wait');
-  errDiv.textContent = '';
-  btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Connessione…';
-  waitDiv.style.display = 'block';
-  document.getElementById('pwd-input').disabled = true;
-  try {
-    const r = await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
-    const data = await r.json();
-    if(data.token){
-      token=data.token; localStorage.setItem('pilot',token);
-      waitDiv.style.display='none'; startApp();
-    } else {
-      loginAttempts++;
-      const rim = MAX_ATTEMPTS - loginAttempts;
-      if(loginAttempts >= MAX_ATTEMPTS){
-        errDiv.innerHTML='<strong>Troppi tentativi errati.</strong><br>Apri una nuova pagina per riprovare.';
-        btn.style.display='none'; waitDiv.style.display='none';
-        document.getElementById('pwd-input').style.display='none';
-      } else {
-        errDiv.textContent=`Password errata. Tentativi rimanenti: ${rim}`;
-        btn.disabled=false; btn.style.opacity='1'; btn.textContent='Accedi';
-        waitDiv.style.display='none';
-        document.getElementById('pwd-input').disabled=false;
-        document.getElementById('pwd-input').value='';
-        document.getElementById('pwd-input').focus();
-      }
-    }
-  } catch(e) {
-    errDiv.textContent='Server non raggiungibile. Riprova tra qualche secondo.';
-    btn.disabled=false; btn.style.opacity='1'; btn.textContent='Accedi';
-    waitDiv.style.display='none';
-    document.getElementById('pwd-input').disabled=false;
-  }
-}
-
-async function checkToken(){
-  if(!token) return false;
-  try{
-    const r=await fetch(API+'/api/ping',{headers:{'X-Auth-Token':token}});
-    return r.status===200;
-  }catch(e){return false;}
-}
-
-function doLogout(){
-  if(token) POST('/api/logout');
-  token=''; localStorage.removeItem('pilot');
-  loginAttempts=0;
-  const btn=document.getElementById('login-btn');
-  const pwd=document.getElementById('pwd-input');
-  const waitDiv=document.getElementById('login-wait');
-  const errDiv=document.getElementById('login-err');
-  if(btn){btn.disabled=false;btn.style.opacity='1';btn.style.display='';btn.textContent='Accedi';}
-  if(pwd){pwd.disabled=false;pwd.style.display='';pwd.value='';}
-  if(waitDiv) waitDiv.style.display='none';
-  if(errDiv) errDiv.textContent='';
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
-}
-
-// ══ START ════════════════════════════════════════════════════════════════════
-async function startApp(){
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('app').style.display='flex';
-  document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  await loadAll();
-}
-
-async function loadAll(){
-  const [iv2,s,ist,mov]=await Promise.all([
-    GET('/api/v2/iscritte'),GET('/api/sessioni'),GET('/api/istruttori'),GET('/api/v2/movimenti')
-  ]);
-  if(iv2) clienti=iv2;
-  if(s) sessioni=s;
-  if(ist) istruttori=ist;
-  if(mov) cassa=mov;
-  // Carica certificati da approvare per dashboard
-  try {
-    const certsResp = await GET('/api/v2/certificati/da-approvare');
-    if(certsResp){
-      certDaApprovare = certsResp.da_approvare || [];
-      certMancanti = certsResp.mancanti || [];
-      certPresenti = certsResp.presenti || [];
-    }
-  } catch(e){}
-  // Carica lezioni e pacchetti commerciali
-  const [lz, pc] = await Promise.all([GET('/api/v2/lezioni'), GET('/api/v2/pacchetti-commerciali')]);
-  if(lz) lezioni=lz;
-  if(pc) pacchettiCommerciali=pc;
-  renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
-  // Aggiorna stati pacchetti al load
-  POST('/api/v2/pacchetti/aggiorna-stati',{}).then(()=>{
-    GET('/api/v2/iscritte').then(iv=>{if(iv){clienti=iv;renderIsc();renderDash();}});
-  });
-
-  updateTopbar(); populateSelects();
-  if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
-}
-
-// ══ NAVIGATION ═══════════════════════════════════════════════════════════════
-function goTab(t){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(tb=>tb.classList.remove('active'));
-  document.getElementById('page-'+t).classList.add('active');
-  const idx=['dash','ses','isc','add','istr-recap','cas','cfg'].indexOf(t);
-  document.querySelectorAll('.tab')[idx].classList.add('active');
-  if(t==='istr-recap') renderIstrRecap();
-  // Quando si torna in Home ricarica i dati dal server
-  if(t==='dash') {
-    Promise.all([
-      GET('/api/v2/iscritte'),
-      GET('/api/v2/movimenti'),
-      GET('/api/v2/certificati/da-approvare')
-    ]).then(([iv2, newMov, certsResp]) => {
-      if(iv2) clienti=iv2;
-      if(newMov) cassa=newMov;
-      if(certsResp){ certDaApprovare=certsResp.da_approvare||[]; certMancanti=certsResp.mancanti||[]; certPresenti=certsResp.presenti||[]; }
-      renderDash(); updateTopbar();
-    });
-  }
-}
-
-// ══ SELECTS DINAMICI ═════════════════════════════════════════════════════════
-function populateSelects(){
-  // Pacchetto (nuova cliente) - usa multi-pacchetto
-  if(document.getElementById('n-pac-list')&&!document.querySelector('.n-pac-select')){
-    aggiungiNPac();
-  }
-  // Tipo corso (sessione)
-  const nsTipoEl=document.getElementById('ns-tipo');
-  nsTipoEl.innerHTML='<option value="">— seleziona —</option>'+lezioni.map(l=>`<option value="${l.id}" data-posti="${l.posti_max}">${l.nome}</option>`).join('');
-  nsTipoEl.onchange=function(){
-    const opt=this.selectedOptions[0];
-    if(opt&&opt.dataset.posti) document.getElementById('ns-posti').value=opt.dataset.posti;
-  };
-  // Istruttore (sessione)
-  document.getElementById('ns-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
-  updateCatOptions();
-}
-
-function updateCatOptions(){
-  const tipo=document.getElementById('mv-tipo').value;
-  const catE=['Abbonamento','Lezione singola','Quota associativa','Altro'];
-  const catU=['Istruttori','Affitto','Attrezzatura','Utenze','Manutenzione','Pulizie','Altro'];
-  const cats=tipo==='Entrata'?catE:catU;
-  document.getElementById('mv-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
-}
-
+// ══ BOOT ════════════════════════════════════════════════════════════════════
 (async()=>{
   if(token && await checkToken()){
     startApp();
   }
 })();
 </script>
+</body>
+</html>
