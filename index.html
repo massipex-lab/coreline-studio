@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.60)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.62)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -636,6 +636,12 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="modal-handle"></div>
     <button class="close-btn" onclick="closeOv('ov-ric')"><span class="ti ti-x"></span></button>
     <div class="modal-title">Sessione ricorrente</div>
+    <div class="field"><label>Tipo corso *</label><select id="ric-tipo"><option value="">— seleziona —</option></select></div>
+    <div class="field"><label>Istruttore/Istruttrice *</label><select id="ric-istr"><option value="">— seleziona —</option></select></div>
+    <div class="field-row">
+      <div class="field"><label>Inizio</label><input type="time" id="ric-ora-start" value="09:00"></div>
+      <div class="field"><label>Fine</label><input type="time" id="ric-ora-end" value="10:00"></div>
+    </div>
     <div class="field"><label>Giorni della settimana</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
         <button type="button" class="giorno-btn" data-giorno="0" onclick="toggleGiorno(this)">Lun</button>
@@ -648,22 +654,16 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Inizio</label><input type="time" id="ric-ora-start" value="09:00"></div>
-      <div class="field"><label>Fine</label><input type="time" id="ric-ora-end" value="10:00"></div>
-    </div>
-    <div class="field"><label>Tipo corso *</label><select id="ric-tipo"><option value="">— seleziona —</option></select></div>
-    <div class="field"><label>Istruttore/Istruttrice *</label><select id="ric-istr"><option value="">— seleziona —</option></select></div>
-    <div class="field-row">
       <div class="field"><label>Data inizio *</label><input type="date" id="ric-inizio"></div>
       <div class="field"><label>Data fine *</label><input type="date" id="ric-fine"></div>
     </div>
     <div class="field"><label>Max partecipanti</label><input type="number" id="ric-posti" min="1" max="20" value="6"></div>
-    <div class="field"><label>Note</label><input type="text" id="ric-note" placeholder="Opzionale"></div>
     <div class="field">
       <label>Partecipanti (opzionale)</label>
       <div id="ric-pax-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
       <button type="button" class="btn btn-sm" onclick="aggiungiRicPax()" style="width:100%"><span class="ti ti-user-plus"></span> Aggiungi partecipante</button>
     </div>
+    <div class="field"><label>Note</label><input type="text" id="ric-note" placeholder="Opzionale"></div>
     <button class="btn btn-primary btn-full" onclick="withLoading(this,creaRicorrenza)">Crea sessioni ricorrenti</button>
   </div>
 </div>
@@ -1508,12 +1508,11 @@ function openRicorrente(){
   ricTipoEl.innerHTML='<option value="">— seleziona —</option>'+lezioni.map(l=>`<option value="${l.id}" data-posti="${l.posti_max}">${l.nome}</option>`).join('');
   ricTipoEl.onchange=function(){
     const opt=this.selectedOptions[0];
-    if(opt&&opt.dataset.posti) document.getElementById('ric-posti').value=opt.dataset.posti;
+
   };
   const ricPaxList=document.getElementById('ric-pax-list');
   if(ricPaxList) ricPaxList.innerHTML='';
-  document.getElementById('ric-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option>${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
-  document.getElementById('ric-posti').value=getPostiMax();
+  document.getElementById('ric-istr').innerHTML='<option value="">— seleziona —</option>'+istruttori.map(i=>`<option value="${i.id}">${i.nome}${i.cognome?' '+i.cognome:''}</option>`).join('');
   
   document.getElementById('ov-ric').classList.add('open');
 }
