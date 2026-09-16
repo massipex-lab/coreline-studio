@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.88)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.89)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1359,7 +1359,20 @@ function setSesV(v){
 }
 
 function renderSes(){
-  const list=sessioni.filter(s=>{const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);return sesView==='f'?sd>=oggi:sd<oggi;}).sort((a,b)=>sesView==='f'?(a.data>b.data?1:-1):(a.data>b.data?-1:1));
+  const q=(document.getElementById('srch-ses')?.value||'').toLowerCase().trim();
+  let list=sessioni.filter(s=>{
+    const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);
+    if(sesView==='f'&&sd<oggi) return false;
+    if(sesView==='p'&&sd>=oggi) return false;
+    if(!q) return true;
+    const istrNome=((istruttori.find(i=>String(i.id)===String(s.istr))||{nome:s.istr}).nome||s.istr||'').toLowerCase();
+    const lezNome=(s.lezione_nome||s.tipo||'').toLowerCase();
+    const dataStr=fmtShort(s.data).toLowerCase();
+    return dataStr.includes(q)||istrNome.includes(q)||lezNome.includes(q);
+  }).sort((a,b)=>{
+    if(a.data!==b.data) return a.data>b.data?-1:1;
+    return (a.orario||'')>(b.orario||'')?-1:1;
+  });
   if(!list.length){document.getElementById('ses-list').innerHTML='<div class="empty"><span class="ti ti-calendar-off"></span>Nessuna sessione</div>';return;}
   let h='',lastD='';
   list.forEach(s=>{
