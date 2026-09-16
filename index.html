@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.86)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.87)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1395,10 +1395,19 @@ function renderSes(){
   document.getElementById('ses-list').innerHTML=h;
 }
 
-function aggiungiNsPax(){
+async function aggiungiNsPax(){
   const container=document.getElementById('ns-pax-list');
   if(!container) return;
-  const opts=clienti.filter(c=>c.stato==='attivo').map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
+  const lezId=parseInt(document.getElementById('ns-tipo')?.value)||null;
+  let clientiFiltrati=clienti.filter(c=>c.stato==='attivo');
+  if(lezId){
+    const tuttiPac=await GET('/api/v2/pacchetti/attivi')||{};
+    clientiFiltrati=clientiFiltrati.filter(c=>{
+      const pacs=tuttiPac[c.id]||[];
+      return pacs.some(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0&&(p.lezioni_ids||[]).includes(lezId));
+    });
+  }
+  const opts=clientiFiltrati.map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
   const div=document.createElement('div');
   div.style.cssText='display:flex;gap:8px;align-items:center';
   div.innerHTML=`<select class="ns-pax-select" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
@@ -1543,10 +1552,19 @@ function openRicorrente(){
   document.getElementById('ov-ric').classList.add('open');
 }
 
-function aggiungiRicPax(){
+async function aggiungiRicPax(){
   const container=document.getElementById('ric-pax-list');
   if(!container) return;
-  const opts=clienti.filter(c=>c.stato==='attivo').map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
+  const lezId=parseInt(document.getElementById('ric-tipo')?.value)||null;
+  let clientiFiltrati=clienti.filter(c=>c.stato==='attivo');
+  if(lezId){
+    const tuttiPac=await GET('/api/v2/pacchetti/attivi')||{};
+    clientiFiltrati=clientiFiltrati.filter(c=>{
+      const pacs=tuttiPac[c.id]||[];
+      return pacs.some(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0&&(p.lezioni_ids||[]).includes(lezId));
+    });
+  }
+  const opts=clientiFiltrati.map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
   const div=document.createElement('div');
   div.style.cssText='display:flex;gap:8px;align-items:center';
   div.innerHTML=`<select class="ric-pax-select" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px">
