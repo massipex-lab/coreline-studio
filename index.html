@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.83)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.84)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -523,11 +523,9 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="modal-title">Nuovo pacchetto</div>
     <div class="field"><label>Pacchetto commerciale *</label><select id="ap-corso"></select></div>
     <div class="field"><label>Data inizio</label><input type="date" id="ap-data"></div>
-    <div class="field"><label>Tipo pagamento</label>
-      <select id="ap-metodo"><option>Bonifico</option><option>Contanti</option><option>Carta</option><option>Da saldare</option></select>
-    </div>
-    <div class="field"><label>Importo pagato (€)</label><input type="number" id="ap-importo" placeholder="0" step="0.01"></div>
     <div class="field"><label>Note</label><input type="text" id="ap-note" placeholder="Opzionale"></div>
+    <input type="hidden" id="ap-metodo" value="Bonifico">
+    <input type="hidden" id="ap-importo" value="0">
     <button class="btn btn-primary btn-full" id="btn-salva-pac" onclick="withLoading(this,salvaAddPacchetto)">Aggiungi pacchetto</button>
   </div>
 </div>
