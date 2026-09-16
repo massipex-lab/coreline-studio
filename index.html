@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.85)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.86)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1430,8 +1430,21 @@ async function openSessione(sid){
   const sel=document.getElementById('ses-add-cliente');
   const pList=Array.isArray(s.partecipanti)?s.partecipanti:[];
   const giaPresenti=new Set(pList.map(p=>typeof p==='object'?p.iscritta_id:null).filter(Boolean));
+  // Filtra clienti che hanno pacchetti attivi con la lezione della sessione
+  const sesLezId = s.lezione_id;
+  const clientiFiltrati = await (async () => {
+    if(!sesLezId) return clienti.filter(c=>!giaPresenti.has(c.id)&&c.stato==='attivo');
+    // Carica pacchetti attivi e filtra per lezione_id
+    const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
+    return clienti.filter(c=>{
+      if(giaPresenti.has(c.id)||c.stato!=='attivo') return false;
+      const pacs = tuttiPac[c.id] || [];
+      return pacs.some(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0&&
+        (p.lezioni_ids||[]).includes(sesLezId));
+    });
+  })();
   sel.innerHTML='<option value="">— seleziona cliente —</option>'+
-    clienti.filter(c=>!giaPresenti.has(c.id)&&c.stato==='attivo').map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
+    clientiFiltrati.map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
   sel.onchange=async function(){
     const iid=parseInt(this.value);
     const pSel=document.getElementById('ses-add-pacchetto');
@@ -1576,6 +1589,17 @@ async function creaRicorrenza(){
   closeOv('ov-ric');
   if(r&&r.sessioni_create){
     toast(`Creato! ${r.sessioni_create} sessioni generate`);
+    // Reset form ricorrente
+    document.querySelectorAll('.giorno-btn').forEach(b=>b.classList.remove('sel'));
+    document.getElementById('ric-tipo').value='';
+    document.getElementById('ric-istr').value='';
+    document.getElementById('ric-ora-start').value='09:00';
+    document.getElementById('ric-ora-end').value='10:00';
+    document.getElementById('ric-inizio').value='';
+    document.getElementById('ric-fine').value='';
+    document.getElementById('ric-posti').value='6';
+    document.getElementById('ric-note').value='';
+    const ricPaxList=document.getElementById('ric-pax-list'); if(ricPaxList) ricPaxList.innerHTML='';
     const s=await GET('/api/sessioni'); if(s) sessioni=s;
     renderSes(); renderDash();
   } else {
@@ -1611,6 +1635,15 @@ async function creaSessione(){
   if(r&&r.ok){
     closeOv('ov-ses');
     toast('Sessione creata!');
+    // Reset form
+    document.getElementById('ns-data').value=new Date().toISOString().split('T')[0];
+    document.getElementById('ns-ora-start').value='09:00';
+    document.getElementById('ns-ora-end').value='10:00';
+    document.getElementById('ns-tipo').value='';
+    document.getElementById('ns-istr').value='';
+    document.getElementById('ns-posti').value='6';
+    document.getElementById('ns-note').value='';
+    const nsPaxList=document.getElementById('ns-pax-list'); if(nsPaxList) nsPaxList.innerHTML='';
     const s=await GET('/api/sessioni'); if(s){sessioni=s; renderSes(); renderDash();}
   } else {
     toast('Errore nella creazione',true);
