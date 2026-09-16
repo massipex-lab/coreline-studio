@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.89)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.90)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -278,14 +278,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
     <!-- SESSIONI -->
     <div class="page" id="page-ses">
-      <div class="row" style="margin-bottom:12px">
+      <div class="row" style="margin-bottom:8px">
         <div class="chips" style="margin:0">
           <div class="chip on" id="sv-f" onclick="setSesV('f')">Prossime</div>
           <div class="chip" id="sv-p" onclick="setSesV('p')">Passate</div>
         </div>
         <button class="btn btn-sm" onclick="openRicorrente()" style="margin-right:4px"><span class="ti ti-repeat"></span> Ricorrente</button>
-    <button class="btn btn-primary btn-sm" onclick="openNuovaSes()"><span class="ti ti-plus"></span> Singola</button>
+        <button class="btn btn-primary btn-sm" onclick="openNuovaSes()"><span class="ti ti-plus"></span> Singola</button>
       </div>
+      <input type="search" id="srch-ses" placeholder="Cerca data, istruttore, lezione..." style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:10px" oninput="renderSes()">
       <div id="ses-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
 
