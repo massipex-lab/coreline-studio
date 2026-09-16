@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.75)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.76)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1329,7 +1329,10 @@ async function aggiungiIsc(){
       data: data_pag, causale, pacchetto_id: primoId
     });
   }
-  ['n-nome','n-pagato','n-lez','n-note'].forEach(id=>document.getElementById(id).value='');
+  ['n-nome','n-cognome','n-telefono','n-email','n-pagato','n-causale','n-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const nDataReg=document.getElementById('n-data-reg'); if(nDataReg) nDataReg.value=new Date().toISOString().split('T')[0];
+  const nPacList=document.getElementById('n-pac-list'); if(nPacList) nPacList.innerHTML='';
+  const nTotale=document.getElementById('n-totale'); if(nTotale) nTotale.textContent='€0';
 
   // Ricarica tutto dal server per avere dati aggiornati (incluso cassa)
   const [iv2, newCas] = await Promise.all([
