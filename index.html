@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.90)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.91)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -286,7 +286,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
         <button class="btn btn-sm" onclick="openRicorrente()" style="margin-right:4px"><span class="ti ti-repeat"></span> Ricorrente</button>
         <button class="btn btn-primary btn-sm" onclick="openNuovaSes()"><span class="ti ti-plus"></span> Singola</button>
       </div>
-      <input type="search" id="srch-ses" placeholder="Cerca data, istruttore, lezione..." style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:10px" oninput="renderSes()">
+      <input type="search" id="srch-ses" placeholder="Cerca data, istruttore, lezione..." style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:10px" oninput="sesPag=0;renderSes()">
       <div id="ses-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
 
@@ -678,6 +678,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 let token = localStorage.getItem('pilot') || '';
 let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
 let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[], lezioni=[], pacchettiCommerciali=[];
+let sesPag=0; const SES_PER_PAG=20;
 
 // ── UTILITY: gestione bottoni durante azioni async ────────────────────────────
 function btnLoading(btnEl, loading, originalText=null){
@@ -1355,6 +1356,7 @@ async function aggiungiIsc(){
 // ══ SESSIONI ═════════════════════════════════════════════════════════════════
 function setSesV(v){
   sesView=v;
+  sesPag=0;
   ['f','p'].forEach(x=>document.getElementById('sv-'+x).classList.toggle('on',x===v));
   renderSes();
 }
@@ -1375,8 +1377,25 @@ function renderSes(){
     return (a.orario||'')>(b.orario||'')?-1:1;
   });
   if(!list.length){document.getElementById('ses-list').innerHTML='<div class="empty"><span class="ti ti-calendar-off"></span>Nessuna sessione</div>';return;}
+
+  // Paginazione solo per "Passate"
+  let pageList=list;
+  let paginaFooter='';
+  if(sesView==='p'){
+    const totPag=Math.ceil(list.length/SES_PER_PAG);
+    if(sesPag>=totPag) sesPag=totPag-1;
+    pageList=list.slice(sesPag*SES_PER_PAG,(sesPag+1)*SES_PER_PAG);
+    if(totPag>1){
+      paginaFooter=`<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0;font-size:13px;color:var(--muted)">
+        <button class="btn btn-sm" ${sesPag===0?'disabled':''} onclick="sesPag--;renderSes()">← Prec</button>
+        <span>Pag. ${sesPag+1} / ${totPag} &nbsp;(${list.length} sessioni)</span>
+        <button class="btn btn-sm" ${sesPag>=totPag-1?'disabled':''} onclick="sesPag++;renderSes()">Succ →</button>
+      </div>`;
+    }
+  }
+
   let h='',lastD='';
-  list.forEach(s=>{
+  pageList.forEach(s=>{
     if(s.data!==lastD){h+=`<div class="ses-day">${fmtData(s.data)}</div>`;lastD=s.data;}
     const sd=new Date(s.data+'T00:00:00');sd.setHours(0,0,0,0);
     const fut=sd>=oggi;
@@ -1406,7 +1425,7 @@ function renderSes(){
       <div class="pchips">${chips+ospChips||'<span style="font-size:12px;color:var(--muted)">Nessun partecipante</span>'}</div>
     </div>`;
   });
-  document.getElementById('ses-list').innerHTML=h;
+  document.getElementById('ses-list').innerHTML=h+paginaFooter;
 }
 
 async function aggiungiNsPax(){
