@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.91)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.92)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1380,16 +1380,16 @@ function renderSes(){
 
   // Paginazione solo per "Passate"
   let pageList=list;
-  let paginaFooter='';
+  let paginaNav='';
   if(sesView==='p'){
     const totPag=Math.ceil(list.length/SES_PER_PAG);
     if(sesPag>=totPag) sesPag=totPag-1;
     pageList=list.slice(sesPag*SES_PER_PAG,(sesPag+1)*SES_PER_PAG);
     if(totPag>1){
-      paginaFooter=`<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0;font-size:13px;color:var(--muted)">
-        <button class="btn btn-sm" ${sesPag===0?'disabled':''} onclick="sesPag--;renderSes()">← Prec</button>
+      paginaNav=`<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0;font-size:13px;color:var(--muted)">
+        <button class="btn btn-sm" ${sesPag===0?'disabled':''} onclick="sesPag--;renderSes();document.getElementById('ses-list').scrollIntoView({behavior:'smooth',block:'start'})">← Prec</button>
         <span>Pag. ${sesPag+1} / ${totPag} &nbsp;(${list.length} sessioni)</span>
-        <button class="btn btn-sm" ${sesPag>=totPag-1?'disabled':''} onclick="sesPag++;renderSes()">Succ →</button>
+        <button class="btn btn-sm" ${sesPag>=totPag-1?'disabled':''} onclick="sesPag++;renderSes();document.getElementById('ses-list').scrollIntoView({behavior:'smooth',block:'start'})">Succ →</button>
       </div>`;
     }
   }
@@ -1425,7 +1425,7 @@ function renderSes(){
       <div class="pchips">${chips+ospChips||'<span style="font-size:12px;color:var(--muted)">Nessun partecipante</span>'}</div>
     </div>`;
   });
-  document.getElementById('ses-list').innerHTML=h+paginaFooter;
+  document.getElementById('ses-list').innerHTML=paginaNav+h+paginaNav;
 }
 
 async function aggiungiNsPax(){
