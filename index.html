@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.00)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.01)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -438,7 +438,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div style="display:flex;gap:8px;margin-bottom:6px">
         <input type="text" id="ospite-search" placeholder="Cerca o crea nuovo ospite…" autocomplete="off"
           style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;font-family:inherit"
-          oninput="renderOspiteDropdown()" onfocus="renderOspiteDropdown()">
+          oninput="renderOspiteDropdown()" onfocus="renderOspiteDropdown()"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();ospiteEnterV2();}">
       </div>
       <div id="ospite-dropdown" style="display:none;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface);max-height:180px;overflow-y:auto;margin-bottom:6px;font-size:13px"></div>
       <div id="ospiti-sel-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -472,6 +473,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <label style="font-size:11px;font-weight:700;color:var(--cl-dark);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:8px">Ospiti (opzionale)</label>
       <input type="text" id="ns-ospite-search" placeholder="Cerca o crea ospite…" autocomplete="off"
         oninput="renderOspiteDropdownNS()" onfocus="renderOspiteDropdownNS()"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();ospiteEnterNS();}"
         style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:4px">
       <div id="ns-ospite-dropdown" style="display:none;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface);max-height:160px;overflow-y:auto;margin-bottom:6px;font-size:13px"></div>
       <div id="ns-ospiti-sel" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -667,6 +669,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div id="ses-ospiti-list" style="margin-bottom:8px"></div>
       <input type="text" id="ses-add-ospite" placeholder="Cerca o crea ospite…" autocomplete="off"
         oninput="renderOspiteDropdownDetail()" onfocus="renderOspiteDropdownDetail()"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();ospiteEnterDetail();}"
         style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:4px">
       <div id="ses-add-ospite-dropdown" style="display:none;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface);max-height:160px;overflow-y:auto;margin-bottom:6px;font-size:13px"></div>
     </div>
@@ -732,6 +735,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <label style="font-size:11px;font-weight:700;color:var(--cl-dark);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:8px">Ospiti (opzionale)</label>
       <input type="text" id="ric-ospite-search" placeholder="Cerca o crea ospite…" autocomplete="off"
         oninput="renderOspiteDropdownRic()" onfocus="renderOspiteDropdownRic()"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();ospiteEnterRic();}"
         style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:4px">
       <div id="ric-ospite-dropdown" style="display:none;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface);max-height:160px;overflow-y:auto;margin-bottom:6px;font-size:13px"></div>
       <div id="ric-ospiti-sel" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -1887,15 +1891,15 @@ function renderOspiteDropdown(){
   let html = filtrati.map(o=>`<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)"
     onmousedown="event.preventDefault();toggleOspiteInSes(${o.id})">
     ${o.nome}${o.cognome?' '+o.cognome:''}</div>`).join('');
-  // Opzione crea nuovo
-  const nomeCapit = (document.getElementById('ospite-search')?.value||'').trim();
-  if(nomeCapit && !filtrati.find(o=>(o.nome+' '+(o.cognome||'')).trim().toLowerCase()===q)){
-    html += `<div style="padding:8px 12px;cursor:pointer;color:var(--primary);font-weight:600"
-      onmousedown="event.preventDefault();creaOspiteAlVolo('${nomeCapit.replace(/'/g,"\\'")}')">
-      <span class="ti ti-plus"></span> Crea "${nomeCapit}"</div>`;
+  // Opzione crea nuovo — usa il valore originale (mantiene maiuscole/minuscole)
+  const nomeOriginale = (document.getElementById('ospite-search')?.value||'').trim();
+  if(nomeOriginale && !filtrati.find(o=>(o.nome+' '+(o.cognome||'')).trim().toLowerCase()===q)){
+    html += `<div style="padding:8px 12px;cursor:pointer;background:var(--pink-l);border-top:1px solid var(--border);font-weight:600;color:var(--cl-dark)"
+      onmousedown="event.preventDefault();creaOspiteAlVolo('${nomeOriginale.replace(/'/g,"\\'")}')">
+      ➕ Aggiungi nuovo ospite: <strong>${nomeOriginale}</strong></div>`;
   }
-  dd.innerHTML = html || '<div style="padding:8px 12px;color:var(--muted)">Nessun risultato</div>';
-  dd.style.display = html || nomeCapit ? 'block' : 'none';
+  dd.innerHTML = html || (nomeOriginale ? '' : '<div style="padding:8px 12px;color:var(--muted)">Inizia a digitare…</div>');
+  dd.style.display = (html || nomeOriginale) ? 'block' : 'none';
 }
 
 function toggleOspiteInSes(oid){
@@ -1919,9 +1923,11 @@ async function creaOspiteAlVolo(nomeCompleto){
     toast('Sessione al completo! Max '+postiMax+' partecipanti', true);
     return;
   }
+  _ospiteSetLoading('ospite-search', true);
   const parts = nomeCompleto.trim().split(' ');
   const nome = parts[0]; const cognome = parts.slice(1).join(' ');
   const r = await POST('/api/v2/ospiti', {nome, cognome, note:''});
+  _ospiteSetLoading('ospite-search', false);
   if(r && r.id){
     ospiti.push(r);
     selOspitiV2.push({id:r.id, nome:r.nome, cognome:r.cognome||''});
@@ -1997,6 +2003,76 @@ async function conferma(){
   if(iv2){clienti=iv2; renderIsc();}
 }
 
+// ══ OSPITI ENTER HELPERS (tasto Invio + spinner anti-doppio-click) ═══════════
+function _ospiteSetLoading(inputId, loading){
+  const el = document.getElementById(inputId);
+  if(!el) return;
+  el.disabled = loading;
+  el.style.opacity = loading ? '.5' : '1';
+}
+
+async function ospiteEnterV2(){
+  const val = (document.getElementById('ospite-search')?.value||'').trim();
+  if(!val) return;
+  // Se c'è un solo match esatto nella lista, selezionalo
+  const match = ospiti.filter(o=>!selOspitiV2.find(x=>x.id===o.id))
+    .find(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===val.toLowerCase());
+  if(match){ toggleOspiteInSes(match.id); return; }
+  // Se c'è un solo risultato nella lista filtrata, selezionalo
+  const filtrati = ospiti.filter(o=>!selOspitiV2.find(x=>x.id===o.id) &&
+    (o.nome+' '+(o.cognome||'')).toLowerCase().includes(val.toLowerCase()));
+  if(filtrati.length===1){ toggleOspiteInSes(filtrati[0].id); return; }
+  // Altrimenti crea nuovo
+  _ospiteSetLoading('ospite-search', true);
+  await creaOspiteAlVolo(val);
+  _ospiteSetLoading('ospite-search', false);
+}
+
+async function ospiteEnterNS(){
+  const val = (document.getElementById('ns-ospite-search')?.value||'').trim();
+  if(!val) return;
+  const match = ospiti.filter(o=>!selOspitiNS.find(x=>x.id===o.id))
+    .find(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===val.toLowerCase());
+  if(match){ toggleOspiteNS(match.id); return; }
+  const filtrati = ospiti.filter(o=>!selOspitiNS.find(x=>x.id===o.id) &&
+    (o.nome+' '+(o.cognome||'')).toLowerCase().includes(val.toLowerCase()));
+  if(filtrati.length===1){ toggleOspiteNS(filtrati[0].id); return; }
+  _ospiteSetLoading('ns-ospite-search', true);
+  await creaOspiteNS(val);
+  _ospiteSetLoading('ns-ospite-search', false);
+}
+
+async function ospiteEnterRic(){
+  const val = (document.getElementById('ric-ospite-search')?.value||'').trim();
+  if(!val) return;
+  const match = ospiti.filter(o=>!selOspitiRic.find(x=>x.id===o.id))
+    .find(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===val.toLowerCase());
+  if(match){ toggleOspiteRic(match.id); return; }
+  const filtrati = ospiti.filter(o=>!selOspitiRic.find(x=>x.id===o.id) &&
+    (o.nome+' '+(o.cognome||'')).toLowerCase().includes(val.toLowerCase()));
+  if(filtrati.length===1){ toggleOspiteRic(filtrati[0].id); return; }
+  _ospiteSetLoading('ric-ospite-search', true);
+  await creaOspiteRic(val);
+  _ospiteSetLoading('ric-ospite-search', false);
+}
+
+async function ospiteEnterDetail(){
+  const val = (document.getElementById('ses-add-ospite')?.value||'').trim();
+  if(!val) return;
+  const sid = parseInt(document.getElementById('ses-detail-id')?.value);
+  const s = sessioni.find(x=>x.id===sid);
+  const selIds = new Set((s?.ospiti||[]).map(o=>typeof o==='object'?o.id:null).filter(Boolean));
+  const match = ospiti.filter(o=>!selIds.has(o.id))
+    .find(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===val.toLowerCase());
+  if(match){ await aggiungiOspiteDetail(match.id); return; }
+  const filtrati = ospiti.filter(o=>!selIds.has(o.id) &&
+    (o.nome+' '+(o.cognome||'')).toLowerCase().includes(val.toLowerCase()));
+  if(filtrati.length===1){ await aggiungiOspiteDetail(filtrati[0].id); return; }
+  _ospiteSetLoading('ses-add-ospite', true);
+  await creaOspiteDetail(val);
+  _ospiteSetLoading('ses-add-ospite', false);
+}
+
 // ══ OSPITI HELPERS — NS (Nuova Sessione) ══════════════════════════════════════
 let selOspitiNS = [];
 
@@ -2007,11 +2083,12 @@ function renderOspiteDropdownNS(){
   let list = ospiti.filter(o=>!selIds.has(o.id));
   if(q) list = list.filter(o=>(o.nome+' '+(o.cognome||'')).toLowerCase().includes(q));
   if(!list.length && !q){ dd.style.display='none'; return; }
-  const creaRow = q && !ospiti.some(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===q)
-    ? `<div style="padding:8px 12px;cursor:pointer;font-style:italic;color:var(--muted)"
-        onmousedown="event.preventDefault();creaOspiteNS('${q.replace(/'/g,"\\'")}')">
-        ➕ Crea ospite "<strong>${q}</strong>"</div>` : '';
-  dd.innerHTML = list.map(o=>`<div style="padding:8px 12px;cursor:pointer"
+  const nomeOrigNS = (document.getElementById('ns-ospite-search')?.value||'').trim();
+  const creaRow = nomeOrigNS && !ospiti.some(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===q)
+    ? `<div style="padding:8px 12px;cursor:pointer;background:var(--pink-l);border-top:1px solid var(--border);font-weight:600;color:var(--cl-dark)"
+        onmousedown="event.preventDefault();creaOspiteNS('${nomeOrigNS.replace(/'/g,"\\'")}')">
+        ➕ Aggiungi nuovo ospite: <strong>${nomeOrigNS}</strong></div>` : '';
+  dd.innerHTML = list.map(o=>`<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)"
     onmousedown="event.preventDefault();toggleOspiteNS(${o.id})">
     ${o.nome}${o.cognome?' '+o.cognome:''}</div>`).join('') + creaRow;
   dd.style.display = (list.length || creaRow) ? 'block' : 'none';
@@ -2026,8 +2103,10 @@ function toggleOspiteNS(oid){
 }
 
 async function creaOspiteNS(nomeCompleto){
+  _ospiteSetLoading('ns-ospite-search', true);
   const parts = nomeCompleto.trim().split(' ');
   const r = await POST('/api/v2/ospiti', {nome:parts[0], cognome:parts.slice(1).join(' '), note:''});
+  _ospiteSetLoading('ns-ospite-search', false);
   if(r && r.id){
     ospiti.push(r);
     selOspitiNS.push({id:r.id, nome:r.nome, cognome:r.cognome||''});
@@ -2061,11 +2140,12 @@ function renderOspiteDropdownRic(){
   let list = ospiti.filter(o=>!selIds.has(o.id));
   if(q) list = list.filter(o=>(o.nome+' '+(o.cognome||'')).toLowerCase().includes(q));
   if(!list.length && !q){ dd.style.display='none'; return; }
-  const creaRow = q && !ospiti.some(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===q)
-    ? `<div style="padding:8px 12px;cursor:pointer;font-style:italic;color:var(--muted)"
-        onmousedown="event.preventDefault();creaOspiteRic('${q.replace(/'/g,"\\'")}')">
-        ➕ Crea ospite "<strong>${q}</strong>"</div>` : '';
-  dd.innerHTML = list.map(o=>`<div style="padding:8px 12px;cursor:pointer"
+  const nomeOrigRic = (document.getElementById('ric-ospite-search')?.value||'').trim();
+  const creaRow = nomeOrigRic && !ospiti.some(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===q)
+    ? `<div style="padding:8px 12px;cursor:pointer;background:var(--pink-l);border-top:1px solid var(--border);font-weight:600;color:var(--cl-dark)"
+        onmousedown="event.preventDefault();creaOspiteRic('${nomeOrigRic.replace(/'/g,"\\'")}')">
+        ➕ Aggiungi nuovo ospite: <strong>${nomeOrigRic}</strong></div>` : '';
+  dd.innerHTML = list.map(o=>`<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)"
     onmousedown="event.preventDefault();toggleOspiteRic(${o.id})">
     ${o.nome}${o.cognome?' '+o.cognome:''}</div>`).join('') + creaRow;
   dd.style.display = (list.length || creaRow) ? 'block' : 'none';
@@ -2080,8 +2160,10 @@ function toggleOspiteRic(oid){
 }
 
 async function creaOspiteRic(nomeCompleto){
+  _ospiteSetLoading('ric-ospite-search', true);
   const parts = nomeCompleto.trim().split(' ');
   const r = await POST('/api/v2/ospiti', {nome:parts[0], cognome:parts.slice(1).join(' '), note:''});
+  _ospiteSetLoading('ric-ospite-search', false);
   if(r && r.id){
     ospiti.push(r);
     selOspitiRic.push({id:r.id, nome:r.nome, cognome:r.cognome||''});
@@ -2129,11 +2211,12 @@ function renderOspiteDropdownDetail(){
   let list = ospiti.filter(o=>!selIds.has(o.id));
   if(q) list = list.filter(o=>(o.nome+' '+(o.cognome||'')).toLowerCase().includes(q));
   if(!list.length && !q){ dd.style.display='none'; return; }
-  const creaRow = q && !ospiti.some(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===q)
-    ? `<div style="padding:8px 12px;cursor:pointer;font-style:italic;color:var(--muted)"
-        onmousedown="event.preventDefault();creaOspiteDetail('${q.replace(/'/g,"\\'")}')">
-        ➕ Crea ospite "<strong>${q}</strong>"</div>` : '';
-  dd.innerHTML = list.map(o=>`<div style="padding:8px 12px;cursor:pointer"
+  const nomeOrigDetail = (document.getElementById('ses-add-ospite')?.value||'').trim();
+  const creaRow = nomeOrigDetail && !ospiti.some(o=>(o.nome+' '+(o.cognome||'')).toLowerCase()===q)
+    ? `<div style="padding:8px 12px;cursor:pointer;background:var(--pink-l);border-top:1px solid var(--border);font-weight:600;color:var(--cl-dark)"
+        onmousedown="event.preventDefault();creaOspiteDetail('${nomeOrigDetail.replace(/'/g,"\\'")}')">
+        ➕ Aggiungi nuovo ospite: <strong>${nomeOrigDetail}</strong></div>` : '';
+  dd.innerHTML = list.map(o=>`<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)"
     onmousedown="event.preventDefault();aggiungiOspiteDetail(${o.id})">
     ${o.nome}${o.cognome?' '+o.cognome:''}</div>`).join('') + creaRow;
   dd.style.display = (list.length || creaRow) ? 'block' : 'none';
@@ -2185,8 +2268,10 @@ async function creaOspiteDetail(nomeCompleto){
     toast('Sessione al completo! Max '+postiMax+' partecipanti', true);
     return;
   }
+  _ospiteSetLoading('ses-add-ospite', true);
   const parts = nomeCompleto.trim().split(' ');
   const r = await POST('/api/v2/ospiti', {nome:parts[0], cognome:parts.slice(1).join(' '), note:''});
+  _ospiteSetLoading('ses-add-ospite', false);
   if(r && r.id){
     ospiti.push(r);
     await aggiungiOspiteDetail(r.id);
