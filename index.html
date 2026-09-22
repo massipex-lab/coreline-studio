@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.09)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.10)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1240,7 +1240,32 @@ async function openIsc(id){
   // Storici
   if(storici.length){
     h += '<div class="sec" style="margin-top:14px">Pacchetti precedenti</div>';
-    storici.forEach(p=>{h+=`<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--bg);color:var(--muted)">${p.corso_nome} · ${p.lezioni_fatte}/${p.lezioni_tot} lez. · <span class="badge b-pink">${p.stato}</span></div>`;});
+    storici.forEach(p=>{
+      const pct = p.lezioni_tot>0?Math.round(p.lezioni_fatte/p.lezioni_tot*100):0;
+      const badgeCls = p.stato==='esaurito'?'b-danger':(p.stato==='terminato'?'b-pink':'b-warn');
+      const lezAbilP = Array.isArray(p.lezioni_abilitate)?p.lezioni_abilitate:[];
+      h += '<div class="card" style="margin-bottom:8px;opacity:0.8">';
+      h += '<div class="row" style="margin-bottom:4px">';
+      h += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+(p.corso_nome||'—')+'</div>';
+      h += '<div style="font-size:11px;color:var(--muted);margin-top:2px">Inizio: '+fmtShort(p.data_inizio)+'</div>';
+      h += '</div>';
+      h += '<span class="badge '+badgeCls+'">'+p.stato+'</span>';
+      h += '</div>';
+      if(p.lezioni_tot>0){
+        if(lezAbilP.length>1){
+          lezAbilP.forEach(l=>{
+            h += '<div style="font-size:12px;color:var(--muted);margin-top:2px">'+l.nome+': '+l.n_fatte+'/'+(l.n_lezioni||'?')+' lez.</div>';
+          });
+        }
+        h += '<div style="margin-top:6px">';
+        h += '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:3px"><span>Lezioni</span><span>'+p.lezioni_fatte+'/'+p.lezioni_tot+'</span></div>';
+        h += '<div style="background:var(--bg);border-radius:4px;height:6px"><div style="width:'+pct+'%;background:var(--muted);border-radius:4px;height:6px"></div></div>';
+        h += '</div>';
+      } else {
+        h += '<div style="font-size:12px;color:var(--muted);margin-top:4px">Pacchetto senza conteggio lezioni</div>';
+      }
+      h += '</div>';
+    });
   }
   // Pulsanti azioni cliente in fondo
   h += `<div class="divider"></div>
