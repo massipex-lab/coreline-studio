@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.04)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.06)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -387,6 +387,17 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div class="sec">Istruttori</div>
       <div class="card" id="istr-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore</button>
+
+      <div class="sec">Manutenzione</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="setting-item" onclick="ricalcolaLezioni()">
+          <div>
+            <div class="setting-label"><span class="ti ti-refresh" style="margin-right:4px"></span>Ricalcola lezioni usate</div>
+            <div class="setting-sub">Riallinea i contatori di ogni pacchetto con le presenze reali. Usa dopo inserimenti storici.</div>
+          </div>
+          <span class="ti ti-chevron-right setting-arrow"></span>
+        </div>
+      </div>
 
       <div class="sec">Database</div>
       <div class="card">
@@ -1567,17 +1578,7 @@ async function openSessione(sid){
   const giaPresenti=new Set(pList.map(p=>typeof p==='object'?p.iscritta_id:null).filter(Boolean));
   // Filtra clienti che hanno pacchetti attivi con la lezione della sessione
   const sesLezId = s.lezione_id;
-  const clientiFiltrati = await (async () => {
-    if(!sesLezId) return clienti.filter(c=>!giaPresenti.has(c.id)&&c.stato==='attivo');
-    // Carica pacchetti attivi e filtra per lezione_id
-    const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
-    return clienti.filter(c=>{
-      if(giaPresenti.has(c.id)||c.stato!=='attivo') return false;
-      const pacs = tuttiPac[c.id] || [];
-      return pacs.some(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0&&
-        (p.lezioni_ids||[]).includes(sesLezId));
-    });
-  })();
+  const clientiFiltrati = clienti.filter(c=>!giaPresenti.has(c.id)&&c.stato==='attivo');
   sel.innerHTML='<option value="">— seleziona cliente —</option>'+
     clientiFiltrati.map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
   sel.onchange=async function(){
@@ -1593,7 +1594,7 @@ async function openSessione(sid){
     const pacsComp=pacsAll.filter(p=>(p.lezioni_abilitate||[]).includes(sesLezId)||!sesLezId);
     const pacs=pacsComp.length>0?pacsComp:pacsAll; // fallback a tutti se nessuno matcha per lezione_id
     if(pacs.length===0){
-      // Nessun pacchetto attivo — il backend userà auto-selezione o segnalerà errore
+      // Nessun pacchetto con lezioni disponibili — il backend bloccherà con messaggio chiaro
       pSel.dataset.autoPacchetto='true';
       pSelWrap.style.display='none';
     } else if(pacs.length===1){
@@ -1651,7 +1652,8 @@ async function aggiungiPartecipante(){
   const nuovaPresenza={iscritta_id:iid, pacchetto_id:pid};
   if(autoPacchetto) nuovaPresenza.auto_pacchetto=true;
   const nuove=[...pList.map(p=>({iscritta_id:typeof p==='object'?p.iscritta_id:null,pacchetto_id:typeof p==='object'?p.pacchetto_id:null})),nuovaPresenza].filter(p=>p.iscritta_id);
-  await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:nuove,ospiti_ids:(s?.ospiti||[]).map(o=>typeof o==='object'?o.id:o).filter(Boolean)});
+  const res=await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:nuove,ospiti_ids:(s?.ospiti||[]).map(o=>typeof o==='object'?o.id:o).filter(Boolean)});
+  if(res?.error){toast(res.error,true);return;}
   // lezione scalata automaticamente in set_presenze
   toast('Partecipante aggiunto!');
   const ss=await GET('/api/sessioni');if(ss){sessioni=ss;renderSes();}
@@ -2838,6 +2840,22 @@ async function migraDati(){
     if(newMov){cassa=newMov; renderCas(); renderDash(); updateTopbar();}
   } else {
     el.innerHTML = `<span style="color:var(--muted)">${r?.message||'Errore'}</span>`;
+  }
+}
+
+async function ricalcolaLezioni(){
+  if(!confirm('Ricalcola i contatori lezioni per tutti i pacchetti?\nL\'operazione aggiorna i dati contando le presenze reali nel database.')) return;
+  toast('Ricalcolo in corso…');
+  const r = await POST('/api/v2/admin/ricalcola-lezioni', {});
+  if(!r || r.error){ toast('Errore durante il ricalcolo', true); return; }
+  const msg = `Ricalcolo completato.\nPacchetti controllati: ${r.pacchetti_controllati}\nPacchetti aggiornati: ${r.pacchetti_aggiornati}`;
+  // Ricarica clienti per aggiornare i pacchetti in memoria
+  const iv2 = await GET('/api/v2/iscritte');
+  if(iv2){ clienti=iv2; renderIsc(); }
+  toast(msg);
+  if(r.dettagli && r.dettagli.length){
+    console.table(r.dettagli);
+    console.log('Dettaglio ricalcolo:', JSON.stringify(r.dettagli, null, 2));
   }
 }
 
