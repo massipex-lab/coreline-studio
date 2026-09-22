@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.92)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.95)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -286,7 +286,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
         <button class="btn btn-sm" onclick="openRicorrente()" style="margin-right:4px"><span class="ti ti-repeat"></span> Ricorrente</button>
         <button class="btn btn-primary btn-sm" onclick="openNuovaSes()"><span class="ti ti-plus"></span> Singola</button>
       </div>
-      <input type="search" id="srch-ses" placeholder="Cerca data, istruttore, lezione..." style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:10px" oninput="sesPag=0;renderSes()">
+      <input type="search" id="srch-ses" placeholder="Cerca data, istruttore, lezione, mese/anno..." style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:10px" oninput="sesPag=0;renderSes()">
       <div id="ses-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
 
@@ -1370,8 +1370,12 @@ function renderSes(){
     if(!q) return true;
     const istrNome=((istruttori.find(i=>String(i.id)===String(s.istr))||{nome:s.istr}).nome||s.istr||'').toLowerCase();
     const lezNome=(s.lezione_nome||s.tipo||'').toLowerCase();
-    const dataStr=fmtShort(s.data).toLowerCase();
-    return dataStr.includes(q)||istrNome.includes(q)||lezNome.includes(q);
+    const dataStr=fmtShort(s.data).toLowerCase(); // dd/mm/yyyy
+    const sd2=new Date(s.data+'T00:00:00');
+    const meseAnno=sd2.toLocaleDateString('it-IT',{month:'long',year:'numeric'}).toLowerCase(); // "settembre 2026"
+    const meseAnnoSlash=meseAnno.replace(' ','/'); // "settembre/2026"
+    const soloMese=sd2.toLocaleDateString('it-IT',{month:'long'}).toLowerCase(); // "settembre"
+    return dataStr.includes(q)||istrNome.includes(q)||lezNome.includes(q)||meseAnno.includes(q)||meseAnnoSlash.includes(q);
   }).sort((a,b)=>{
     if(a.data!==b.data) return a.data>b.data?-1:1;
     return (a.orario||'')>(b.orario||'')?-1:1;
