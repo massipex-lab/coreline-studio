@@ -225,7 +225,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.98)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v2.99)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -235,6 +235,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="tab" onclick="goTab('isc')"><span class="ti ti-users"></span>Clienti</div>
     <div class="tab" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuovo</div>
     <div class="tab" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttori</div>
+    <div class="tab" onclick="goTab('ospiti')"><span class="ti ti-user-heart"></span>Ospiti</div>
     <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
     <div class="tab" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</div>
   </div>
@@ -345,6 +346,16 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div id="istr-recap-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
     </div>
 
+    <!-- OSPITI -->
+    <div class="page" id="page-ospiti">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="sec" style="margin:0">Ospiti</div>
+        <button class="btn" onclick="openNuovoOspite()"><span class="ti ti-plus"></span> Nuovo ospite</button>
+      </div>
+      <input type="search" id="srch-ospiti" placeholder="Cerca ospite…" oninput="renderOspitiPage()" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;background:var(--bg);box-sizing:border-box;margin-bottom:10px">
+      <div id="ospiti-page-list"></div>
+    </div>
+
     <!-- CONFIG -->
     <div class="page" id="page-cfg">
       <!-- AREA 1: LEZIONI -->
@@ -423,12 +434,14 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="picker-grid" id="pren-picker"></div>
     <div class="divider"></div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:700;color:var(--cl-dark);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Aggiungi ospite</div>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="ospite-nome" placeholder="Nome e cognome ospite" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;font-family:inherit">
-        <button class="btn btn-sm" onclick="aggiungiOspite()"><span class="ti ti-user-plus"></span></button>
+      <div style="font-size:11px;font-weight:700;color:var(--cl-dark);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Ospiti</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <input type="text" id="ospite-search" placeholder="Cerca o crea nuovo ospite…" autocomplete="off"
+          style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);font-size:13px;font-family:inherit"
+          oninput="renderOspiteDropdown()" onfocus="renderOspiteDropdown()">
       </div>
-      <div id="ospiti-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+      <div id="ospite-dropdown" style="display:none;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface);max-height:180px;overflow-y:auto;margin-bottom:6px;font-size:13px"></div>
+      <div id="ospiti-sel-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
     <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="withLoading(this,conferma)">Conferma prenotazione</button>
     <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Le lezioni vengono scalate automaticamente a fine giornata. Usa questo pannello per modifiche manuali dell'ultimo secondo.</p>
@@ -496,6 +509,32 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     </div>
     <div class="field"><label>Note</label><input type="text" id="c-note" placeholder="Opzionale"></div>
     <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaCorso)">Salva corso</button>
+  </div>
+</div>
+
+<!-- Nuovo/modifica ospite -->
+<div class="overlay" id="ov-ospite">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-ospite')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="ospite-modal-title">Nuovo ospite</div>
+    <input type="hidden" id="ospite-edit-id">
+    <div class="field-row">
+      <div class="field"><label>Nome *</label><input type="text" id="ospite-nome-input" placeholder="Nome"></div>
+      <div class="field"><label>Cognome</label><input type="text" id="ospite-cognome-input" placeholder="Cognome"></div>
+    </div>
+    <div class="field"><label>Note</label><input type="text" id="ospite-note-input" placeholder="Opzionale"></div>
+    <button class="btn btn-primary btn-full" onclick="withLoading(this,salvaOspite)">Salva</button>
+  </div>
+</div>
+
+<!-- Storico sessioni ospite -->
+<div class="overlay" id="ov-ospite-ses">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOv('ov-ospite-ses')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="ospite-ses-title">Sessioni ospite</div>
+    <div id="ospite-ses-body" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -686,7 +725,7 @@ const API = (window.BACKEND_URL || 'https://pilates-backend-47ys.onrender.com');
 
 // ══ STATE ════════════════════════════════════════════════════════════════════
 let token = localStorage.getItem('pilot') || '';
-let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[];
+let clienti=[], sessioni=[], corsi=[], istruttori=[], cassa=[], ospiti=[];
 let filtro='tutte', sesView='f', casTab='tutti', certDaApprovare=[], certMancanti=[], certPresenti=[], lezioni=[], pacchettiCommerciali=[];
 let sesPag=0; const SES_PER_PAG=20;
 let istrSesPag=0;
@@ -746,10 +785,13 @@ async function api(method, path, body){
   if(body) opts.body=JSON.stringify(body);
   const r=await fetch(API+path,opts);
   if(r.status===401){doLogout();return null;}
-  return r.json();
+  if(r.status===204||r.headers.get('content-length')==='0') return true;
+  return r.json().catch(()=>true);
 }
 const GET  = path       => api('GET',path);
 const POST = (path,body)=> api('POST',path,body);
+const PUT  = (path,body)=> api('PUT',path,body);
+const DEL  = path       => api('DELETE',path);
 
 // ══ LOGIN/LOGOUT ═════════════════════════════════════════════════════════════
 let loginAttempts = 0;
@@ -846,11 +888,12 @@ async function loadAll(){
       certPresenti = certsResp.presenti || [];
     }
   } catch(e){}
-  // Carica lezioni e pacchetti commerciali
-  const [lz, pc] = await Promise.all([GET('/api/v2/lezioni'), GET('/api/v2/pacchetti-commerciali')]);
+  // Carica lezioni, pacchetti commerciali e ospiti
+  const [lz, pc, osp] = await Promise.all([GET('/api/v2/lezioni'), GET('/api/v2/pacchetti-commerciali'), GET('/api/v2/ospiti')]);
   if(lz) lezioni=lz;
   if(pc) pacchettiCommerciali=pc;
-  renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg();
+  if(osp) ospiti=osp;
+  renderDash(); renderIsc(); renderSes(); renderCas(); renderCfg(); renderOspitiPage();
   // Aggiorna stati pacchetti al load
   POST('/api/v2/pacchetti/aggiorna-stati',{}).then(()=>{
     GET('/api/v2/iscritte').then(iv=>{if(iv){clienti=iv;renderIsc();renderDash();}});
@@ -865,9 +908,10 @@ function goTab(t){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(tb=>tb.classList.remove('active'));
   document.getElementById('page-'+t).classList.add('active');
-  const idx=['dash','ses','isc','add','istr-recap','cas','cfg'].indexOf(t);
+  const idx=['dash','ses','isc','add','istr-recap','ospiti','cas','cfg'].indexOf(t);
   document.querySelectorAll('.tab')[idx].classList.add('active');
   if(t==='istr-recap') renderIstrRecap();
+  if(t==='ospiti') renderOspitiPage();
   // Quando si torna in Home ricarica i dati dal server
   if(t==='dash') {
     Promise.all([
@@ -1419,7 +1463,7 @@ function renderSes(){
       const nome=typeof p==='object'?(p.nome||'')+(p.cognome?' '+p.cognome:''):p;
       return `<span class="pchip">${nome}</span>`;
     }).join('');
-    const ospChips=(s.ospiti||[]).map(o=>`<span class="pchip" style="opacity:.6">${o} (ospite)</span>`).join('');
+    const ospChips=(s.ospiti||[]).map(o=>`<span class="pchip" style="opacity:.6">${typeof o==='object'?(o.nome+(o.cognome?' '+o.cognome:'')):o} (ospite)</span>`).join('');
     const postiMax = s.posti_max || 6;
     const nPren = pList.length + (s.ospiti||[]).length;
     const postiColor = nPren >= postiMax ? 'var(--green)' : 'var(--red)';
@@ -1552,7 +1596,7 @@ async function aggiungiPartecipante(){
   // Aggiungi presenza
   const pList=Array.isArray(s?.partecipanti)?s.partecipanti:[];
   const nuove=[...pList.map(p=>({iscritta_id:typeof p==='object'?p.iscritta_id:null,pacchetto_id:typeof p==='object'?p.pacchetto_id:null})),{iscritta_id:iid,pacchetto_id:pid}].filter(p=>p.iscritta_id);
-  await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:nuove,ospiti:s?.ospiti||[]});
+  await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:nuove,ospiti_ids:(s?.ospiti||[]).map(o=>typeof o==='object'?o.id:o).filter(Boolean)});
   // lezione scalata automaticamente in set_presenze
   toast('Partecipante aggiunto!');
   const ss=await GET('/api/sessioni');if(ss){sessioni=ss;renderSes();}
@@ -1562,7 +1606,7 @@ async function aggiungiPartecipante(){
 async function rimuoviPartecipante(sid,presenzaId){
   const s=sessioni.find(x=>x.id===sid);
   const pList=(Array.isArray(s?.partecipanti)?s.partecipanti:[]).filter(p=>typeof p==='object'&&p.id!==presenzaId);
-  await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:pList.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),ospiti:s?.ospiti||[]});
+  await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:pList.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),ospiti_ids:(s?.ospiti||[]).map(o=>typeof o==='object'?o.id:o).filter(Boolean)});
   toast('Partecipante rimosso.');
   const ss=await GET('/api/sessioni');if(ss){sessioni=ss;renderSes();}
   openSessione(sid);
@@ -1718,7 +1762,7 @@ async function creaSessione(){
 
 // selPart v2: [{iscritta_id, pacchetto_id, nome}]
 let selPartV2 = [];
-let ospiti = []; // [{nome}] ospiti non clienti
+let selOspitiV2 = []; // [{id,nome,cognome}] ospiti selezionati per sessione corrente
 let tuttiPacGlobal = {}; // cache pacchetti attivi per togglePartV2
 
 async function openPren(sid){
@@ -1730,10 +1774,11 @@ async function openPren(sid){
   // Carica presenze attuali della sessione
   const presenze = await GET(`/api/v2/sessioni/${sid}/presenze`) || [];
   selPartV2 = presenze.map(p=>({iscritta_id:p.iscritta_id, pacchetto_id:p.pacchetto_id, nome:p.nome}));
-  // Ricarica ospiti dal campo ospiti salvato in DB
-  ospiti = (activeSes.ospiti||[]).map(n=>({nome:n, sel:true}));
-  document.getElementById('ospite-nome').value = '';
-  renderOspiti();
+  // Carica ospiti correnti della sessione (ora oggetti {id,nome,cognome})
+  selOspitiV2 = (activeSes.ospiti||[]).map(o=>typeof o==='object'?o:{id:null,nome:o,cognome:''});
+  document.getElementById('ospite-search').value = '';
+  document.getElementById('ospite-dropdown').style.display = 'none';
+  renderOspitiSel();
 
   // Carica tutti i pacchetti attivi in una sola chiamata
   const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
@@ -1778,34 +1823,65 @@ function toggleGiorno(btn){
   btn.classList.toggle('sel');
 }
 
-function aggiungiOspite(){
-  const nome = document.getElementById('ospite-nome').value.trim();
-  if(!nome) return;
-  ospiti.push({nome, sel:true});
-  document.getElementById('ospite-nome').value = '';
-  renderOspiti();
+function renderOspiteDropdown(){
+  const q = (document.getElementById('ospite-search')?.value||'').toLowerCase().trim();
+  const dd = document.getElementById('ospite-dropdown');
+  if(!q){dd.style.display='none';return;}
+  const selIds = new Set(selOspitiV2.map(o=>o.id));
+  const filtrati = ospiti.filter(o=>{
+    if(selIds.has(o.id)) return false;
+    const full = (o.nome+' '+(o.cognome||'')).toLowerCase();
+    return full.includes(q);
+  });
+  let html = filtrati.map(o=>`<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)"
+    onmousedown="event.preventDefault();toggleOspiteInSes(${o.id})">
+    ${o.nome}${o.cognome?' '+o.cognome:''}</div>`).join('');
+  // Opzione crea nuovo
+  const nomeCapit = (document.getElementById('ospite-search')?.value||'').trim();
+  if(nomeCapit && !filtrati.find(o=>(o.nome+' '+(o.cognome||'')).trim().toLowerCase()===q)){
+    html += `<div style="padding:8px 12px;cursor:pointer;color:var(--primary);font-weight:600"
+      onmousedown="event.preventDefault();creaOspiteAlVolo('${nomeCapit.replace(/'/g,"\\'")}')">
+      <span class="ti ti-plus"></span> Crea "${nomeCapit}"</div>`;
+  }
+  dd.innerHTML = html || '<div style="padding:8px 12px;color:var(--muted)">Nessun risultato</div>';
+  dd.style.display = html || nomeCapit ? 'block' : 'none';
 }
 
-function toggleOspite(idx){
-  ospiti[idx].sel = !ospiti[idx].sel;
-  renderOspiti();
+function toggleOspiteInSes(oid){
+  const o = ospiti.find(x=>x.id===oid); if(!o) return;
+  if(!selOspitiV2.find(x=>x.id===oid)) selOspitiV2.push({id:o.id,nome:o.nome,cognome:o.cognome||''});
+  document.getElementById('ospite-search').value='';
+  document.getElementById('ospite-dropdown').style.display='none';
+  renderOspitiSel();
 }
 
-function rimuoviOspite(idx){
-  ospiti.splice(idx,1);
-  renderOspiti();
+async function creaOspiteAlVolo(nomeCompleto){
+  const parts = nomeCompleto.trim().split(' ');
+  const nome = parts[0]; const cognome = parts.slice(1).join(' ');
+  const r = await POST('/api/v2/ospiti', {nome, cognome, note:''});
+  if(r && r.id){
+    ospiti.push(r);
+    selOspitiV2.push({id:r.id, nome:r.nome, cognome:r.cognome||''});
+    document.getElementById('ospite-search').value='';
+    document.getElementById('ospite-dropdown').style.display='none';
+    renderOspitiSel();
+    renderOspitiPage();
+  }
 }
 
-function renderOspiti(){
-  document.getElementById('ospiti-list').innerHTML = ospiti.map((o,i)=>
-    `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
-      border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;user-select:none;
-      background:${o.sel?'#7B6E5D':'#F0EDE8'};color:${o.sel?'#fff':'#7B6E5D'};
-      border:1.5px solid ${o.sel?'#7B6E5D':'#D5CFC8'};transition:all .15s"
-      onclick="toggleOspite(${i})">
-      👤 ${o.nome}
-      <span onclick="event.stopPropagation();rimuoviOspite(${i})"
-        style="font-size:12px;opacity:.7;margin-left:2px;font-weight:700">&times;</span>
+function rimuoviOspiteSel(oid){
+  selOspitiV2 = selOspitiV2.filter(o=>o.id!==oid);
+  renderOspitiSel();
+}
+
+function renderOspitiSel(){
+  document.getElementById('ospiti-sel-list').innerHTML = selOspitiV2.map(o=>
+    `<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;
+      border-radius:20px;font-size:13px;font-weight:600;
+      background:#7B6E5D;color:#fff;border:1.5px solid #7B6E5D">
+      👤 ${o.nome}${o.cognome?' '+o.cognome:''}
+      <span onclick="rimuoviOspiteSel(${o.id})"
+        style="font-size:12px;opacity:.8;margin-left:2px;font-weight:700;cursor:pointer">&times;</span>
     </div>`
   ).join('');
 }
@@ -1834,22 +1910,105 @@ function togglePartV2(iid){
 async function conferma(){
   if(!activeSes) return;
   const postiMax = activeSes.posti_max || 6;
-  const totPartecipanti = selPartV2.length + ospiti.filter(o=>o.sel).length;
+  const totPartecipanti = selPartV2.length + selOspitiV2.length;
   if(totPartecipanti > postiMax){
     toast('Hai superato il limite di '+postiMax+' partecipanti!', true);
     return;
   }
   await POST(`/api/v2/sessioni/${activeSes.id}/presenze`, {
     presenze: selPartV2.map(p=>({iscritta_id:p.iscritta_id,pacchetto_id:p.pacchetto_id})),
-    ospiti: ospiti.filter(o=>o.sel).map(o=>o.nome)
+    ospiti_ids: selOspitiV2.map(o=>o.id)
   });
-  activeSes.partecipanti = [...selPartV2.map(p=>p.nome), ...ospiti.filter(o=>o.sel).map(o=>o.nome+' (ospite)')];
-  activeSes.ospiti = ospiti.filter(o=>o.sel).map(o=>o.nome);
+  activeSes.partecipanti = [...selPartV2.map(p=>p.nome), ...selOspitiV2.map(o=>o.nome+(o.cognome?' '+o.cognome:'')+' (ospite)')];
+  activeSes.ospiti = selOspitiV2.map(o=>({id:o.id,nome:o.nome,cognome:o.cognome}));
   closeOv('ov-pren');
   toast(`Salvato · ${selPartV2.length} partecipant${selPartV2.length===1?'e':'i'}`);
   renderSes(); renderDash();
   const iv2=await GET('/api/v2/iscritte');
   if(iv2){clienti=iv2; renderIsc();}
+}
+
+// ══ OSPITI PAGE ══════════════════════════════════════════════════════════════
+function renderOspitiPage(){
+  const q=(document.getElementById('srch-ospiti')?.value||'').toLowerCase().trim();
+  const el=document.getElementById('ospiti-page-list'); if(!el) return;
+  let list=[...ospiti].sort((a,b)=>(a.cognome||a.nome).localeCompare(b.cognome||b.nome,'it'));
+  if(q) list=list.filter(o=>(o.nome+' '+(o.cognome||'')).toLowerCase().includes(q));
+  if(!list.length){el.innerHTML='<div class="empty"><span class="ti ti-user-off"></span>Nessun ospite</div>';return;}
+  el.innerHTML=list.map(o=>{
+    const nSes=o.n_sessioni||0;
+    const ult=o.ultima_sessione?fmtShort(o.ultima_sessione):'—';
+    return `<div class="card" style="margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-weight:700;font-size:14px">${o.nome}${o.cognome?' '+o.cognome:''}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${nSes} session${nSes===1?'e':'i'}${nSes>0?' · ultima: '+ult:''}</div>
+        ${o.note?`<div style="font-size:11px;color:var(--muted)">${o.note}</div>`:''}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="openOspiteSessioni(${o.id})"><span class="ti ti-calendar"></span></button>
+        <button class="btn btn-sm" onclick="openEditOspite(${o.id})"><span class="ti ti-pencil"></span></button>
+        <button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteOspite(${o.id}))"><span class="ti ti-trash"></span></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let ospiteEditId=null;
+function openNuovoOspite(){
+  ospiteEditId=null;
+  document.getElementById('ospite-modal-title').textContent='Nuovo ospite';
+  document.getElementById('ospite-edit-id').value='';
+  document.getElementById('ospite-nome-input').value='';
+  document.getElementById('ospite-cognome-input').value='';
+  document.getElementById('ospite-note-input').value='';
+  document.getElementById('ov-ospite').classList.add('open');
+}
+function openEditOspite(oid){
+  const o=ospiti.find(x=>x.id===oid); if(!o) return;
+  ospiteEditId=oid;
+  document.getElementById('ospite-modal-title').textContent='Modifica ospite';
+  document.getElementById('ospite-edit-id').value=oid;
+  document.getElementById('ospite-nome-input').value=o.nome||'';
+  document.getElementById('ospite-cognome-input').value=o.cognome||'';
+  document.getElementById('ospite-note-input').value=o.note||'';
+  document.getElementById('ov-ospite').classList.add('open');
+}
+async function salvaOspite(){
+  const nome=document.getElementById('ospite-nome-input').value.trim();
+  const cognome=document.getElementById('ospite-cognome-input').value.trim();
+  const note=document.getElementById('ospite-note-input').value.trim();
+  if(!nome){toast('Nome obbligatorio',true);return;}
+  const oid=document.getElementById('ospite-edit-id').value;
+  let r;
+  if(oid){
+    r=await PUT('/api/v2/ospiti/'+oid,{nome,cognome,note});
+    if(r){const idx=ospiti.findIndex(x=>x.id===Number(oid));if(idx>=0) ospiti[idx]={...ospiti[idx],nome,cognome,note};}
+  } else {
+    r=await POST('/api/v2/ospiti',{nome,cognome,note});
+    if(r && r.id) ospiti.push(r);
+  }
+  if(r){closeOv('ov-ospite');renderOspitiPage();toast('Ospite salvato!');}
+  else toast('Errore',true);
+}
+async function deleteOspite(oid){
+  if(!confirm('Eliminare questo ospite?')) return;
+  const r=await DEL('/api/v2/ospiti/'+oid);
+  if(r!==false){ospiti=ospiti.filter(x=>x.id!==oid);renderOspitiPage();toast('Ospite eliminato.');}
+  else toast('Errore',true);
+}
+async function openOspiteSessioni(oid){
+  const o=ospiti.find(x=>x.id===oid); if(!o) return;
+  document.getElementById('ospite-ses-title').textContent=(o.nome+(o.cognome?' '+o.cognome:''))+' — sessioni';
+  document.getElementById('ospite-ses-body').innerHTML='<div class="loading"><div class="spin"></div>Caricamento…</div>';
+  document.getElementById('ov-ospite-ses').classList.add('open');
+  const list=await GET('/api/v2/ospiti/'+oid+'/sessioni')||[];
+  if(!list.length){document.getElementById('ospite-ses-body').innerHTML='<div class="empty">Nessuna sessione</div>';return;}
+  document.getElementById('ospite-ses-body').innerHTML=list.map(s=>
+    `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-weight:600">${fmtData(s.data)} ${s.orario||''}</div>
+      <div style="font-size:12px;color:var(--muted)">${s.tipo||s.lezione_nome||'—'} · ${s.istr||'—'}</div>
+    </div>`
+  ).join('');
 }
 
 // ══ CASSA ════════════════════════════════════════════════════════════════════
