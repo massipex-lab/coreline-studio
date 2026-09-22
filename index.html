@@ -60,6 +60,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);font-size:13px;gap:10px}
 .spin{width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--cl-dark);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.ospite-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--cl-dark);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-left:6px;flex-shrink:0}
 
 /* ── CARDS ── */
 .card{background:#fff;border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px;border:1px solid var(--border);box-shadow:var(--shadow)}
@@ -225,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.01)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.02)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -2009,6 +2010,18 @@ function _ospiteSetLoading(inputId, loading){
   if(!el) return;
   el.disabled = loading;
   el.style.opacity = loading ? '.5' : '1';
+  const spinnerId = inputId + '-spinner';
+  if(loading){
+    if(!document.getElementById(spinnerId)){
+      const sp = document.createElement('span');
+      sp.id = spinnerId;
+      sp.className = 'ospite-spinner';
+      el.parentNode.insertBefore(sp, el.nextSibling);
+    }
+  } else {
+    const sp = document.getElementById(spinnerId);
+    if(sp) sp.remove();
+  }
 }
 
 async function ospiteEnterV2(){
