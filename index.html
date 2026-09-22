@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.07)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.09)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1576,9 +1576,18 @@ async function openSessione(sid){
   const sel=document.getElementById('ses-add-cliente');
   const pList=Array.isArray(s.partecipanti)?s.partecipanti:[];
   const giaPresenti=new Set(pList.map(p=>typeof p==='object'?p.iscritta_id:null).filter(Boolean));
-  // Filtra clienti che hanno pacchetti attivi con la lezione della sessione
+  // Filtra clienti per tipo di lezione della sessione (indipendentemente dalle lezioni rimanenti)
   const sesLezId = s.lezione_id;
-  const clientiFiltrati = clienti.filter(c=>!giaPresenti.has(c.id)&&c.stato==='attivo');
+  const clientiFiltrati = await (async () => {
+    const base = clienti.filter(c=>!giaPresenti.has(c.id)&&c.stato==='attivo');
+    if(!sesLezId) return base; // nessun filtro se la sessione non ha tipo lezione
+    const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
+    return base.filter(c=>{
+      const pacs = tuttiPac[c.id] || [];
+      // Mostra solo clienti con almeno 1 pacchetto attivo compatibile con la lezione della sessione
+      return pacs.some(p=>p.stato==='attivo'&&(p.lezioni_ids||[]).includes(sesLezId));
+    });
+  })();
   sel.innerHTML='<option value="">— seleziona cliente —</option>'+
     clientiFiltrati.map(c=>`<option value="${c.id}">${c.nome} ${c.cognome||''}</option>`).join('');
   sel.onchange=async function(){
