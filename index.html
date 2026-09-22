@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.02)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.03)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1585,20 +1585,25 @@ async function openSessione(sid){
     const pSel=document.getElementById('ses-add-pacchetto');
     const pSelWrap=document.getElementById('ses-add-pacchetto-wrap');
     pSel.innerHTML='<option value="">— seleziona pacchetto —</option>';
-    if(!iid){if(pSelWrap)pSelWrap.style.display='block';return;}
+    pSel.dataset.autoPacchetto='false';
+    if(!iid){pSelWrap.style.display='none';return;}
     const scheda=await GET('/api/v2/iscritte/'+iid+'/scheda');
-    const pacs=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo'&&(p.lezioni_tot||0)>0);
-    if(pacs.length===1){
-      // Auto-seleziona l'unico pacchetto disponibile
+    // Filtra i pacchetti attivi compatibili con la lezione della sessione
+    const pacsAll=(scheda?.pacchetti||[]).filter(p=>p.stato==='attivo'&&(p.lezioni_rim||0)>0);
+    const pacsComp=pacsAll.filter(p=>(p.lezioni_abilitate||[]).includes(sesLezId)||!sesLezId);
+    const pacs=pacsComp.length>0?pacsComp:pacsAll; // fallback a tutti se nessuno matcha per lezione_id
+    if(pacs.length===0){
+      // Nessun pacchetto attivo — il backend userà auto-selezione o segnalerà errore
+      pSel.dataset.autoPacchetto='true';
+      pSelWrap.style.display='none';
+    } else if(pacs.length===1){
+      // Un solo pacchetto compatibile — auto-selezione silenziosa
       pSel.innerHTML=`<option value="${pacs[0].id}" selected>${pacs[0].corso_nome||'—'} · ${fmtShort(pacs[0].data_inizio)} (${pacs[0].lezioni_rim||0} lez. rim.)</option>`;
-      if(pSelWrap) pSelWrap.style.display='none';
-    } else if(pacs.length>1){
-      pSel.innerHTML='<option value="">— seleziona pacchetto —</option>'+
-        pacs.map(p=>`<option value="${p.id}">${p.corso_nome||'—'} · ${fmtShort(p.data_inizio)} (${p.lezioni_rim||0} lez. rim.)</option>`).join('');
-      if(pSelWrap) pSelWrap.style.display='block';
+      pSelWrap.style.display='none';
     } else {
-      pSel.innerHTML='<option value="">Nessun pacchetto attivo</option>';
-      if(pSelWrap) pSelWrap.style.display='block';
+      // Più pacchetti — il backend sceglie automaticamente il più vecchio, no dropdown
+      pSel.dataset.autoPacchetto='true';
+      pSelWrap.style.display='none';
     }
   };
   document.getElementById('ses-add-pacchetto').innerHTML='<option value="">— seleziona pacchetto —</option>';
@@ -1629,7 +1634,9 @@ function renderSesDetailPax(s){
 async function aggiungiPartecipante(){
   const sid=parseInt(document.getElementById('ses-detail-id').value);
   const iid=parseInt(document.getElementById('ses-add-cliente').value);
-  const pid=parseInt(document.getElementById('ses-add-pacchetto').value)||null;
+  const pSelEl=document.getElementById('ses-add-pacchetto');
+  const autoPacchetto=pSelEl?.dataset?.autoPacchetto==='true';
+  const pid=autoPacchetto?null:(parseInt(pSelEl?.value)||null);
   if(!iid){toast('Seleziona un cliente',true);return;}
   const s=sessioni.find(x=>x.id===sid);
   // Controlla capienza
@@ -1640,8 +1647,10 @@ async function aggiungiPartecipante(){
     toast('Sessione al completo! Max '+postiMaxD+' partecipanti', true);
     return;
   }
-  // Aggiungi presenza
-  const nuove=[...pList.map(p=>({iscritta_id:typeof p==='object'?p.iscritta_id:null,pacchetto_id:typeof p==='object'?p.pacchetto_id:null})),{iscritta_id:iid,pacchetto_id:pid}].filter(p=>p.iscritta_id);
+  // Aggiungi presenza — se autoPacchetto=true il backend sceglie il pacchetto più vecchio compatibile
+  const nuovaPresenza={iscritta_id:iid, pacchetto_id:pid};
+  if(autoPacchetto) nuovaPresenza.auto_pacchetto=true;
+  const nuove=[...pList.map(p=>({iscritta_id:typeof p==='object'?p.iscritta_id:null,pacchetto_id:typeof p==='object'?p.pacchetto_id:null})),nuovaPresenza].filter(p=>p.iscritta_id);
   await POST('/api/v2/sessioni/'+sid+'/presenze',{presenze:nuove,ospiti_ids:(s?.ospiti||[]).map(o=>typeof o==='object'?o.id:o).filter(Boolean)});
   // lezione scalata automaticamente in set_presenze
   toast('Partecipante aggiunto!');
