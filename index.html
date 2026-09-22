@@ -1719,6 +1719,7 @@ async function creaSessione(){
 // selPart v2: [{iscritta_id, pacchetto_id, nome}]
 let selPartV2 = [];
 let ospiti = []; // [{nome}] ospiti non clienti
+let tuttiPacGlobal = {}; // cache pacchetti attivi per togglePartV2
 
 async function openPren(sid){
   activeSes=sessioni.find(s=>s.id===sid||s.id===Number(sid)); if(!activeSes) return;
@@ -1736,6 +1737,7 @@ async function openPren(sid){
 
   // Carica tutti i pacchetti attivi in una sola chiamata
   const tuttiPac = await GET('/api/v2/pacchetti/attivi') || {};
+  tuttiPacGlobal = tuttiPac;
 
   let html = '';
   for(const isc of clienti){
@@ -1750,8 +1752,10 @@ async function openPren(sid){
 
     let packSelect = '';
     if(compatibili.length > 1){
-      packSelect = `<select id="pac-sel-${isc.id}" style="font-size:10px;padding:2px;border-radius:4px;border:1px solid var(--border);margin-left:4px">
-        ${compatibili.map(p=>`<option value="${p.id}" ${inSes&&inSes.pacchetto_id===p.id?'selected':''}>${p.corso_nome} (${p.lezioni_rim})</option>`).join('')}
+      // Preseleziona: il pacchetto già usato in sessione, altrimenti il primo (più vecchio, già ordinato per created_at dal backend)
+      const defaultPid = (inSes && inSes.pacchetto_id) ? inSes.pacchetto_id : compatibili[0].id;
+      packSelect = `<select id="pac-sel-${isc.id}" style="font-size:10px;padding:2px;border-radius:4px;border:1px solid var(--border);margin-left:4px" onclick="event.stopPropagation()">
+        ${compatibili.map(p=>`<option value="${p.id}" ${p.id===defaultPid?'selected':''}>${p.corso_nome} (${p.lezioni_rim})</option>`).join('')}
       </select>`;
     }
 
@@ -1813,9 +1817,14 @@ function togglePartV2(iid){
     selPartV2 = selPartV2.filter(x=>x.iscritta_id!==iid);
     document.getElementById('pi-'+iid)?.classList.remove('sel');
   } else {
-    // Trova pacchetto selezionato (da select se presente, altrimenti il primo compatibile)
+    // Trova pacchetto: da select se presente e valido, altrimenti il più vecchio compatibile (API già ordina per created_at ASC)
     const selEl = document.getElementById('pac-sel-'+iid);
-    const pacId = selEl ? parseInt(selEl.value) : null;
+    const selVal = selEl ? parseInt(selEl.value) : NaN;
+    let pacId = !isNaN(selVal) ? selVal : null;
+    if(!pacId){
+      const pacs = (tuttiPacGlobal[iid]||[]).filter(p=>p.stato==='attivo'&&p.lezioni_rim>0);
+      if(pacs.length>0) pacId = pacs[0].id; // primo = più vecchio
+    }
     const nome = isc.nome+(isc.cognome?' '+isc.cognome:'');
     selPartV2.push({iscritta_id:iid, pacchetto_id:pacId, nome});
     document.getElementById('pi-'+iid)?.classList.add('sel');
