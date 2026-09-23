@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.14)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.14.1)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -272,8 +272,9 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="page" id="page-isc">
       <div class="search-wrap"><span class="ti ti-search"></span><input type="text" id="srch" placeholder="Cerca cliente…" oninput="renderIsc()"></div>
       <div class="chips">
-        <div class="chip on" id="f-tutte" onclick="setFilt('tutte')">Tutte</div>
-        <div class="chip" id="f-rinnovo" onclick="setFilt('rinnovo')">Da rinnovare</div>
+        <div class="chip on" id="f-tutte" onclick="setFilt('tutte')">Tutti</div>
+        <div class="chip" id="f-qa-scad" onclick="setFilt('qa-scad')">QA in scadenza (30gg)</div>
+        <div class="chip" id="f-no-lez" onclick="setFilt('no-lez')">Senza lezioni</div>
         <div class="chip" id="f-saldo" onclick="setFilt('saldo')">Da saldare</div>
       </div>
       <div id="isc-list"><div class="loading"><div class="spin"></div>Caricamento…</div></div>
@@ -1087,7 +1088,7 @@ function renderDash(){
 // ══ CLIENTI ═════════════════════════════════════════════════════════════════
 function setFilt(f){
   filtro=f;
-  ['tutte','rinnovo','saldo'].forEach(x=>document.getElementById('f-'+x).classList.toggle('on',x===f));
+  ['tutte','qa-scad','no-lez','saldo'].forEach(x=>document.getElementById('f-'+x).classList.toggle('on',x===f));
   renderIsc();
 }
 
@@ -1100,7 +1101,15 @@ function renderIsc(){
     return !q || nomeCompleto.includes(q) || cognomeNome.includes(q) ||
       i.nome.toLowerCase().includes(q) || (i.cognome||'').toLowerCase().includes(q);
   });
-  if(filtro==='rinnovo') list=list.filter(i=>(i.da_rinnovare||lezRim(i)<=2&&(i.lezioni_tot||i.lezTot||0)>0)&&i.stato!=='sospeso');
+  if(filtro==='qa-scad'){
+    const oggi30=new Date(oggi);oggi30.setDate(oggi30.getDate()+30);
+    list=list.filter(i=>{
+      if(i.stato==='sospeso'||!i.qa_data_inizio) return false;
+      const scad=new Date(i.qa_data_inizio);scad.setFullYear(scad.getFullYear()+1);
+      return scad>=oggi&&scad<=oggi30;
+    });
+  }
+  if(filtro==='no-lez') list=list.filter(i=>i.stato!=='sospeso'&&(i.pacchetti_lezioni_attivi??0)===0);
   if(filtro==='saldo') list=list.filter(i=>(i.totale_da_saldare||0)>0&&i.stato!=='sospeso');
   if(!list.length){document.getElementById('isc-list').innerHTML='<div class="empty"><span class="ti ti-mood-empty"></span>Nessun risultato</div>';return;}
   document.getElementById('isc-list').innerHTML=list.map(isc=>{
