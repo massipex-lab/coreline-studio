@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13.1)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13.2)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -2733,12 +2733,14 @@ function renderCfg(){
   let listPC=[...pacchettiCommerciali].filter(p=>!qPC||p.nome.toLowerCase().includes(qPC));
   if(ordPC==='asc') listPC.sort((a,b)=>a.created_at>b.created_at?1:-1);
   else listPC.sort((a,b)=>a.created_at>b.created_at?-1:1);
+  // Salva dati clienti per pacchetto in mappa globale (evita problemi con apostrofi/caratteri speciali nell'onclick)
+  window._pcClientiMap = {};
+  listPC.forEach(p=>{ window._pcClientiMap[p.id]={nome:p.nome, nomi:(p.clienti_nomi||[]).map(c=>c.nome)}; });
+
   document.getElementById('pc-list').innerHTML=listPC.length
     ?listPC.map(p=>{
-      const nomiEnc = encodeURIComponent(JSON.stringify((p.clienti_nomi||[]).map(c=>c.nome)));
-      const nomeEnc = encodeURIComponent(p.nome);
       const attiviBadge = p.clienti_attivi>0
-        ? ` · <span class="badge b-warn" style="cursor:pointer" onclick="showClientiPacchetto(event,'${nomiEnc}','${nomeEnc}')">${p.clienti_attivi} attivi</span>`
+        ? ` · <span class="badge b-warn" style="cursor:pointer" onclick="showClientiPacchetto(event,${p.id})">${p.clienti_attivi} attivi</span>`
         : '';
       return `<div class="setting-item">
         <div style="flex:1">
@@ -3124,13 +3126,12 @@ async function salvaPC(){
   const pc=await GET('/api/v2/pacchetti-commerciali'); if(pc){pacchettiCommerciali=pc; renderCfg();}
 }
 
-function showClientiPacchetto(event, nomiEnc, nomePackEnc){
+function showClientiPacchetto(event, id){
   event.stopPropagation();
-  let nomi=[];
-  try{ nomi=JSON.parse(decodeURIComponent(nomiEnc)); }catch(e){}
+  const data = window._pcClientiMap && window._pcClientiMap[id] || {};
+  const nomi = data.nomi || [];
   if(!nomi.length) return;
-  const nomePac=nomePackEnc?decodeURIComponent(nomePackEnc):'';
-  document.getElementById('ov-clienti-pac-title').textContent=nomePac||'Clienti attivi';
+  document.getElementById('ov-clienti-pac-title').textContent = data.nome || 'Clienti attivi';
   document.getElementById('ov-clienti-pac-body').innerHTML=
     `<div style="font-size:12px;color:var(--muted);margin-bottom:10px">${nomi.length} iscritti attivi</div>`+
     nomi.map(n=>`<div style="padding:8px 0;border-bottom:1px solid var(--bg);font-size:14px">${n}</div>`).join('');
