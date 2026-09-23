@@ -2632,7 +2632,7 @@ function renderIstrRecap(){
     const key = s.istr;
     if(!stats[key]) stats[key] = { nome:key, sesCount:0, oreCount:0, partTot:0, ultSes:[] };
     stats[key].sesCount++;
-    stats[key].partTot += (s.partecipanti||[]).length;
+    stats[key].partTot += (s.partecipanti||[]).length + (s.ospiti||[]).length;
     // Calcola ore dall'orario es "09:00–10:00"
     if(s.orario && s.orario.includes('–')){
       const parts = s.orario.split('–');
@@ -2655,7 +2655,7 @@ function renderIstrRecap(){
   document.getElementById('istr-recap-list').innerHTML = list.map(ist=>{
     const oreStr = Number.isInteger(ist.oreCount) ? ist.oreCount+'h' : ist.oreCount.toFixed(1)+'h';
     const ultHtml = ist.ultSes.length ? ist.ultSes.map(s=>{
-      const nPart = (s.partecipanti||[]).length;
+      const nPart = (s.partecipanti||[]).length + (s.ospiti||[]).length;
       const postiMax = s.posti_max ?? 6;
       const postiLabel = postiMax === 0 ? `${nPart}/—` : `${nPart}/${postiMax}`;
       const postiColor = postiMax === 0 ? 'var(--muted)' : (nPart >= postiMax ? 'var(--green)' : 'var(--muted)');
@@ -2737,8 +2737,10 @@ function renderIstrSesPag(nomeIstr){
   let rows='';
   pagina.forEach(s=>{
     const pList = Array.isArray(s.partecipanti) ? s.partecipanti : [];
-    const nomi = pList.map(n=>typeof n==='object'?(((n.nome||'')+(n.cognome?' '+n.cognome:'')).trim()||'?'):(n||'')).join(', ');
-    const nPart = pList.length;
+    const oList = Array.isArray(s.ospiti) ? s.ospiti : [];
+    const nomiOspiti = oList.map(o=>typeof o==='object'?(((o.nome||'')+(o.cognome?' '+o.cognome:'')).trim()||'?'):(o||'')).join(', ');
+    const nomi = [pList.map(n=>typeof n==='object'?(((n.nome||'')+(n.cognome?' '+n.cognome:'')).trim()||'?'):(n||'')).join(', '), nomiOspiti].filter(Boolean).join(', ');
+    const nPart = pList.length + oList.length;
     const postiMax = s.posti_max ?? 6;
     const postiLabel = postiMax === 0 ? `${nPart}/—` : `${nPart}/${postiMax}`;
     const postiColor = postiMax === 0 ? 'var(--muted)' : (nPart >= postiMax ? 'var(--green)' : 'var(--muted)');
