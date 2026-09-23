@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.15.2)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.15.4)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -2652,11 +2652,13 @@ function renderIstrRecap(){
   document.getElementById('istr-recap-list').innerHTML = list.map(ist=>{
     const oreStr = Number.isInteger(ist.oreCount) ? ist.oreCount+'h' : ist.oreCount.toFixed(1)+'h';
     const ultHtml = ist.ultSes.length ? ist.ultSes.map(s=>{
-      const nomi = (s.partecipanti||[]).map(n=>typeof n==='object'?(n.nome||''):(n.split(' ')[0]||'')).join(', ');
-      return `<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--bg)">
-        <span style="font-weight:600">${fmtShort(s.data)}</span>
-        <span style="color:var(--muted)"> · ${s.orario} · ${s.tipo}</span>
-        ${nomi?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${nomi}</div>`:''}
+      const nPart = (s.partecipanti||[]).length;
+      const postiMax = s.posti_max ?? 6;
+      const postiLabel = postiMax === 0 ? `${nPart}/—` : `${nPart}/${postiMax}`;
+      const postiColor = postiMax === 0 ? 'var(--muted)' : (nPart >= postiMax ? 'var(--green)' : 'var(--muted)');
+      return `<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--bg);display:flex;align-items:center;justify-content:space-between">
+        <span><span style="font-weight:600">${fmtShort(s.data)}</span><span style="color:var(--muted)"> · ${s.orario} · ${s.tipo}</span></span>
+        <span style="font-size:11px;font-weight:700;color:${postiColor};white-space:nowrap;margin-left:8px">${postiLabel}</span>
       </div>`;
     }).join('') : '<div style="font-size:12px;color:var(--muted);padding:6px 0">Nessuna sessione passata</div>';
 
