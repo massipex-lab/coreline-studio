@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.12)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -412,6 +412,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 </div>
 
 <!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
+
+<!-- Modale clienti attivi pacchetto -->
+<div class="overlay" id="ov-clienti-pac" onclick="if(event.target===this)closeOv('ov-clienti-pac')">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-handle"></div>
+    <div class="modal-hdr"><span id="ov-clienti-pac-title">Clienti attivi</span><button class="btn-close" onclick="closeOv('ov-clienti-pac')">✕</button></div>
+    <div id="ov-clienti-pac-body" style="padding:0 16px 16px"></div>
+  </div>
+</div>
 
 <!-- Dettaglio cliente -->
 <div class="overlay" id="ov-isc">
@@ -2726,8 +2735,9 @@ function renderCfg(){
   document.getElementById('pc-list').innerHTML=listPC.length
     ?listPC.map(p=>{
       const nomiEnc = encodeURIComponent(JSON.stringify((p.clienti_nomi||[]).map(c=>c.nome)));
+      const nomeEnc = encodeURIComponent(p.nome);
       const attiviBadge = p.clienti_attivi>0
-        ? ` · <span class="badge b-warn" style="cursor:pointer" onclick="showClientiPacchetto(event,'${nomiEnc}')">${p.clienti_attivi} attivi</span>`
+        ? ` · <span class="badge b-warn" style="cursor:pointer" onclick="showClientiPacchetto(event,'${nomiEnc}','${nomeEnc}')">${p.clienti_attivi} attivi</span>`
         : '';
       return `<div class="setting-item">
         <div style="flex:1">
@@ -3113,34 +3123,17 @@ async function salvaPC(){
   const pc=await GET('/api/v2/pacchetti-commerciali'); if(pc){pacchettiCommerciali=pc; renderCfg();}
 }
 
-function showClientiPacchetto(event, nomiEnc){
+function showClientiPacchetto(event, nomiEnc, nomePackEnc){
   event.stopPropagation();
-  // Rimuovi popup esistente
-  document.querySelectorAll('.pc-popup').forEach(el=>el.remove());
   let nomi=[];
   try{ nomi=JSON.parse(decodeURIComponent(nomiEnc)); }catch(e){}
   if(!nomi.length) return;
-  const popup=document.createElement('div');
-  popup.className='pc-popup';
-  popup.style.cssText='position:fixed;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:0 4px 20px rgba(0,0,0,.25);padding:10px 14px;min-width:180px;max-width:260px;font-size:13px';
-  popup.innerHTML='<div style="font-weight:700;margin-bottom:8px;color:var(--text)">Clienti attivi</div>'+
-    nomi.map(n=>`<div style="padding:3px 0;border-bottom:1px solid var(--bg);color:var(--text)">${n}</div>`).join('')+
-    '<div style="font-size:11px;color:var(--muted);margin-top:6px">Clicca altrove per chiudere</div>';
-  document.body.appendChild(popup);
-  // Posiziona DOPO append così da avere le dimensioni reali
-  const rect=event.target.getBoundingClientRect();
-  const popW=popup.offsetWidth||220;
-  const popH=popup.offsetHeight||120;
-  let top=rect.bottom+6;
-  let left=rect.left;
-  // Evita uscita a destra
-  if(left+popW>window.innerWidth-8) left=window.innerWidth-popW-8;
-  // Evita uscita in basso: mostra sopra il badge
-  if(top+popH>window.innerHeight-8) top=rect.top-popH-6;
-  popup.style.top=top+'px';
-  popup.style.left=left+'px';
-  // Chiudi cliccando fuori
-  setTimeout(()=>document.addEventListener('click',function h(){popup.remove();document.removeEventListener('click',h);},{once:true}),50);
+  const nomePac=nomePackEnc?decodeURIComponent(nomePackEnc):'';
+  document.getElementById('ov-clienti-pac-title').textContent=nomePac||'Clienti attivi';
+  document.getElementById('ov-clienti-pac-body').innerHTML=
+    `<div style="font-size:12px;color:var(--muted);margin-bottom:10px">${nomi.length} iscritti attivi</div>`+
+    nomi.map(n=>`<div style="padding:8px 0;border-bottom:1px solid var(--bg);font-size:14px">${n}</div>`).join('');
+  document.getElementById('ov-clienti-pac').classList.add('open');
 }
 
 async function deletePC(id, nome, hasClienti){
