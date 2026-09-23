@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.15.4)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.15.5)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -2733,13 +2733,21 @@ function renderIstrSesPag(nomeIstr){
 
   let rows='';
   pagina.forEach(s=>{
-    const nomi=(s.partecipanti||[]).map(n=>typeof n==='object'?(n.nome||''):(n.split(' ')[0]||'')).join(', ');
+    const pList = Array.isArray(s.partecipanti) ? s.partecipanti : [];
+    const nomi = pList.map(n=>typeof n==='object'?(((n.nome||'')+(n.cognome?' '+n.cognome:'')).trim()||'?'):(n||'')).join(', ');
+    const nPart = pList.length;
+    const postiMax = s.posti_max ?? 6;
+    const postiLabel = postiMax === 0 ? `${nPart}/—` : `${nPart}/${postiMax}`;
+    const postiColor = postiMax === 0 ? 'var(--muted)' : (nPart >= postiMax ? 'var(--green)' : 'var(--muted)');
     rows+=`<div style="font-size:12px;padding:7px 0;border-bottom:1px solid var(--bg)">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <span style="font-weight:600">${fmtShort(s.data)}</span>
         <span style="color:var(--muted);font-size:11px">${s.orario}</span>
       </div>
-      <div style="color:var(--cl-dark);margin-top:2px">${s.lezione_nome||s.tipo||'—'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:2px">
+        <span style="color:var(--cl-dark)">${s.lezione_nome||s.tipo||'—'}</span>
+        <span style="font-size:11px;font-weight:700;color:${postiColor}">${postiLabel}</span>
+      </div>
       ${nomi?`<div style="font-size:11px;color:var(--muted);margin-top:1px">${nomi}</div>`:''}
     </div>`;
   });
