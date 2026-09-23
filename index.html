@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13.2)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13.5)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1528,19 +1528,21 @@ function renderSes(){
       return `<span class="pchip">${nome}</span>`;
     }).join('');
     const ospChips=(s.ospiti||[]).map(o=>`<span class="pchip" style="opacity:.6">${typeof o==='object'?(o.nome+(o.cognome?' '+o.cognome:'')):o} (ospite)</span>`).join('');
-    const postiMax = s.posti_max || 6;
+    const postiMax = s.posti_max ?? 6;
     const nPren = pList.length + (s.ospiti||[]).length;
-    const postiColor = nPren >= postiMax ? 'var(--green)' : 'var(--red)';
+    const postiColor = postiMax===0 ? 'var(--muted)' : (nPren >= postiMax ? 'var(--green)' : 'var(--red)');
+    const postiLabel = postiMax===0 ? `${nPren}/—` : `${nPren}/${postiMax}`;
     const titolo = s.lezione_nome || s.tipo || '—';
+    const titoloConNote = s.note ? `${titolo} <span style="font-weight:400;color:var(--muted)">(${s.note})</span>` : titolo;
     const istrNome = (istruttori.find(i=>String(i.id)===String(s.istr))||{nome:s.istr}).nome || s.istr;
     h+=`<div class="ses-card" onclick="openSessione(${s.id})" style="cursor:pointer">
       <div class="row" style="margin-bottom:6px">
         <div>
-          <div class="ses-title">${titolo}</div>
+          <div class="ses-title">${titoloConNote}</div>
           <div class="ses-meta">${fmtData(s.data)} · ${s.orario} · ${istrNome}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
-          <span style="font-size:13px;font-weight:700;color:${postiColor}">${nPren}/${postiMax}</span>
+          <span style="font-size:13px;font-weight:700;color:${postiColor}">${postiLabel}</span>
           <button class="btn btn-sm btn-icon" onclick="openSessione(${s.id})" title="Modifica sessione"><span class="ti ti-pencil"></span></button>
           <button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="withLoading(this,()=>deleteSessione(${s.id},'${titolo}'))" title="Cancella sessione"><span class="ti ti-trash"></span></button>
         </div>
@@ -1681,7 +1683,7 @@ async function aggiungiPartecipante(){
   // Controlla capienza
   const pList=Array.isArray(s?.partecipanti)?s.partecipanti:[];
   const oList=s?.ospiti||[];
-  const postiMaxD=s?.posti_max||6;
+  const postiMaxD=s?.posti_max??6;
   if(pList.length + oList.length >= postiMaxD){
     toast('Sessione al completo! Max '+postiMaxD+' partecipanti', true);
     return;
@@ -1791,7 +1793,7 @@ async function creaRicorrenza(){
     orario:document.getElementById('ric-ora-start').value+'-'+document.getElementById('ric-ora-end').value,
     tipo:lezObjR?lezObjR.nome:tipo, lezione_id, istr, istruttore_id,
     data_inizio:inizio, data_fine:fine,
-    posti_max:parseInt(document.getElementById('ric-posti').value)||6,
+    posti_max:(v=>v===''?6:parseInt(v))(document.getElementById('ric-posti').value),
     note:document.getElementById('ric-note').value,
     presenze:presenze_template,
     ospiti_ids: selOspitiRic.map(o=>o.id)
@@ -1825,7 +1827,7 @@ async function creaSessione(){
   const istr=document.getElementById('ns-istr').value;
   if(!data||!tipo||!istr){toast('Compila data, corso e istruttore',true);return;}
   const orario=document.getElementById('ns-ora-start').value+'-'+document.getElementById('ns-ora-end').value;
-  const posti_max=parseInt(document.getElementById('ns-posti').value)||6;
+  const posti_max=(v=>v===''?6:parseInt(v))(document.getElementById('ns-posti').value);
   const lezione_id=parseInt(tipo)||null;
   const lezObj=lezioni.find(l=>l.id===lezione_id);
   // Recupera pacchetti per ogni partecipante selezionato
@@ -1955,7 +1957,7 @@ function renderOspiteDropdown(){
 function toggleOspiteInSes(oid){
   const o = ospiti.find(x=>x.id===oid); if(!o) return;
   if(!selOspitiV2.find(x=>x.id===oid)){
-    const postiMax = activeSes?.posti_max || 6;
+    const postiMax = activeSes?.posti_max ?? 6;
     if(selPartV2.length + selOspitiV2.length >= postiMax){
       toast('Sessione al completo! Max '+postiMax+' partecipanti', true);
       return;
@@ -1968,7 +1970,7 @@ function toggleOspiteInSes(oid){
 }
 
 async function creaOspiteAlVolo(nomeCompleto){
-  const postiMax = activeSes?.posti_max || 6;
+  const postiMax = activeSes?.posti_max ?? 6;
   if(selPartV2.length + selOspitiV2.length >= postiMax){
     toast('Sessione al completo! Max '+postiMax+' partecipanti', true);
     return;
@@ -2013,7 +2015,7 @@ function togglePartV2(iid){
     document.getElementById('pi-'+iid)?.classList.remove('sel');
   } else {
     // Controlla capienza prima di aggiungere
-    const postiMax = activeSes?.posti_max || 6;
+    const postiMax = activeSes?.posti_max ?? 6;
     if(selPartV2.length + selOspitiV2.length >= postiMax){
       toast('Sessione al completo! Max '+postiMax+' partecipanti', true);
       return;
@@ -2034,7 +2036,7 @@ function togglePartV2(iid){
 
 async function conferma(){
   if(!activeSes) return;
-  const postiMax = activeSes.posti_max || 6;
+  const postiMax = activeSes.posti_max ?? 6;
   const totPartecipanti = selPartV2.length + selOspitiV2.length;
   if(totPartecipanti > postiMax){
     toast('Hai superato il limite di '+postiMax+' partecipanti!', true);
@@ -2290,7 +2292,7 @@ async function aggiungiOspiteDetail(oid){
   // Controlla capienza
   const pList = Array.isArray(s.partecipanti)?s.partecipanti:[];
   const oList = s.ospiti||[];
-  const postiMax = s.posti_max||6;
+  const postiMax = s.posti_max??6;
   if(pList.length + oList.length >= postiMax){
     toast('Sessione al completo! Max '+postiMax+' partecipanti', true);
     return;
@@ -2327,7 +2329,7 @@ async function creaOspiteDetail(nomeCompleto){
   const s = sessioni.find(x=>x.id===sid); if(!s) return;
   const pList = Array.isArray(s.partecipanti)?s.partecipanti:[];
   const oList = s.ospiti||[];
-  const postiMax = s.posti_max||6;
+  const postiMax = s.posti_max??6;
   if(pList.length + oList.length >= postiMax){
     toast('Sessione al completo! Max '+postiMax+' partecipanti', true);
     return;
@@ -2992,7 +2994,7 @@ async function salvaLezione(){
   const id = document.getElementById('lez-id').value;
   const nome = document.getElementById('lez-nome').value.trim();
   if(!nome){toast('Inserisci il nome della lezione',true);return;}
-  const body = {nome, posti_max:parseInt(document.getElementById('lez-posti').value)||6, note:document.getElementById('lez-note').value};
+  const body = {nome, posti_max:(v=>v===''?6:parseInt(v))(document.getElementById('lez-posti').value), note:document.getElementById('lez-note').value};
   if(id){
     await fetch(API+'/api/v2/lezioni/'+id,{method:'PUT',headers:{'Content-Type':'application/json','X-Auth-Token':token},body:JSON.stringify(body)});
   } else {
