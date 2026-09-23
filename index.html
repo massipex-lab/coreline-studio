@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.14.2)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.15)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1161,14 +1161,32 @@ async function openIsc(id){
   const movCliente = (scheda.movimenti||[]);
   const storici = pacchetti.filter(p=>p.stato!=='attivo');
   let h = '';
-  // Pacchetti attivi
+  // 1. Anagrafica
+  const isSospeso = iscritta.stato==='sospeso';
+  const certS = isSospeso?'n/a':(iscritta.cert_medico_stato||'non presentato');
+  const certCol = certS==='valido'?'var(--green)':(certS==='scaduto'||certS==='non presentato'?'var(--red)':'var(--warn)');
+  const certEmj = certS==='n/a'?'⏸️':(certS==='valido'?'🟢':(certS==='scaduto'||certS==='non presentato'?'🔴':'🟡'));
+  h += '<div class="sec" style="display:flex;align-items:center;justify-content:space-between">Anagrafica <button class="btn btn-sm btn-icon" onclick="toggleEditAnagrafica()" title="Modifica"><span class="ti ti-pencil"></span></button></div>';
+  h += '<div class="card" style="margin-bottom:14px">';
+  h += '<div id="anagrafica-view">';
+  h += '<table class="dtable"><tr><td>Telefono</td><td>'+(iscritta.telefono||'—')+'</td></tr>';
+  h += '<tr><td>Email</td><td>'+(iscritta.email||'—')+'</td></tr>';
+  if(iscritta.note) h += '<tr><td>Note</td><td>'+iscritta.note+'</td></tr>';
+  h += '</table></div>';
+  h += '<div id="anagrafica-edit" style="display:none">';
+  h += '<div class="field-row"><div class="field"><label>Nome *</label><input type="text" id="ae-nome" value="'+(iscritta.nome||'')+'"></div><div class="field"><label>Cognome</label><input type="text" id="ae-cognome" value="'+(iscritta.cognome||'')+'"></div></div>';
+  h += '<div class="field"><label>Telefono</label><input type="text" id="ae-tel" value="'+(iscritta.telefono||'')+'"></div>';
+  h += '<div class="field"><label>Email</label><input type="email" id="ae-email" value="'+(iscritta.email||'')+'"></div>';
+  h += '<div class="field"><label>Data registrazione</label><input type="date" id="ae-data-reg" value="'+(iscritta.data_registrazione||isc.data_registrazione||'')+'"></div>';
+  h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>salvaAnagrafica('+id+'))">Salva anagrafica</button>';
+  h += '</div></div>';
+  // 2. Pacchetti attivi
+  h += '<div class="sec">Sottoscrizioni attive</div>';
   if(attivi.length){
-    h += '<div class="sec">Sottoscrizioni</div>';
     attivi.forEach(p=>{
       const pct = p.lezioni_tot>0?Math.round(p.lezioni_fatte/p.lezioni_tot*100):0;
       const fc = p.lezioni_rim===0?'var(--red)':(p.lezioni_rim<=2?'var(--warn)':'var(--green)');
       const resto = p.tot_pagato !== undefined ? Math.max(0, (p.corso_prezzo||0) - (p.tot_pagato||0)) : 0;
-      // Sotto-contatori per pacchetti misti Mat+Reformer
       const lezAbilP=Array.isArray(p.lezioni_abilitate)?p.lezioni_abilitate:[];
 
       h += '<div class="card" style="margin-bottom:8px">';
@@ -1197,7 +1215,19 @@ async function openIsc(id){
     h += '<div style="font-size:13px;color:var(--muted);padding:8px 0 4px">Nessun pacchetto attivo.</div>';
   }
   h += `<button class="btn btn-full" style="margin-bottom:14px" onclick="openAddPacchetto(${id})"><span class="ti ti-plus"></span> Aggiungi pacchetto</button>`;
-  // Saldo totale e storico pagamenti
+  // 3. Certificato medico
+  h += `<div class="sec" style="margin-top:2px">Certificato medico</div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="row" style="margin-bottom:8px">
+      <div style="font-size:14px;font-weight:700">${certEmj} ${certS.charAt(0).toUpperCase()+certS.slice(1)}</div>
+      <button class="btn btn-sm" onclick="openEditCert(${id})"><span class="ti ti-pencil"></span></button>
+    </div>
+    <table class="dtable">
+      <tr><td>Data certificato</td><td>${iscritta.cert_medico_data?fmtShort(iscritta.cert_medico_data):'—'}</td></tr>
+      <tr><td>Scadenza</td><td style="color:${certCol};font-weight:600">${iscritta.cert_medico_scadenza?fmtShort(iscritta.cert_medico_scadenza):'—'}</td></tr>
+    </table>
+  </div>`;
+  // 4. Storico pagamenti
   const totalePrezzi = attivi.reduce((a,p)=>a+(p.corso_prezzo||0),0);
   const totalePagato = movCliente.reduce((a,m)=>a+(m.importo||0),0);
   const saldoAperto = Math.max(0, totalePrezzi - totalePagato);
@@ -1225,45 +1255,9 @@ async function openIsc(id){
   h += '</div>';
   h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>registraPagamentoInline('+id+'))"><span class="ti ti-cash"></span> Registra pagamento</button>';
   h += '</div></div>';
-  // Ultime presenze
-  if(ultime_presenze.length){
-    h += '<div class="sec">Ultime sessioni</div><div class="card" style="margin-bottom:14px">';
-    ultime_presenze.forEach(p=>{h+=`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--bg)">${fmtShort(p.data)} · ${p.orario} · ${p.tipo}</div>`;});
-    h += '</div>';
-  }
-  // Anagrafica
-  const isSospeso = iscritta.stato==='sospeso';
-  const certS = isSospeso?'n/a':(iscritta.cert_medico_stato||'non presentato');
-  const certCol = certS==='valido'?'var(--green)':(certS==='scaduto'||certS==='non presentato'?'var(--red)':'var(--warn)');
-  const certEmj = certS==='n/a'?'⏸️':(certS==='valido'?'🟢':(certS==='scaduto'||certS==='non presentato'?'🔴':'🟡'));
-  h += '<div class="sec" style="display:flex;align-items:center;justify-content:space-between">Anagrafica <button class="btn btn-sm btn-icon" onclick="toggleEditAnagrafica()" title="Modifica"><span class="ti ti-pencil"></span></button></div>';
-  h += '<div class="card" style="margin-bottom:14px">';
-  h += '<div id="anagrafica-view">';
-  h += '<table class="dtable"><tr><td>Telefono</td><td>'+(iscritta.telefono||'—')+'</td></tr>';
-  h += '<tr><td>Email</td><td>'+(iscritta.email||'—')+'</td></tr>';
-  if(iscritta.note) h += '<tr><td>Note</td><td>'+iscritta.note+'</td></tr>';
-  h += '</table></div>';
-  h += '<div id="anagrafica-edit" style="display:none">';
-  h += '<div class="field-row"><div class="field"><label>Nome *</label><input type="text" id="ae-nome" value="'+(iscritta.nome||'')+'"></div><div class="field"><label>Cognome</label><input type="text" id="ae-cognome" value="'+(iscritta.cognome||'')+'"></div></div>';
-  h += '<div class="field"><label>Telefono</label><input type="text" id="ae-tel" value="'+(iscritta.telefono||'')+'"></div>';
-  h += '<div class="field"><label>Email</label><input type="email" id="ae-email" value="'+(iscritta.email||'')+'"></div>';
-  h += '<div class="field"><label>Data registrazione</label><input type="date" id="ae-data-reg" value="'+(iscritta.data_registrazione||isc.data_registrazione||'')+'"></div>';
-  h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>salvaAnagrafica('+id+'))">Salva anagrafica</button>';
-  h += '</div></div>';
-  h += `<div class="sec" style="margin-top:14px">Certificato medico</div>
-  <div class="card" style="margin-bottom:10px">
-    <div class="row" style="margin-bottom:8px">
-      <div style="font-size:14px;font-weight:700">${certEmj} ${certS.charAt(0).toUpperCase()+certS.slice(1)}</div>
-      <button class="btn btn-sm" onclick="openEditCert(${id})"><span class="ti ti-pencil"></span></button>
-    </div>
-    <table class="dtable">
-      <tr><td>Data certificato</td><td>${iscritta.cert_medico_data?fmtShort(iscritta.cert_medico_data):'—'}</td></tr>
-      <tr><td>Scadenza</td><td style="color:${certCol};font-weight:600">${iscritta.cert_medico_scadenza?fmtShort(iscritta.cert_medico_scadenza):'—'}</td></tr>
-    </table>
-  </div>`;
-  // Storici
+  // 5. Sottoscrizioni passate
   if(storici.length){
-    h += '<div class="sec" style="margin-top:14px">Pacchetti precedenti</div>';
+    h += '<div class="sec" style="margin-top:2px">Sottoscrizioni passate</div>';
     storici.forEach(p=>{
       const pct = p.lezioni_tot>0?Math.round(p.lezioni_fatte/p.lezioni_tot*100):0;
       const badgeCls = p.stato==='esaurito'?'b-danger':(p.stato==='terminato'?'b-pink':'b-warn');
@@ -1271,7 +1265,7 @@ async function openIsc(id){
       h += '<div class="card" style="margin-bottom:8px;opacity:0.8">';
       h += '<div class="row" style="margin-bottom:4px">';
       h += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+(p.corso_nome||'—')+'</div>';
-      h += '<div style="font-size:11px;color:var(--muted);margin-top:2px">Inizio: '+fmtShort(p.data_inizio)+'</div>';
+      h += '<div style="font-size:11px;color:var(--muted);margin-top:2px">Inizio: '+fmtShort(p.data_inizio)+(p.data_fine?' · Fine: '+fmtShort(p.data_fine):'')+'</div>';
       h += '</div>';
       h += '<span class="badge '+badgeCls+'">'+p.stato+'</span>';
       h += '</div>';
