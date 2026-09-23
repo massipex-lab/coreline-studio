@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.10)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.11)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -387,17 +387,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div class="sec">Istruttori</div>
       <div class="card" id="istr-list"></div>
       <button class="btn btn-full" style="margin-bottom:14px" onclick="openNuovoIstr()"><span class="ti ti-plus"></span> Aggiungi istruttore</button>
-
-      <div class="sec">Manutenzione</div>
-      <div class="card" style="margin-bottom:16px">
-        <div class="setting-item" onclick="ricalcolaLezioni()">
-          <div>
-            <div class="setting-label"><span class="ti ti-refresh" style="margin-right:4px"></span>Ricalcola lezioni usate</div>
-            <div class="setting-sub">Riallinea i contatori di ogni pacchetto con le presenze reali. Usa dopo inserimenti storici.</div>
-          </div>
-          <span class="ti ti-chevron-right setting-arrow"></span>
-        </div>
-      </div>
 
       <div class="sec">Database</div>
       <div class="card">
@@ -2735,16 +2724,22 @@ function renderCfg(){
   if(ordPC==='asc') listPC.sort((a,b)=>a.created_at>b.created_at?1:-1);
   else listPC.sort((a,b)=>a.created_at>b.created_at?-1:1);
   document.getElementById('pc-list').innerHTML=listPC.length
-    ?listPC.map(p=>`<div class="setting-item">
+    ?listPC.map(p=>{
+      const nomiEnc = encodeURIComponent(JSON.stringify((p.clienti_nomi||[]).map(c=>c.nome)));
+      const attiviBadge = p.clienti_attivi>0
+        ? ` · <span class="badge b-warn" style="cursor:pointer" onclick="showClientiPacchetto(event,'${nomiEnc}')">${p.clienti_attivi} attivi</span>`
+        : '';
+      return `<div class="setting-item">
         <div style="flex:1">
           <div class="setting-label">${p.nome}</div>
-          <div class="setting-sub">${euro(p.prezzo)} · ${(p.lezioni_nomi||[]).join(', ')||'—'}${p.clienti_attivi>0?` · <span style="color:var(--warn)">${p.clienti_attivi} attivi</span>`:''}</div>
+          <div class="setting-sub">${euro(p.prezzo)} · ${(p.lezioni_nomi||[]).join(', ')||'—'}${attiviBadge}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <button class="btn btn-sm btn-icon" onclick="openEditPC(${p.id})" title="Modifica"><span class="ti ti-pencil"></span></button>
           <button class="btn btn-sm btn-icon" style="color:var(--red);border-color:var(--red)" onclick="deletePC(${p.id},'${p.nome}',${p.clienti_attivi>0})" title="Cancella"><span class="ti ti-trash"></span></button>
         </div>
-      </div>`).join('')
+      </div>`;
+    }).join('')
     :'<div style="color:var(--muted);font-size:13px;padding:8px 0">Nessun pacchetto. Aggiungine uno.</div>';
 
   // AREA 3: Istruttori
@@ -3116,6 +3111,28 @@ async function salvaPC(){
   closeOv('ov-pc');
   toast('Pacchetto salvato!');
   const pc=await GET('/api/v2/pacchetti-commerciali'); if(pc){pacchettiCommerciali=pc; renderCfg();}
+}
+
+function showClientiPacchetto(event, nomiEnc){
+  event.stopPropagation();
+  // Rimuovi popup esistente
+  document.querySelectorAll('.pc-popup').forEach(el=>el.remove());
+  let nomi=[];
+  try{ nomi=JSON.parse(decodeURIComponent(nomiEnc)); }catch(e){}
+  if(!nomi.length) return;
+  const popup=document.createElement('div');
+  popup.className='pc-popup';
+  popup.style.cssText='position:fixed;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:0 4px 20px rgba(0,0,0,.25);padding:10px 14px;min-width:180px;max-width:260px;font-size:13px';
+  popup.innerHTML='<div style="font-weight:700;margin-bottom:8px;color:var(--text)">Clienti attivi</div>'+
+    nomi.map(n=>`<div style="padding:3px 0;border-bottom:1px solid var(--bg);color:var(--text)">${n}</div>`).join('')+
+    '<div style="font-size:11px;color:var(--muted);margin-top:6px">Clicca altrove per chiudere</div>';
+  // Posiziona vicino al click
+  const rect=event.target.getBoundingClientRect();
+  popup.style.top=(rect.bottom+6)+'px';
+  popup.style.left=Math.min(rect.left, window.innerWidth-280)+'px';
+  document.body.appendChild(popup);
+  // Chiudi cliccando fuori
+  setTimeout(()=>document.addEventListener('click',function h(){popup.remove();document.removeEventListener('click',h);},{once:true}),50);
 }
 
 async function deletePC(id, nome, hasClienti){
