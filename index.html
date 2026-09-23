@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13.6)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.14)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -246,10 +246,11 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="page active" id="page-dash">
       <div class="stat-grid">
         <div class="stat"><div class="stat-val" style="color:var(--cl-dark)" id="d-isc">—</div><div class="stat-lbl">Clienti</div></div>
-        <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-rin">—</div><div class="stat-lbl">Da rinnovare</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-qa-scad">—</div><div class="stat-lbl">QA in scadenza</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--red)" id="d-no-lez">—</div><div class="stat-lbl">Senza lezioni</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--red)" id="d-sal">—</div><div class="stat-lbl">Da saldare</div></div>
         <div class="stat"><div class="stat-val" style="color:var(--blue)" id="d-sog">—</div><div class="stat-lbl">Sessioni oggi</div></div>
-    <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-cert">—</div><div class="stat-lbl">Cert. da approvare</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--warn)" id="d-cert">—</div><div class="stat-lbl">Cert. da approvare</div></div>
       </div>
       <div class="sec">Situazione cassa</div>
       <div id="dash-saldo"></div>
@@ -999,12 +1000,19 @@ function updateTopbar(){
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
 function renderDash(){
-  const daRin=clienti.filter(i=>i.pacchetti_attivi===0&&i.stato!=='sospeso');
+  const oggi30=new Date(oggi);oggi30.setDate(oggi30.getDate()+30);
+  const qaScad=clienti.filter(i=>{
+    if(i.stato==='sospeso'||!i.qa_data_inizio) return false;
+    const scad=new Date(i.qa_data_inizio);scad.setFullYear(scad.getFullYear()+1);
+    return scad>=oggi&&scad<=oggi30;
+  });
+  const noLez=clienti.filter(i=>i.stato!=='sospeso'&&(i.pacchetti_lezioni_attivi??0)===0);
   const daSal=clienti.filter(i=>(i.totale_da_saldare||0)>0&&i.stato!=='sospeso');
   const totDaSaldare=daSal.reduce((a,i)=>a+(i.totale_da_saldare||0),0);
   const todaySes=sessioni.filter(s=>{const d=new Date(s.data+'T00:00:00');d.setHours(0,0,0,0);return d.getTime()===oggi.getTime();});
   document.getElementById('d-isc').textContent=clienti.filter(i=>i.stato!=='sospeso').length;
-  document.getElementById('d-rin').textContent=daRin.length;
+  document.getElementById('d-qa-scad').textContent=qaScad.length;
+  document.getElementById('d-no-lez').textContent=noLez.length;
   document.getElementById('d-sal').textContent=euro(totDaSaldare);
   document.getElementById('d-sog').textContent=todaySes.length;
   document.getElementById('d-cert').textContent=certDaApprovare.length;
