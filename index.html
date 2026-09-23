@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13)</span></div>
+    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.13.1)</span></div>
     <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -414,11 +414,12 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 <!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
 
 <!-- Modale clienti attivi pacchetto -->
-<div class="overlay" id="ov-clienti-pac" onclick="if(event.target===this)closeOv('ov-clienti-pac')">
-  <div class="modal" style="max-width:340px">
+<div class="overlay" id="ov-clienti-pac">
+  <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-hdr"><span id="ov-clienti-pac-title">Clienti attivi</span><button class="btn-close" onclick="closeOv('ov-clienti-pac')">✕</button></div>
-    <div id="ov-clienti-pac-body" style="padding:0 16px 16px"></div>
+    <button class="close-btn" onclick="closeOv('ov-clienti-pac')"><span class="ti ti-x"></span></button>
+    <div class="modal-title" id="ov-clienti-pac-title"></div>
+    <div id="ov-clienti-pac-body"></div>
   </div>
 </div>
 
