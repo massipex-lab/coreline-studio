@@ -1255,7 +1255,13 @@ async function openIsc(id){
   h += '</div>';
   h += '<button class="btn btn-primary btn-full" onclick="withLoading(this,()=>registraPagamentoInline('+id+'))"><span class="ti ti-cash"></span> Registra pagamento</button>';
   h += '</div></div>';
-  // 5. Sottoscrizioni passate
+  // 5. Ultime sessioni
+  if(ultime_presenze.length){
+    h += '<div class="sec">Ultime sessioni</div><div class="card" style="margin-bottom:14px">';
+    ultime_presenze.forEach(p=>{h+=`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--bg)">${fmtShort(p.data)} · ${p.orario} · ${p.tipo}</div>`;});
+    h += '</div>';
+  }
+  // 6. Sottoscrizioni passate
   if(storici.length){
     h += '<div class="sec" style="margin-top:2px">Sottoscrizioni passate</div>';
     storici.forEach(p=>{
