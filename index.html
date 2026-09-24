@@ -39,6 +39,11 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 #app{display:none;flex-direction:column;height:100vh}
 .topbar{background:var(--cl-mid);color:#fff;padding:12px 16px 14px;flex-shrink:0}
 .topbar-row{display:flex;justify-content:space-between;align-items:center}
+.btn-refresh{background:transparent;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .15s;opacity:.85}
+.btn-refresh:hover{background:rgba(255,255,255,.15);opacity:1}
+.btn-refresh .ti{font-size:20px;transition:transform .5s ease}
+.btn-refresh.spinning .ti{animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .topbar h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
 .topbar .sub{font-size:11px;opacity:.75;margin-top:2px}
 .incasso .val{font-size:20px;font-weight:700;text-align:right}
@@ -271,9 +276,12 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
         <div style="font-family:'Cormorant Garamond',serif;font-weight:300;font-size:22px;color:#fff;letter-spacing:3px;text-transform:lowercase;line-height:1">c<span style="display:inline-block;width:14px;height:14px;border:1.5px solid #fff;border-radius:50%;vertical-align:middle;margin:0 1px -2px"></span>reline</div>
         <div style="font-size:7px;color:#fff;letter-spacing:3px;text-transform:uppercase;opacity:.8">Pilates &amp; Fitness Studio</div>
       </div>
-      <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
+        <button class="btn-refresh" id="btn-refresh" onclick="refreshAll(this)" title="Aggiorna dati"><span class="ti ti-refresh"></span></button>
+      </div>
     </div>
-    <div class="topbar-band" style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.16.1)</span></div>
+    <div class="topbar-band" style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.17)</span></div>
     <div class="topbar-band" style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
@@ -1016,6 +1024,13 @@ async function loadAll(){
 
   updateTopbar(); populateSelects();
   if(document.getElementById('page-istr-recap').classList.contains('active')) renderIstrRecap();
+}
+
+async function refreshAll(btn){
+  if(!btn) btn = document.getElementById('btn-refresh');
+  if(btn) btn.classList.add('spinning');
+  try { await loadAll(); }
+  finally { if(btn) btn.classList.remove('spinning'); }
 }
 
 // ══ NAVIGATION ═══════════════════════════════════════════════════════════════
