@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.3)</title>
-<!-- cliente.html v1.3 -->
+<title>Coreline Pilates — La tua area (v1.4)</title>
+<!-- cliente.html v1.4 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -451,10 +451,11 @@ async function loadApp(){
   const presenze = await GET('/api/v2/iscritte/'+clienteId+'/sessioni');
   prenotazioniAttive = {};
   if(presenze){
+    const oggi = new Date().toISOString().slice(0,10);
     presenze
-      .filter(p=>p.stato==='prenotato' && p.data >= new Date().toISOString().slice(0,10))
+      .filter(p=>p.stato==='prenotato' && p.data >= oggi)
       .forEach(p=>{
-        prenotazioniAttive[p.tipo_sessione||'gruppo'] = {
+        prenotazioniAttive[p.sessione_id] = {
           sessione_id: p.sessione_id,
           data: p.data,
           orario: p.orario,
@@ -574,7 +575,7 @@ function getLezCompatibili(){
 }
 
 function renderSesCard(s, lezCompatibili){
-  const isPrenotata = Object.values(prenotazioniAttive).some(p=>p.sessione_id===s.id);
+  const isPrenotata = s.id in prenotazioniAttive;
   const isPiena = s.posti_disponibili <= 0 && !isPrenotata;
   const istrLabel = s.istr ? `<span class="ti ti-user" style="font-size:11px"></span> ${s.istr}` : '';
 
