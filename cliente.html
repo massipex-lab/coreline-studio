@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.9)</title>
-<!-- cliente.html v1.9 -->
+<title>Coreline Pilates — La tua area (v2.0)</title>
+<!-- cliente.html v2.0 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -731,11 +731,59 @@ async function reload(){
 }
 
 // ── LEZIONI PAGE ──────────────────────────────────────────────────────────────
+const STORICO_PAGE = 12; // quante voci caricare per volta
+let _storicoData = [];   // buffer globale delle passate
+let _storicoOffset = 0;  // quante già renderizzate
+let _storicoObserver = null;
+
+function _renderPrenCard(p){
+  const stato = p.stato==='cancellato'?'cancellato':p.stato==='presente'?'presente':null;
+  const badgeHtml = stato
+    ? `<span class="pren-stato ${stato}">${stato==='cancellato'?'Disdetta':'Presente'}</span>`
+    : '';
+  return `<div class="pren-card passata">
+    <div class="pren-row">
+      <div>
+        <div class="pren-tipo">${p.tipo||'Sessione'}</div>
+        <div class="pren-data">${fmtDataShort(p.data)} · ${(p.orario||'').slice(0,5)}</div>
+      </div>
+      ${badgeHtml}
+    </div>
+  </div>`;
+}
+
+function _appendStoricoChunk(){
+  const container = document.getElementById('storico-list');
+  const sentinel  = document.getElementById('storico-sentinel');
+  if(!container) return;
+
+  const chunk = _storicoData.slice(_storicoOffset, _storicoOffset + STORICO_PAGE);
+  if(!chunk.length){
+    // tutto caricato, rimuovi sentinel e osservatore
+    if(_storicoObserver){ _storicoObserver.disconnect(); _storicoObserver=null; }
+    if(sentinel) sentinel.remove();
+    return;
+  }
+
+  chunk.forEach(p => container.insertAdjacentHTML('beforeend', _renderPrenCard(p)));
+  _storicoOffset += chunk.length;
+
+  // se abbiamo finito rimuovi sentinel
+  if(_storicoOffset >= _storicoData.length){
+    if(_storicoObserver){ _storicoObserver.disconnect(); _storicoObserver=null; }
+    if(sentinel) sentinel.remove();
+  }
+}
+
 async function loadLezioni(){
   const loading = document.getElementById('lez-loading');
   const content = document.getElementById('lez-content');
   loading.style.display='flex';
   content.style.display='none';
+
+  // Reset stato storico precedente
+  if(_storicoObserver){ _storicoObserver.disconnect(); _storicoObserver=null; }
+  _storicoData=[]; _storicoOffset=0;
 
   const data = await GET('/api/v2/iscritte/'+clienteId+'/sessioni');
   loading.style.display='none';
@@ -748,7 +796,7 @@ async function loadLezioni(){
 
   const oggi = new Date().toISOString().slice(0,10);
   const future = data.filter(p=>p.data>=oggi && p.stato==='prenotato');
-  const passate = data.filter(p=>p.data<oggi || p.stato!=='prenotato');
+  _storicoData = data.filter(p=>p.data<oggi || p.stato!=='prenotato');
 
   let html='';
   if(future.length){
@@ -767,27 +815,25 @@ async function loadLezioni(){
     html+='</div>';
   }
 
-  if(passate.length){
-    html+='<div class="storico-header">Storico</div><div class="lezioni-section">';
-    passate.slice(0,30).forEach(p=>{
-      const stato = p.stato==='cancellato'?'cancellato':p.stato==='presente'?'presente':null;
-      const badgeHtml = stato
-        ? `<span class="pren-stato ${stato}">${stato==='cancellato'?'Disdetta':'Presente'}</span>`
-        : '';
-      html+=`<div class="pren-card passata">
-        <div class="pren-row">
-          <div>
-            <div class="pren-tipo">${p.tipo||'Sessione'}</div>
-            <div class="pren-data">${fmtDataShort(p.data)} · ${(p.orario||'').slice(0,5)}</div>
-          </div>
-          ${badgeHtml}
-        </div>
-      </div>`;
-    });
-    html+='</div>';
+  if(_storicoData.length){
+    html+=`<div class="storico-header">Storico</div>
+      <div class="lezioni-section" id="storico-list"></div>
+      <div id="storico-sentinel" style="height:1px;margin:8px 0"></div>`;
   }
 
   content.innerHTML=html;
+
+  if(_storicoData.length){
+    // Carica primo blocco subito, poi osserva il sentinel
+    _appendStoricoChunk();
+    const sentinel = document.getElementById('storico-sentinel');
+    if(sentinel && _storicoOffset < _storicoData.length){
+      _storicoObserver = new IntersectionObserver(entries=>{
+        if(entries[0].isIntersecting) _appendStoricoChunk();
+      }, {rootMargin:'120px'});
+      _storicoObserver.observe(sentinel);
+    }
+  }
 }
 
 function renderLezioni(){
