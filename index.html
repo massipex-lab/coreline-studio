@@ -189,6 +189,53 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .saldo-box .lbl{font-size:11px;opacity:.8;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .saldo-box .val{font-size:32px;font-weight:700;margin:4px 0 2px}
 .saldo-box .sub{font-size:12px;opacity:.8}
+
+/* ── CONFIRM DIALOG ── */
+#confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:flex-end;justify-content:center}
+#confirm-overlay.open{display:flex}
+#confirm-box{background:#fff;border-radius:var(--r-lg) var(--r-lg) 0 0;padding:24px 20px 40px;width:100%;max-width:480px}
+#confirm-box .confirm-icon{font-size:32px;text-align:center;margin-bottom:8px}
+#confirm-box .confirm-msg{font-size:15px;font-weight:600;color:var(--cl-dark);text-align:center;margin-bottom:6px;line-height:1.4}
+#confirm-box .confirm-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;line-height:1.4}
+#confirm-box .confirm-btns{display:flex;gap:10px}
+#confirm-box .confirm-btns button{flex:1;padding:13px;border-radius:var(--r-sm);border:1.5px solid var(--border);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+#confirm-box .btn-confirm-ok{background:var(--red);color:#fff;border-color:var(--red)}
+#confirm-box .btn-confirm-ok.safe{background:var(--cl-dark);border-color:var(--cl-dark)}
+#confirm-box .btn-confirm-cancel{background:#fff;color:var(--cl-dark)}
+
+/* ── MOBILE BOTTOM NAV ── */
+@media(max-width:600px){
+  /* Nascondi topbar band e mostra header compatto */
+  .topbar-band{display:none}
+  .topbar{padding:10px 14px 10px}
+  .topbar-row{align-items:center}
+  .topbar h1{font-size:16px}
+  .incasso .val{font-size:15px}
+  .incasso .lbl{font-size:10px}
+
+  /* Nascondi tabs top, mostra bottom nav */
+  .tabs{display:none}
+  .bottom-nav{display:flex !important}
+
+  /* Pagine: padding bottom per nav bar */
+  .pages{padding-bottom:0}
+  .page{padding:12px 12px 80px}
+}
+
+/* Bottom nav bar (hidden on desktop) */
+.bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff;border-top:1px solid var(--border);
+  z-index:100;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.bottom-nav::-webkit-scrollbar{display:none}
+.bottom-nav-inner{display:flex;min-width:max-content;width:100%}
+.bnav-item{flex:1;min-width:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px 10px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border:none;background:transparent;gap:2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.bnav-item .ti{font-size:21px;line-height:1}
+.bnav-item.active{color:var(--cl-dark)}
+.bnav-item.active .ti{color:var(--cl-dark)}
 </style>
 <!-- Tabler Icons CDN -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -226,8 +273,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       </div>
       <div class="incasso"><div class="val" id="top-inc" style="font-size:16px;font-weight:700;color:#fff">—</div><div class="lbl" style="font-size:10px;font-weight:600;color:#fff;opacity:.9;letter-spacing:1px;text-transform:uppercase">Incassato</div></div>
     </div>
-    <div style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.15.6)</span></div>
-    <div style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
+    <div class="topbar-band" style="text-align:center;margin-top:6px;font-size:13px;font-weight:500;color:#fff;letter-spacing:5px;text-transform:uppercase">BackOffice <span style="font-size:9px;opacity:.7;letter-spacing:1px">(v3.16)</span></div>
+    <div class="topbar-band" style="text-align:center;margin-top:2px;font-size:9px;color:#fff;opacity:.75;letter-spacing:1px;text-transform:uppercase" id="topbar-date"></div>
   </div>
 
   <div class="tabs">
@@ -240,6 +287,20 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
     <div class="tab" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</div>
     <div class="tab" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</div>
   </div>
+
+  <!-- Bottom nav (mobile only) -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="bnav-item active" data-tab="dash" onclick="goTab('dash')"><span class="ti ti-chart-bar"></span>Home</button>
+      <button class="bnav-item" data-tab="ses" onclick="goTab('ses')"><span class="ti ti-calendar"></span>Sessioni</button>
+      <button class="bnav-item" data-tab="isc" onclick="goTab('isc')"><span class="ti ti-users"></span>Clienti</button>
+      <button class="bnav-item" data-tab="add" onclick="goTab('add')"><span class="ti ti-user-plus"></span>Nuovo</button>
+      <button class="bnav-item" data-tab="istr-recap" onclick="goTab('istr-recap')"><span class="ti ti-id-badge"></span>Istruttori</button>
+      <button class="bnav-item" data-tab="ospiti" onclick="goTab('ospiti')"><span class="ti ti-user-heart"></span>Ospiti</button>
+      <button class="bnav-item" data-tab="cas" onclick="goTab('cas')"><span class="ti ti-cash"></span>Cassa</button>
+      <button class="bnav-item" data-tab="cfg" onclick="goTab('cfg')"><span class="ti ti-settings"></span>Config</button>
+    </div>
+  </nav>
 
   <div class="pages">
     <!-- DASHBOARD -->
@@ -759,6 +820,19 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
 <div class="toast" id="toast"></div>
 
+<!-- Confirm dialog -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-sub" id="confirm-sub"></div>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" id="confirm-cancel-btn" onclick="confirmResolve(false)">Annulla</button>
+      <button class="btn-confirm-ok" id="confirm-ok-btn" onclick="confirmResolve(true)">Conferma</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══ CONFIG ═══════════════════════════════════════════════════════════════════
 // IMPORTANTE: sostituisci con l'URL del tuo backend Render dopo il deploy
@@ -951,6 +1025,8 @@ function goTab(t){
   document.getElementById('page-'+t).classList.add('active');
   const idx=['dash','ses','isc','add','istr-recap','ospiti','cas','cfg'].indexOf(t);
   document.querySelectorAll('.tab')[idx].classList.add('active');
+  // Sync bottom nav
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
   if(t==='istr-recap') renderIstrRecap();
   if(t==='ospiti') renderOspitiPage();
   // Quando si torna in Home ricarica i dati dal server
@@ -1074,7 +1150,7 @@ function renderDash(){
         <div style="flex:1">
           <div style="font-weight:600;cursor:pointer;color:var(--cl-dark)" onclick="openIsc(${c.id})">${c.nome} ${c.cognome||''}</div>
           <div style="font-size:11px;color:var(--muted)">
-            ${c.stato==='in attesa approvazione'?'🟡 In attesa':c.stato==='non presentato'?'🔴 Non presentato':c.stato==='scaduto'?'🔴 Scaduto':'🟡 Grace period'}
+            ${c.stato==='in attesa approvazione'?'🟡 In attesa':c.stato==='non presentato'?'🔴 Non presentato':c.stato==='scaduto'?'🔴 Scaduto':'🟡 In proroga'}
             ${c.cert_medico_scadenza?' · Scad: '+fmtShort(c.cert_medico_scadenza):''}
             ${c.ha_file?'<span style="color:var(--green)"> · 📎 File presente</span>':''}
           </div>
@@ -1746,7 +1822,7 @@ async function rimuoviPartecipante(sid,presenzaId){
 }
 
 async function deleteSessione(sid, tipo){
-  if(!confirm('Cancellare la sessione "'+tipo+'"? Verranno rimosse anche le prenotazioni.')) return;
+  if(!await confirmDialog('Cancellare la sessione "'+tipo+'"?',{sub:'Verranno rimosse anche le prenotazioni.',icon:'🗑️',okLabel:'Cancella'})) return;
   const r = await fetch(API+'/api/sessioni/'+sid,{method:'DELETE',headers:{'X-Auth-Token':token}});
   const data = await r.json();
   if(data.ok){
@@ -2453,7 +2529,7 @@ async function salvaOspite(){
   else toast('Errore',true);
 }
 async function deleteOspite(oid){
-  if(!confirm('Eliminare questo ospite?')) return;
+  if(!await confirmDialog('Eliminare questo ospite?',{icon:'🗑️',okLabel:'Elimina'})) return;
   const r=await DEL('/api/v2/ospiti/'+oid);
   if(r!==false){ospiti=ospiti.filter(x=>x.id!==oid);renderOspitiPage();toast('Ospite eliminato.');}
   else toast('Errore',true);
@@ -2574,7 +2650,7 @@ async function salvaMov(mid){
 }
 
 async function deleteMov(mid, iid=null){
-  if(!confirm('Eliminare questo movimento?')) return;
+  if(!await confirmDialog('Eliminare questo movimento?',{icon:'🗑️',okLabel:'Elimina'})) return;
   await fetch(API+`/api/v2/movimenti/${mid}`,{method:'DELETE',headers:{'X-Auth-Token':token}});
   toast('Movimento eliminato.');
   const [newMov, iv2] = await Promise.all([GET('/api/v2/movimenti'), GET('/api/v2/iscritte')]);
@@ -2830,8 +2906,8 @@ function openNuovoCorso(){
   document.getElementById('ov-corso').classList.add('open');
 }
 async function deleteCorso(cid, nome, hasPac){
-  const msg = hasPac ? 'Ci sono pacchetti attivi. Il backend bloccherà se ci sono lezioni da fare. Procedere?' : 'Cancellare il corso? Operazione irreversibile.';
-  if(!confirm(msg)) return;
+  const msg = hasPac ? 'Ci sono pacchetti attivi.' : 'Operazione irreversibile.';
+  if(!await confirmDialog('Cancellare il corso "'+nome+'"?',{sub:msg,icon:'🗑️',okLabel:'Cancella'})) return;
   const r = await fetch(API+'/api/v2/lezioni/'+cid,{method:'DELETE',headers:{'X-Auth-Token':token}});
   const data = await r.json();
   if(data.ok){
@@ -2845,7 +2921,7 @@ async function deleteCorso(cid, nome, hasPac){
 
 async function deleteIstr(iid, nomeEnc){
   const nome = decodeURIComponent(nomeEnc);
-  if(!confirm('Cancellare ' + nome + '? Possibile solo se non ha sessioni future.')) return;
+  if(!await confirmDialog('Cancellare '+nome+'?',{sub:'Possibile solo se non ha sessioni future.',icon:'🗑️',okLabel:'Cancella'})) return;
   const r = await fetch(API+'/api/istruttori/'+iid,{method:'DELETE',headers:{'X-Auth-Token':token}});
   const data = await r.json();
   if(data.ok){
@@ -2902,8 +2978,7 @@ async function salvaIstr(){
 
 async function uploadDb(input){
   const file = input.files[0]; if(!file) return;
-  const confirm_msg = "Stai per sostituire il database con questo file Excel. Tutti i dati attuali verranno sovrascritti. Continuare?";
-  if(!window.confirm(confirm_msg)){ input.value=''; return; }
+  if(!await confirmDialog('Sostituire il database?',{sub:'Tutti i dati attuali verranno sovrascritti con il file Excel. Operazione irreversibile.',icon:'⚠️',okLabel:'Carica e sostituisci'})){ input.value=''; return; }
   const btn = document.querySelector('[onclick*="upload-db"]');
   if(btn) btnLoading(btn, true);
   toast('Caricamento in corso…');
@@ -2944,7 +3019,7 @@ async function migraDati(){
 }
 
 async function ricalcolaLezioni(){
-  if(!confirm('Ricalcola i contatori lezioni per tutti i pacchetti?\nL\'operazione aggiorna i dati contando le presenze reali nel database.')) return;
+  if(!await confirmDialog('Ricalcola contatori lezioni?',{sub:"L'operazione aggiorna i dati contando le presenze reali nel database.",icon:'🔄',okLabel:'Ricalcola',okDanger:false})) return;
   toast('Ricalcolo in corso…');
   const r = await POST('/api/v2/admin/ricalcola-lezioni', {});
   if(!r || r.error){ toast('Errore durante il ricalcolo', true); return; }
@@ -2975,7 +3050,7 @@ async function downloadDb(){
 async function sospendi(iid){
   const cliente = clienti.find(x=>x.id===iid);
   const nome = cliente ? cliente.nome+' '+(cliente.cognome||'') : '';
-  if(!confirm(`Vuoi sospendere ${nome.trim()}?\n\nIl cliente non potrà più prenotare lezioni. I dati rimangono invariati.\nPuoi riattivarlo in qualsiasi momento.`)) return;
+  if(!await confirmDialog(`Sospendere ${nome.trim()}?`,{sub:'Il cliente non potrà più prenotare lezioni. Puoi riattivarlo in qualsiasi momento.',icon:'⏸️',okLabel:'Sospendi',okDanger:false})) return;
   const r = await fetch(API+`/api/v2/iscritte/${iid}/sospendi`, {
     method:'POST', headers:{'Content-Type':'application/json','X-Auth-Token':token}
   });
@@ -2994,10 +3069,10 @@ async function cancellaCliente(iid){
   const cliente = clienti.find(x=>x.id===iid);
   const nome = cliente ? (cliente.nome+' '+(cliente.cognome||'')).trim() : '';
 
-  const conf1 = confirm('⚠️ ATTENZIONE\n\nStai per cancellare definitivamente ' + nome + '.\n\nVerranno eliminati:\n• Tutti i dati anagrafici\n• Tutti i pacchetti\n• Tutti i pagamenti\n• Tutte le presenze\n\nQuesta operazione è IRREVERSIBILE.\n\nVuoi continuare?');
+  const conf1 = await confirmDialog('Cancellare definitivamente '+nome+'?',{sub:'Verranno eliminati: dati anagrafici, pacchetti, pagamenti, presenze. Operazione IRREVERSIBILE.',icon:'⚠️',okLabel:'Cancella'});
   if(!conf1) return;
 
-  const cancellaCassa = confirm('Vuoi cancellare anche i movimenti di cassa relativi a ' + nome + '?\n\n• OK = Cancella anche i movimenti cassa\n• Annulla = Mantieni i movimenti cassa');
+  const cancellaCassa = await confirmDialog('Cancellare anche i movimenti di cassa?',{sub:'Scegli "Conferma" per eliminare anche il flusso cassa, "Annulla" per mantenerlo.',icon:'💰',okLabel:'Sì, cancella cassa',okDanger:false});
 
   const r = await fetch(API + '/api/v2/iscritte/' + iid, {
     method: 'DELETE',
@@ -3057,9 +3132,8 @@ async function salvaLezione(){
 }
 
 async function deleteLezione(id, nome, hasSes){
-  const msg = hasSes ? 'Ci sono sessioni future associate. Impossibile cancellare.' : 'Cancellare la lezione "'+nome+'"?';
-  if(hasSes){toast(msg,true);return;}
-  if(!confirm(msg)) return;
+  if(hasSes){toast('Ci sono sessioni future associate. Impossibile cancellare.',true);return;}
+  if(!await confirmDialog('Cancellare la lezione "'+nome+'"?',{icon:'🗑️',okLabel:'Cancella'})) return;
   const r=await fetch(API+'/api/v2/lezioni/'+id,{method:'DELETE',headers:{'X-Auth-Token':token}});
   const data=await r.json();
   if(data.ok){toast('Lezione cancellata.');const lz=await GET('/api/v2/lezioni');if(lz){lezioni=lz;renderCfg();populateSelects();}}
@@ -3193,7 +3267,7 @@ function showClientiPacchetto(event, id){
 
 async function deletePC(id, nome, hasClienti){
   if(hasClienti){toast('Ci sono clienti con questo pacchetto attivo. Impossibile cancellare.',true);return;}
-  if(!confirm('Cancellare il pacchetto "'+nome+'"?')) return;
+  if(!await confirmDialog('Cancellare il pacchetto "'+nome+'"?',{icon:'🗑️',okLabel:'Cancella'})) return;
   const r=await fetch(API+'/api/v2/pacchetti-commerciali/'+id,{method:'DELETE',headers:{'X-Auth-Token':token}});
   const data=await r.json();
   if(data.ok){toast('Pacchetto cancellato.');const pc=await GET('/api/v2/pacchetti-commerciali');if(pc){pacchettiCommerciali=pc;renderCfg();}}
@@ -3242,7 +3316,7 @@ async function caricaTuttePresenze(iid, btn){
 }
 
 async function cancellaPackettoIscritta(pid, iid){
-  if(!confirm('Cancellare questo pacchetto? Verranno rimossi anche il tracking lezioni associato.')) return;
+  if(!await confirmDialog('Cancellare questo pacchetto?',{sub:'Verranno rimossi anche il tracking lezioni associato.',icon:'🗑️',okLabel:'Cancella'})) return;
   const r=await fetch(API+'/api/v2/iscritte/'+iid+'/pacchetti/'+pid,{
     method:'DELETE', headers:{'X-Auth-Token':token}
   });
@@ -3336,7 +3410,7 @@ async function registraPagamentoInline(iid){
 }
 
 async function approvaCert(iid){
-  if(!confirm('Approvi il certificato medico?')) return;
+  if(!await confirmDialog('Approvare il certificato medico?',{icon:'✅',okLabel:'Approva',okDanger:false})) return;
   await POST(`/api/v2/certificati/${iid}/approva`,{});
   toast('Certificato approvato!');
   const certsR=await GET('/api/v2/certificati/da-approvare');
@@ -3347,7 +3421,7 @@ async function approvaCert(iid){
 }
 
 async function rifiutaCert(iid){
-  if(!confirm('Rifiuti il certificato? Il cliente dovrà ricaricarlo.')) return;
+  if(!await confirmDialog('Rifiutare il certificato?',{sub:'Il cliente dovrà ricaricarlo.',icon:'❌',okLabel:'Rifiuta'})) return;
   await POST(`/api/v2/certificati/${iid}/rifiuta`,{});
   toast('Certificato rifiutato.');
   const certsR=await GET('/api/v2/certificati/da-approvare');
@@ -3405,6 +3479,30 @@ function toast(msg,warn=false){
   t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
+// ── CONFIRM DIALOG (sostituisce window.confirm) ─────────────────────────────
+let _confirmResolve=null;
+function confirmResolve(val){
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if(_confirmResolve){_confirmResolve(val);_confirmResolve=null;}
+}
+function confirmDialog(msg,{sub='',okLabel='Conferma',okDanger=true,icon='⚠️'}={}){
+  return new Promise(res=>{
+    _confirmResolve=res;
+    document.getElementById('confirm-icon').textContent=icon;
+    document.getElementById('confirm-msg').textContent=msg;
+    document.getElementById('confirm-sub').textContent=sub;
+    document.getElementById('confirm-sub').style.display=sub?'':'none';
+    const okBtn=document.getElementById('confirm-ok-btn');
+    okBtn.textContent=okLabel;
+    okBtn.className='btn-confirm-ok'+(okDanger?'':' safe');
+    document.getElementById('confirm-overlay').classList.add('open');
+  });
+}
+// Chiudi su tap backdrop
+document.getElementById('confirm-overlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('confirm-overlay')) confirmResolve(false);
+});
+
 async function uploadExcel(input){
   const file = input.files[0];
   if(!file) return;
@@ -3426,10 +3524,11 @@ async function uploadExcel(input){
   if(d1.needs_confirm){
     // Mostra riepilogo e chiedi conferma
     const s = d1.summary;
-    let msg = `Riepilogo import:\n• ${s.iscritte} iscritte\n• ${s.lezioni} lezioni\n• ${s.pacchetti_commerciali} pacchetti commerciali\n• ${s.pacchetti_iscritte} pacchetti iscritte\n• ${s.movimenti} movimenti\n• ${s.sessioni} sessioni\n• ${s.presenze} presenze\n• ${s.istruttori} istruttori`;
-    if(d1.warnings?.length) msg += '\n\nWarning:\n'+d1.warnings.join('\n');
-    msg += '\n\n⚠️ ATTENZIONE: il database verrà completamente sostituito.\nContinuare?';
-    if(!confirm(msg)){ input.value=''; return; }
+    const s = d1.summary;
+    const summaryText = `${s.iscritte} iscritte · ${s.lezioni} lezioni · ${s.pacchetti_commerciali} pacchetti · ${s.movimenti} movimenti · ${s.sessioni} sessioni · ${s.presenze} presenze`
+      + (d1.warnings?.length ? '\n⚠️ '+d1.warnings.join('; ') : '');
+    const goOn = await confirmDialog('Il database verrà sostituito',{sub:summaryText,icon:'⚠️',okLabel:'Importa'});
+    if(!goOn){ input.value=''; return; }
     // Step 2: Importa con conferma
     toast('Import in corso...');
     const fd2 = new FormData();
