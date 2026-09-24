@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.6)</title>
-<!-- cliente.html v1.6 -->
+<title>Coreline Pilates — La tua area (v1.7)</title>
+<!-- cliente.html v1.7 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -532,11 +532,14 @@ function renderBook(){
   // Calcola lezioni compatibili con i pacchetti attivi del cliente
   const lezCompatibili = getLezCompatibili();
 
+  // Se nessun pacchetto attivo con lezioni rimaste → messaggio dedicato
+  if(!lezCompatibili.size){
+    list.innerHTML='<div class="empty"><span class="ti ti-package-off"></span>Nessun pacchetto attivo.<br><span style="font-size:13px;color:var(--muted)">Contatta lo studio per rinnovare.</span></div>';
+    return;
+  }
+
   // Filtra solo sessioni compatibili con i pacchetti
-  const sesFiltrate = sessioni.filter(s=>{
-    if(!lezCompatibili.size) return true; // se nessun pacchetto, mostra tutto
-    return lezCompatibili.has(s.tipo);
-  });
+  const sesFiltrate = sessioni.filter(s=> lezCompatibili.has(s.tipo));
 
   if(!sesFiltrate.length){
     list.innerHTML='<div class="empty"><span class="ti ti-lock"></span>Nessuna sessione compatibile con i tuoi pacchetti attivi</div>';
@@ -798,6 +801,7 @@ function renderIo(){
   }
   const i = clienteData.iscritta;
   const pacchetti = (clienteData.pacchetti||[]).filter(p=>p.stato==='attivo');
+  const pachettiStorico = (clienteData.pacchetti||[]).filter(p=>p.stato!=='attivo');
   const saldare = (clienteData.movimenti||[]).filter(m=>m.importo<0);
 
   // Certificato medico
@@ -839,6 +843,24 @@ function renderIo(){
       html+=`<div class="pac-card">
         <div class="pac-nome">${p.corso_nome||'Pacchetto'}</div>
         <div class="pac-lez-list">${lezHtml||'<div style="font-size:13px;color:var(--muted)">Nessuna lezione nel pacchetto</div>'}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Storico pacchetti
+  if(pachettiStorico.length){
+    html+=`<div class="io-card"><h3>Storico pacchetti</h3>`;
+    pachettiStorico.forEach(p=>{
+      const lezTot = (p.lezioni_abilitate||[]).reduce((s,l)=>s+l.n_lezioni,0);
+      const lezFatte = (p.lezioni_abilitate||[]).reduce((s,l)=>s+l.n_fatte,0);
+      const statoLabel = p.stato==='esaurito'?'Esaurito':p.stato==='scaduto'?'Scaduto':'Terminato';
+      html+=`<div class="io-row">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text)">${p.corso_nome||'Pacchetto'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${p.data_inizio?fmtDataShort(p.data_inizio):''} · ${lezFatte}/${lezTot} lezioni</div>
+        </div>
+        <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;background:var(--bg);color:var(--muted)">${statoLabel}</span>
       </div>`;
     });
     html+=`</div>`;
