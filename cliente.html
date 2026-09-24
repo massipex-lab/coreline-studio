@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v2.2)</title>
-<!-- cliente.html v2.2 -->
+<title>Coreline Pilates — La tua area (v2.3)</title>
+<!-- cliente.html v2.3 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -287,7 +287,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <span class="ti ti-user-circle"></span>
       Io
     </button>
-    <button class="bnav-item bnav-logout" onclick="logout()">
+    <button class="bnav-item bnav-logout" onclick="confirmLogout()">
       <span class="ti ti-logout"></span>
       Esci
     </button>
@@ -985,6 +985,15 @@ function goPage(p){
   document.getElementById('bnav-'+p).classList.add('active');
   if(p==='lezioni') renderLezioni();
   if(p==='io') renderIo();
+}
+
+async function confirmLogout(){
+  const ok = await confirmDialog('Vuoi uscire dalla tua area?',{
+    sub:'Dovrai selezionare di nuovo il tuo nome al prossimo accesso.',
+    icon:'👋', okLabel:'Esci', okDanger:false
+  });
+  if(!ok) return;
+  logout();
 }
 
 function logout(){
