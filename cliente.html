@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.5)</title>
-<!-- cliente.html v1.5 -->
+<title>Coreline Pilates — La tua area (v1.6)</title>
+<!-- cliente.html v1.6 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -761,14 +761,17 @@ async function loadLezioni(){
   if(passate.length){
     html+='<div class="storico-header">Storico</div><div class="lezioni-section">';
     passate.slice(0,30).forEach(p=>{
-      const stato = p.stato==='presente'?'presente':p.stato==='cancellato'?'cancellato':'presente';
+      const stato = p.stato==='cancellato'?'cancellato':p.stato==='presente'?'presente':null;
+      const badgeHtml = stato
+        ? `<span class="pren-stato ${stato}">${stato==='cancellato'?'Disdetta':'Presente'}</span>`
+        : '';
       html+=`<div class="pren-card passata">
         <div class="pren-row">
           <div>
             <div class="pren-tipo">${p.tipo||'Sessione'}</div>
             <div class="pren-data">${fmtDataShort(p.data)} · ${(p.orario||'').slice(0,5)}</div>
           </div>
-          <span class="pren-stato ${stato}">${stato==='cancellato'?'Disdetta':'Presente'}</span>
+          ${badgeHtml}
         </div>
       </div>`;
     });
