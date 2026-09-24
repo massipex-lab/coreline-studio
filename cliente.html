@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v2.0)</title>
-<!-- cliente.html v2.0 -->
+<title>Coreline Pilates — La tua area (v2.1)</title>
+<!-- cliente.html v2.1 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -884,11 +884,12 @@ function renderIo(){
     html+=`<div class="io-card"><h3>I tuoi pacchetti</h3>`;
     pacchetti.forEach(p=>{
       const lezHtml = (p.lezioni_abilitate||[]).map(l=>{
-        const rim=Math.max(0,l.n_lezioni-l.n_fatte);
-        const pct=Math.round((l.n_fatte/l.n_lezioni)*100)||0;
+        const fatte=Math.min(l.n_fatte, l.n_lezioni);
+        const rim=Math.max(0,l.n_lezioni-fatte);
+        const pct=Math.round((fatte/l.n_lezioni)*100)||0;
         return `<div class="pac-lez-row">
           <span class="pac-lez-nome">${l.nome}</span>
-          <span class="pac-lez-count">${rim} / ${l.n_lezioni}</span>
+          <span class="pac-lez-count">${fatte} / ${l.n_lezioni} <span style="font-size:11px;font-weight:400;color:var(--muted)">(${rim} rim.)</span></span>
         </div>
         <div class="pac-prog"><div class="pac-prog-fill" style="width:${pct}%"></div></div>`;
       }).join('');
