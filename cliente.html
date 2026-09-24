@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v2.1)</title>
-<!-- cliente.html v2.1 -->
+<title>Coreline Pilates — La tua area (v2.2)</title>
+<!-- cliente.html v2.2 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -79,12 +79,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border:none;background:transparent;padding:8px 4px 12px;transition:color .15s;position:relative}
 .bnav-item::before{content:'';position:absolute;top:0;left:25%;right:25%;height:3px;border-radius:0 0 3px 3px;background:transparent;transition:background .15s}
 .bnav-item .ti{font-size:22px;line-height:1;transition:transform .15s}
-.bnav-item .ti-filled{display:none}
-.bnav-item .ti-outline{display:inline}
 .bnav-item.active{color:var(--cl-dark)}
 .bnav-item.active::before{background:var(--cl-dark)}
-.bnav-item.active .ti-filled{display:inline}
-.bnav-item.active .ti-outline{display:none}
 .bnav-item.active .ti{transform:scale(1.1)}
 .bnav-item.bnav-logout{color:var(--muted);opacity:.7}
 .bnav-item.bnav-logout:active{opacity:1;color:var(--red)}
@@ -280,18 +276,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
   <!-- Bottom Nav -->
   <nav class="bottom-nav">
     <button class="bnav-item active" id="bnav-book" onclick="goPage('book')">
-      <span class="ti ti-calendar-event ti-outline"></span>
-      <span class="ti ti-calendar-event-filled ti-filled"></span>
+      <span class="ti ti-calendar-event"></span>
       Book
     </button>
     <button class="bnav-item" id="bnav-lezioni" onclick="goPage('lezioni')">
-      <span class="ti ti-list-check ti-outline"></span>
-      <span class="ti ti-list-check ti-filled"></span>
+      <span class="ti ti-list-check"></span>
       Lezioni
     </button>
     <button class="bnav-item" id="bnav-io" onclick="goPage('io')">
-      <span class="ti ti-user-circle ti-outline"></span>
-      <span class="ti ti-user-circle-filled ti-filled"></span>
+      <span class="ti ti-user-circle"></span>
       Io
     </button>
     <button class="bnav-item bnav-logout" onclick="logout()">
