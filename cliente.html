@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.7)</title>
-<!-- cliente.html v1.7 -->
+<title>Coreline Pilates — La tua area (v1.8)</title>
+<!-- cliente.html v1.8 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -86,6 +86,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .bnav-item.active .ti-filled{display:inline}
 .bnav-item.active .ti-outline{display:none}
 .bnav-item.active .ti{transform:scale(1.1)}
+.bnav-item.bnav-logout{color:var(--muted);opacity:.7}
+.bnav-item.bnav-logout:active{opacity:1;color:var(--red)}
 
 /* ── PAGE CONTENT ── */
 .page{display:none;padding:0}
@@ -291,6 +293,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <span class="ti ti-user-circle ti-outline"></span>
       <span class="ti ti-user-circle-filled ti-filled"></span>
       Io
+    </button>
+    <button class="bnav-item bnav-logout" onclick="logout()">
+      <span class="ti ti-logout"></span>
+      Esci
     </button>
   </nav>
 
@@ -879,7 +885,6 @@ function renderIo(){
     html+=`</div>`;
   }
 
-  html+=`<button class="logout-btn" onclick="logout()"><span class="ti ti-logout"></span> Esci</button>`;
   html+=`</div>`;
 
   content.innerHTML=html;
