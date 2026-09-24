@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.0)</title>
-<!-- cliente.html v1.0 -->
+<title>Coreline Pilates — La tua area (v1.1)</title>
+<!-- cliente.html v1.1 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -68,9 +68,16 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 
 /* ── BOTTOM NAV ── */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:#fff;border-top:1px solid var(--border);display:flex;z-index:100;height:var(--nav-h)}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border:none;background:transparent;padding:8px 4px 12px;transition:color .15s}
-.bnav-item .ti{font-size:22px;line-height:1}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border:none;background:transparent;padding:8px 4px 12px;transition:color .15s;position:relative}
+.bnav-item::before{content:'';position:absolute;top:0;left:25%;right:25%;height:3px;border-radius:0 0 3px 3px;background:transparent;transition:background .15s}
+.bnav-item .ti{font-size:22px;line-height:1;transition:transform .15s}
+.bnav-item .ti-filled{display:none}
+.bnav-item .ti-outline{display:inline}
 .bnav-item.active{color:var(--cl-dark)}
+.bnav-item.active::before{background:var(--cl-dark)}
+.bnav-item.active .ti-filled{display:inline}
+.bnav-item.active .ti-outline{display:none}
+.bnav-item.active .ti{transform:scale(1.1)}
 
 /* ── PAGE CONTENT ── */
 .page{display:none;padding:0}
@@ -211,7 +218,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div class="topbar-logo">c<span></span>reline</div>
       <div class="topbar-user">
         <span id="top-nome">—</span>
-        <small>La tua area · v1.0</small>
+        <small>La tua area · v1.1</small>
       </div>
     </div>
   </div>
@@ -253,13 +260,19 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
   <!-- Bottom Nav -->
   <nav class="bottom-nav">
     <button class="bnav-item active" id="bnav-book" onclick="goPage('book')">
-      <span class="ti ti-calendar-event"></span>Book
+      <span class="ti ti-calendar-event ti-outline"></span>
+      <span class="ti ti-calendar-event-filled ti-filled"></span>
+      Book
     </button>
     <button class="bnav-item" id="bnav-lezioni" onclick="goPage('lezioni')">
-      <span class="ti ti-list-check"></span>Lezioni
+      <span class="ti ti-list-check ti-outline"></span>
+      <span class="ti ti-list-check ti-filled"></span>
+      Lezioni
     </button>
     <button class="bnav-item" id="bnav-io" onclick="goPage('io')">
-      <span class="ti ti-user-circle"></span>Io
+      <span class="ti ti-user-circle ti-outline"></span>
+      <span class="ti ti-user-circle-filled ti-filled"></span>
+      Io
     </button>
   </nav>
 
