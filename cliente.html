@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.4)</title>
-<!-- cliente.html v1.4 -->
+<title>Coreline Pilates — La tua area (v1.5)</title>
+<!-- cliente.html v1.5 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -103,7 +103,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 /* ── SESSION CARD ── */
 .ses-card{margin:0 12px 8px;background:#fff;border-radius:var(--r-md);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;transition:transform .1s}
 .ses-card:active{transform:scale(.99)}
-.ses-card.prenotata{border-color:var(--cl-dark);border-width:1.5px}
+.ses-card.prenotata{background:var(--green-l);border-color:var(--cl-dark);border-width:1.5px}
 .ses-card.piena{opacity:.6}
 .ses-card-body{padding:14px 14px 12px;display:flex;align-items:flex-start;gap:12px}
 .ses-time{flex-shrink:0;text-align:center;width:44px}
@@ -111,7 +111,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .ses-time .dot{width:8px;height:8px;border-radius:50%;margin:5px auto 0;background:var(--border)}
 .ses-time .dot.ok{background:#4caf50}
 .ses-time .dot.piena{background:var(--red)}
-.ses-time .dot.prenotata{background:var(--cl-dark)}
+.ses-time .dot.prenotata{width:16px;height:16px;border-radius:50%;background:var(--cl-dark);display:flex;align-items:center;justify-content:center;margin:2px auto 0}
+.ses-time .dot.prenotata::after{content:'✓';color:#fff;font-size:9px;font-weight:700;line-height:1}
 .ses-info{flex:1;min-width:0}
 .ses-tipo{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
 .ses-meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -123,11 +124,14 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
 .btn-prenota{flex:1;padding:11px;border-radius:var(--r-sm);border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn-prenota.prenota{background:var(--cl-dark);color:#fff}
 .btn-prenota.prenota:active{background:var(--green-d)}
-.btn-prenota.disdici{background:var(--red-l);color:var(--red);border:1.5px solid var(--red)}
-.btn-prenota.disdici:disabled{opacity:.45;cursor:not-allowed}
 .btn-prenota.piena{background:var(--bg);color:var(--muted);cursor:not-allowed}
 .btn-prenota.loading{opacity:.6;pointer-events:none}
-.prenotata-badge{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--cl-dark);padding:0 14px 10px}
+/* stato prenotata — footer con conferma + disdici discreto */
+.prenotata-footer{padding:0 14px 13px;display:flex;align-items:center;justify-content:space-between}
+.prenotata-label{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--green-d)}
+.btn-disdici-link{background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;padding:4px 0;text-decoration:underline;text-underline-offset:2px;transition:color .15s}
+.btn-disdici-link:hover{color:var(--red)}
+.btn-disdici-link:disabled{opacity:.4;cursor:not-allowed;text-decoration:none}
 
 /* ── PROGRESS BAR ── */
 .posti-bar{height:4px;background:var(--bg);border-radius:2px;margin-top:6px;overflow:hidden;max-width:100px}
@@ -602,12 +606,13 @@ function renderSesCard(s, lezCompatibili){
   // Pulsante
   let btnHtml='';
   if(isPrenotata){
+    const disdiciHtml = canDisdire
+      ? `<button class="btn-disdici-link" onclick="disdici(${s.id},this)">Disdici</button>`
+      : `<button class="btn-disdici-link" disabled title="Non disdibile entro 24h">Non disdibile</button>`;
     btnHtml=`
-      <div class="prenotata-badge"><span class="ti ti-circle-check"></span> Sei prenotata</div>
-      <div class="ses-card-footer">
-        <button class="btn-prenota disdici" ${canDisdire?'':'disabled'} onclick="disdici(${s.id},this)">
-          ${canDisdire?'<span class="ti ti-x"></span> Disdici':'<span class="ti ti-lock"></span> Disdetta non disponibile'}
-        </button>
+      <div class="prenotata-footer">
+        <span class="prenotata-label"><span class="ti ti-circle-check"></span> Sei prenotata</span>
+        ${disdiciHtml}
       </div>`;
   } else if(isPiena){
     btnHtml=`<div class="ses-card-footer"><button class="btn-prenota piena" disabled>Sessione piena</button></div>`;
