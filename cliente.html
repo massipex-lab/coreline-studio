@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.2)</title>
-<!-- cliente.html v1.2 -->
+<title>Coreline Pilates — La tua area (v1.3)</title>
+<!-- cliente.html v1.3 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -226,7 +226,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;ba
       <div class="topbar-logo">c<span></span>reline</div>
       <div class="topbar-user">
         <span id="top-nome">—</span>
-        <small>La tua area · v1.2</small>
+        <small>La tua area · v1.3</small>
       </div>
     </div>
   </div>
@@ -347,7 +347,9 @@ function cResolve(v){
   document.getElementById('confirm-overlay').classList.remove('open');
   if(_cResolve){_cResolve(v);_cResolve=null;}
 }
-function confirmDialog(msg,{sub='',ok='Conferma',danger=false,icon='⚠️'}={}){
+function confirmDialog(msg,{sub='',ok,okLabel,danger,okDanger,icon='⚠️'}={}){
+  const label = okLabel||ok||'Conferma';
+  const isDanger = okDanger||danger||false;
   return new Promise(res=>{
     _cResolve=res;
     document.getElementById('c-icon').textContent=icon;
@@ -355,8 +357,8 @@ function confirmDialog(msg,{sub='',ok='Conferma',danger=false,icon='⚠️'}={})
     document.getElementById('c-sub').textContent=sub;
     document.getElementById('c-sub').style.display=sub?'':'none';
     const btn=document.getElementById('c-ok-btn');
-    btn.textContent=ok;
-    btn.className='c-ok'+(danger?' danger':'');
+    btn.textContent=label;
+    btn.className='c-ok'+(isDanger?' danger':'');
     document.getElementById('confirm-overlay').classList.add('open');
   });
 }
@@ -666,7 +668,7 @@ async function prenota(sid, tipo, btn){
 async function disdici(sid, btn){
   const ok = await confirmDialog('Disdire questa sessione?',{
     sub:'La tua lezione verrà ripristinata nel pacchetto.',
-    icon:'🗑️',ok:'Disdici',danger:true
+    icon:'🗑️', okLabel:'Disdici', okDanger:true
   });
   if(!ok) return;
 
