@@ -6,8 +6,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#96a387">
-<title>Coreline Pilates — La tua area (v1.8)</title>
-<!-- cliente.html v1.8 -->
+<title>Coreline Pilates — La tua area (v1.9)</title>
+<!-- cliente.html v1.9 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -606,7 +606,7 @@ function renderSesCard(s, lezCompatibili){
   const pct = Math.round((pOcc/pMax)*100);
   let postiClass = 'ok', postiLabel='';
   if(isPiena){ postiClass='piena'; postiLabel='Piena'; }
-  else if(s.posti_disponibili<=2){ postiClass='warn'; postiLabel=s.posti_disponibili+' posto'+(s.posti_disponibili===1?'':'i'); }
+  else if(s.posti_disponibili<=2){ postiClass='warn'; postiLabel=s.posti_disponibili+(s.posti_disponibili===1?' posto libero':' posti liberi'); }
   else { postiLabel=s.posti_disponibili+' posti liberi'; }
 
   let dotClass = isPrenotata?'prenotata':isPiena?'piena':'ok';
